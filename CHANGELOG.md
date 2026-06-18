@@ -4,8 +4,6 @@
 
 **安全 hooks 改用 Node（修复 Windows 失效）+ 文档收尾（P2）**
 
-详见 `OPTIMIZATION-PLAN.md` P2。
-
 ### 修复
 
 - **P2.1 — 安全 hooks 在无 jq 环境静默失效**：旧 `.sh` hooks 依赖 `jq` 解析 stdin JSON，而 Git for Windows 默认不带 jq，导致 hook 读不到内容、直接 `exit 0` **放行所有代码**——含 `eval()` 的代码不会被拦。安全检查形同虚设。
@@ -27,8 +25,6 @@
 ## v3.1.0（2026-06-18）
 
 **ai-knowledge-base 双语言路线 + 反框架立场（P1）**
-
-详见 `OPTIMIZATION-PLAN.md` P1。
 
 ### 新增
 
@@ -54,8 +50,6 @@
 ## v3.0.2（2026-06-18）
 
 **修复分发管线的两个致命问题（P0）+ 增加 CLI 冒烟测试**
-
-详见 `OPTIMIZATION-PLAN.md`。
 
 ### 修复
 

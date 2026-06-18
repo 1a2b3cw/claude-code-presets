@@ -48,6 +48,6 @@ coverage/
 
 # create-claude-team: vendored copies are GENERATED at pack/publish time
 # (scripts/sync-config.js via prepack). Never commit them — root is the
-# single source of truth. See OPTIMIZATION-PLAN.md P0.2.
+# single source of truth.
 create-claude-team/.claude/
 create-claude-team/presets/
