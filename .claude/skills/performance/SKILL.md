@@ -1,189 +1,52 @@
 ---
 name: performance
-description: Web 性能优化，涵盖包分析、懒加载、缓存策略和 Core Web Vitals
+description: 性能优化方法（语言无关）——先测量再优化、定位瓶颈、优化热点、验证。具体技术（前端 Core Web Vitals、后端查询、AI 延迟）见所用预设。
 ---
 
-# Performance Optimization
+# 性能优化方法
 
-## Bundle Analysis and Code Splitting
+> 这是**通用方法**，不绑定技术栈。具体优化手段见所用预设：
+> - web-fullstack：`frontend` 技能（Core Web Vitals、代码分割、图片优化、bundle）
+> - ai-app：`rag` 规则与 specs（嵌入缓存、向量索引、流式、延迟 P95）
 
-```typescript
-// Dynamic import for route-level code splitting
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Settings = lazy(() => import("./pages/Settings"));
+## 铁律：先测量，再优化
 
-function App() {
-  return (
-    <Suspense fallback={<PageSkeleton />}>
-      <Routes>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/settings" element={<Settings />} />
-      </Routes>
-    </Suspense>
-  );
-}
+不要凭感觉优化。**先用数据找到真正的瓶颈**，否则你优化的多半不是慢的地方。
+
+```
+① 测量 → ② 定位瓶颈 → ③ 优化热点 → ④ 再测量验证 → 回到①
 ```
 
-```javascript
-// vite.config.ts - manual chunk splitting
-export default defineConfig({
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ["react", "react-dom"],
-          charts: ["recharts", "d3"],
-          editor: ["@monaco-editor/react"],
-        },
-      },
-    },
-  },
-});
-```
+- 没有 before/after 数字，就不算优化完成
+- 优化最热的那 20%，不要均匀用力
+- 每次只改一处，单独验证效果（否则不知道哪个改动起了作用）
 
-```bash
-# Analyze bundle composition
-npx vite-bundle-visualizer
-npx source-map-explorer dist/assets/*.js
-```
+## 瓶颈分类（按这四类排查）
 
-## Image Optimization
+| 类别 | 典型症状 | 通用对策 |
+|------|----------|----------|
+| **计算** | CPU 打满、主线程卡 | 降复杂度、缓存结果、移出热路径、并行/异步 |
+| **IO** | 等磁盘/数据库/文件 | 批量、索引、连接池、避免 N+1、流式 |
+| **网络** | 等远程响应 | 并发请求、缓存、减少往返、就近部署、压缩 |
+| **内存** | OOM、GC 频繁、泄漏 | 释放引用、流式处理大数据、分页、对象复用 |
 
-```tsx
-import Image from "next/image";
+## 通用优化模式
 
-function ProductImage({ src, alt }: { src: string; alt: string }) {
-  return (
-    <Image
-      src={src}
-      alt={alt}
-      width={800}
-      height={600}
-      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-      placeholder="blur"
-      blurDataURL={generateBlurHash(src)}
-      loading="lazy"
-    />
-  );
-}
-```
+- **缓存**：对昂贵且可复用的结果做缓存（注意失效策略）
+- **批量**：把 N 次小调用合并成 1 次（数据库、API、嵌入生成都适用）
+- **并发**：互不依赖的 IO 操作并行（不要在循环里串行 await）
+- **懒加载/分页**：不要一次性加载/计算用不到的东西
+- **避免 N+1**：循环里逐条查询 → 改成一次批量查询
 
-```html
-<!-- Native lazy loading with aspect ratio -->
-<img
-  src="product.webp"
-  alt="Product photo"
-  width="800"
-  height="600"
-  loading="lazy"
-  decoding="async"
-  fetchpriority="low"
-/>
+## 反模式
 
-<!-- Preload LCP image -->
-<link rel="preload" as="image" href="/hero.webp" fetchpriority="high" />
-```
+- 没测量就优化（"我觉得这里慢"）
+- 过早优化（牺牲可读性换不必要的性能）
+- 优化冷路径（一天调用一次的代码抠微秒）
+- 一次改一堆，无法归因
+- 用缓存掩盖根本性的算法/查询问题
 
-## Caching Headers
+## 输出
 
-```typescript
-function setCacheHeaders(res: Response, options: CacheOptions) {
-  if (options.immutable) {
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    return;
-  }
-
-  if (options.revalidate) {
-    res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${options.revalidate}, stale-while-revalidate=${options.staleWhileRevalidate ?? 86400}`);
-    return;
-  }
-
-  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-}
-
-app.use("/assets", (req, res, next) => {
-  setCacheHeaders(res, { immutable: true });
-  next();
-});
-
-app.use("/api", (req, res, next) => {
-  setCacheHeaders(res, { revalidate: 60, staleWhileRevalidate: 3600 });
-  next();
-});
-```
-
-## Virtual Lists for Large Data
-
-```tsx
-import { useVirtualizer } from "@tanstack/react-virtual";
-
-function VirtualList({ items }: { items: Item[] }) {
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  const virtualizer = useVirtualizer({
-    count: items.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 50,
-    overscan: 5,
-  });
-
-  return (
-    <div ref={parentRef} style={{ height: "600px", overflow: "auto" }}>
-      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>
-        {virtualizer.getVirtualItems().map((virtualRow) => (
-          <div
-            key={virtualRow.key}
-            style={{
-              position: "absolute",
-              top: 0,
-              transform: `translateY(${virtualRow.start}px)`,
-              height: `${virtualRow.size}px`,
-              width: "100%",
-            }}
-          >
-            <ItemRow item={items[virtualRow.index]} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-## Core Web Vitals Monitoring
-
-```typescript
-import { onCLS, onINP, onLCP } from "web-vitals";
-
-function sendMetric(metric: { name: string; value: number; id: string }) {
-  navigator.sendBeacon("/api/vitals", JSON.stringify(metric));
-}
-
-onCLS(sendMetric);
-onINP(sendMetric);
-onLCP(sendMetric);
-```
-
-- **LCP** (Largest Contentful Paint): < 2.5s. Preload hero images, optimize server response time.
-- **INP** (Interaction to Next Paint): < 200ms. Avoid long tasks, use `requestIdleCallback`.
-- **CLS** (Cumulative Layout Shift): < 0.1. Set explicit dimensions on images and embeds.
-
-## Anti-Patterns
-
-- Loading all JavaScript upfront instead of code-splitting by route
-- Serving unoptimized images (no WebP/AVIF, no responsive sizes)
-- Missing `width` and `height` on images (causes layout shift)
-- Using `Cache-Control: no-cache` on static assets with content hashes
-- Rendering thousands of DOM nodes instead of virtualizing lists
-- Blocking the main thread with synchronous computation
-
-## Checklist
-
-- [ ] Routes lazy-loaded with dynamic `import()` and Suspense
-- [ ] Bundle analyzed and vendor chunks separated
-- [ ] Images served in WebP/AVIF with responsive `sizes` attribute
-- [ ] LCP image preloaded with `fetchpriority="high"`
-- [ ] Static assets cached with immutable headers and content hashes
-- [ ] Lists with 100+ items use virtualization
-- [ ] Core Web Vitals monitored in production (LCP, INP, CLS)
-- [ ] No render-blocking resources in the critical path
+性能工作要给出：瓶颈在哪（数据支撑）、改了什么、before/after 对比。
+具体指标阈值见预设（如 web 的 LCP<2.5s、AI 的检索 P95<3s）。

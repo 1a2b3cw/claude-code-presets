@@ -25,7 +25,18 @@
 - **`architecture` skill**：原为"Web全栈架构设计"，含 Next.js/Prisma 决策树却放在**公共** skill 里，对 AI/Python 项目误导。改为**语言无关**的架构方法（分层、模块边界、依赖方向、模式），技术栈选型交回各预设 PRESET.md。
 - **`project-planning` skill**：原自带一套与标准流程冲突的 5 问需求清单 + 完整流程，和 Architect-Planner 抢活。改为**纯拆解方法**，服务两个粒度（产品级→roadmap.md、功能级→tasks.md），需求确认交回 /plan、/dev 的统一 Phase 0。
 - **Architect-Planner agent**：明确"角色定义职责/流程/产出契约，方法调用 skill"，引用 `project-planning`/`architecture`，不再重述方法论；讲清同时服务 `/plan`（产品级）与 `/dev`（功能级）。
-- 已知同类待办：`performance` skill 也是"Web 专属内容放在公共层"，留待后续处理。
+
+### 优化（公共层语言解耦）
+
+根因：项目 v1-v2 是纯 Web/TS，v3 加了 AI 预设但公共层（common skills/agents）从未与 Web 解耦，导致装 AI/Python 预设时仍被灌 React/Vitest/Prisma 内容。统一原则：**公共层只放语言无关的「方法」，技术栈细节下沉到预设。**
+
+- **`performance` skill**：原 100% Web（lazy/vite/next-image/Core Web Vitals）→ 改为通用性能方法（先测量、定位瓶颈、四类瓶颈、通用模式）。Web 细节本就在 web 的 frontend 技能，AI 在 rag 规则。
+- **`testing` skill**：原 100% TS 工具（Vitest/Testcontainers/Pact）→ 改为通用测试方法（TDD、金字塔、Mock 原则、覆盖率哲学）。工具交回预设（web rules/specs、ai python/ts specs）。
+- **`debugging` skill**：保留通用流程，泛化 Web 专属的工具/症状清单为通用根因分类。
+- **`code-review` skill**：维度 6「无障碍」标注**仅前端 UI 文件适用**（后端/库/CLI 跳过）；说明方法语言无关、示例仅 TS 演示。
+- **`builder` agent**：删除硬编码 TS 规则（"不用 any 用 unknown"等），改为"语言规范遵循 rules/"。
+- **`devops` agent**：Prisma/package.json 等示例泛化为"按栈"（Prisma/Drizzle/Alembic、package.json/pyproject.toml）。
+- **`reviewer` agent**：删除与 review-all.md 重复的流程和输出格式大段，改为引用，只保留角色级职责。
 
 ## v3.2.0（2026-06-18）
 

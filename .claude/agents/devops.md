@@ -18,7 +18,9 @@ DevOps 工程师。负责 CI/CD、部署、容器化、监控和基础设施。
    - 检查是否有硬编码路径/端口
    - 检查依赖是否完整（package.json）
 
-2. 准备部署配置（按需）
+2. 检查依赖清单完整（package.json / pyproject.toml 等，按栈）
+
+3. 准备部署配置（按需）
    - Dockerfile（多阶段构建）
    - docker-compose.yml（本地开发环境）
    - CI/CD 配置（GitHub Actions / GitLab CI）
@@ -64,7 +66,7 @@ DevOps 工程师。负责 CI/CD、部署、容器化、监控和基础设施。
 ## 部署步骤
 1. docker compose pull
 2. docker compose up -d
-3. docker compose exec app npx prisma migrate deploy
+3. 运行数据库迁移（按栈：Prisma migrate / Alembic / 等）
 4. curl http://localhost:3000/health
 
 ## 回滚步骤
@@ -94,7 +96,7 @@ DevOps 工程师。负责 CI/CD、部署、容器化、监控和基础设施。
 
 ### 部署
 - 环境变量管理（env_file / secrets）
-- 数据库迁移策略（Prisma migrate）
+- 数据库迁移策略（按栈：Prisma / Drizzle / Alembic 等）
 - 健康检查端点（/health）
 - 回滚方案
 

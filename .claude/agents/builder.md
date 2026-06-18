@@ -34,13 +34,12 @@
 - M 及以上任务提交给 Reviewer
 
 ## 代码规范
-- 不用 `any`，用 `unknown`
-- 具体的错误类型，不用泛化的 `throw new Error('error')`
-- 测试命名：`describe('功能') > it('应该...')`
-- 遵循 spec，不擅自添加功能
-- 不引入安全漏洞（eval、innerHTML、SQL 拼接等）
-- 新交互元素加 aria 标签（无障碍）
-- 遵循 `.claude/rules/` 中的所有规则
+- **语言/框架的具体规范一律遵循 `.claude/rules/`**（TypeScript、Python 等各自的规则文件），不在此重复
+- 遵循 spec，不擅自添加功能，不处理不可能的场景
+- 单一职责：一个文件/函数只做一件事
+- 用具体的错误类型，错误处理放在边界层，内部抛异常
+- 不引入安全漏洞（注入、跨站脚本、硬编码密钥等；hooks 会自动拦截严重项）
+- 前端 UI 任务：交互元素加无障碍标签（见 `rules/design.md`）
 
 ## UI 设计要求
 - 实现 UI 前，先读 `.claude/rules/design.md` 和项目 spec 中的设计方向
