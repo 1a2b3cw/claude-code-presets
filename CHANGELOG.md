@@ -18,6 +18,15 @@
 - BEST-PRACTICES 主线骨架插入 `/plan` 作为"③ 开局"步骤（新项目可选）。
 - 冒烟测试新增命令数 + plan.md 断言。版本 → 3.3.0。
 
+### 优化（规划职责分层）
+
+理清 Architect-Planner（角色）与规划类 skill（方法）的边界，消除重叠：
+
+- **`architecture` skill**：原为"Web全栈架构设计"，含 Next.js/Prisma 决策树却放在**公共** skill 里，对 AI/Python 项目误导。改为**语言无关**的架构方法（分层、模块边界、依赖方向、模式），技术栈选型交回各预设 PRESET.md。
+- **`project-planning` skill**：原自带一套与标准流程冲突的 5 问需求清单 + 完整流程，和 Architect-Planner 抢活。改为**纯拆解方法**，服务两个粒度（产品级→roadmap.md、功能级→tasks.md），需求确认交回 /plan、/dev 的统一 Phase 0。
+- **Architect-Planner agent**：明确"角色定义职责/流程/产出契约，方法调用 skill"，引用 `project-planning`/`architecture`，不再重述方法论；讲清同时服务 `/plan`（产品级）与 `/dev`（功能级）。
+- 已知同类待办：`performance` skill 也是"Web 专属内容放在公共层"，留待后续处理。
+
 ## v3.2.0（2026-06-18）
 
 **AI 预设更名 `ai-knowledge-base` → `ai-app`**

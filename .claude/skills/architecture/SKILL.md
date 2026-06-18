@@ -1,101 +1,77 @@
 ---
 name: architecture
-description: Web全栈架构设计，包括技术选型、模块划分、数据流设计
+description: 架构设计方法（语言无关）——分层、模块边界、依赖方向、设计模式、何时不要抽象。具体技术栈选型见所用预设的 PRESET.md/rules。
 ---
 
-# 架构设计技能
+# 架构设计方法
 
-## 触发条件
-- 新项目启动
-- 重大功能需要架构设计
-- 技术选型决策
+> 这是**通用方法**，不绑定语言/框架。具体技术栈的选型（如 web 用 Next.js/Hono/Prisma，AI 用 FastAPI/pgvector）见所用预设的 `PRESET.md` 和 `rules/`。
+> 本技能是 Architect-Planner 在做架构决策时使用的方法库。
+
+## 何时用
+- 新系统/新模块需要结构设计
+- 重大功能的架构决策
 - 重构现有架构
+- 需要划分模块边界、定义模块间接口时
 
-## Web 全栈架构模式
+## 分层原则
 
-### 分层架构
 ```
-┌─────────────────────────────────┐
-│         表现层 (Presentation)    │
-│    React / Next.js / API Routes │
-├─────────────────────────────────┤
-│         业务层 (Business)        │
-│    Services / Use Cases         │
-├─────────────────────────────────┤
-│         数据层 (Data)            │
-│    Repository / ORM / Cache     │
-├─────────────────────────────────┤
-│       基础设施层 (Infra)         │
-│    DB / Queue / Storage / Auth  │
-└─────────────────────────────────┘
+表现层 (Presentation)   ← 入口：UI / API 路由 / CLI
+   ↓ 只能向下依赖
+业务层 (Business)       ← 用例、领域逻辑（不依赖框架）
+   ↓
+数据层 (Data)           ← 仓储、ORM、缓存
+   ↓
+基础设施 (Infra)        ← DB / 队列 / 存储 / 外部服务
 ```
 
-### 模块化组织（Feature-based）
+- **依赖方向单向向下**，上层依赖下层，禁止循环依赖
+- 业务层不应耦合具体框架（便于测试和替换）
+- 跨层调用通过接口，不直接摸下层实现
+
+## 模块化组织（按功能，不按文件类型）
+
 ```
 src/
-├── features/
-│   ├── auth/           # 认证模块
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── services/
-│   │   ├── types/
-│   │   └── index.ts    # 公共 API
-│   ├── user/           # 用户模块
-│   └── order/          # 订单模块
-├── shared/             # 共享代码
-│   ├── components/
-│   ├── hooks/
-│   ├── utils/
-│   └── types/
-└── app/                # 应用入口
+├── features/             # 按业务功能切分
+│   └── [feature]/
+│       ├── ...           # 该功能的组件/逻辑/数据访问/类型
+│       └── index.ts      # 模块的公共 API（对外只暴露这里）
+├── shared/               # 跨功能复用的通用代码
+└── app/ (或 main)        # 应用入口、装配
 ```
 
-## 技术选型决策树
+- 每个模块有**明确的对外接口**（index 暴露），内部实现可自由重构
+- 模块间通过公共 API 通信，不深入彼此内部
+- 共享代码下沉到 shared，但警惕"什么都往 shared 塞"
 
-### 前端
-- **SSR/SSG 需求**？→ Next.js 14+（App Router）
-- **内容站点**？→ Astro（零 JS 默认）
-- **纯 SPA**？→ Vite + React
-- **轻量级**？→ Preact / Solid
+## 技术选型原则（具体选型见预设）
 
-### 后端
-- **全栈框架**？→ Next.js API Routes / Remix
-- **独立 API**？→ **Hono（优先）** / Fastify / Express
-- **Edge 部署**？→ Hono（原生 Edge Runtime 支持）
-- **微服务**？→ 各服务独立选型
+- **选经过验证的**，不追新；团队熟悉度也是选型因素
+- **按场景选**，不一刀切：先问清约束（规模、性能、部署目标、团队技能）
+- **避免过度设计**：没有当前需求就不引入抽象层 / 框架 / 中间件
+- 选型要能说出**理由**和**放弃的代价**（记入 ADR）
 
-### 数据库
-- **关系型为主**？→ PostgreSQL
-- **嵌入式/轻量**？→ SQLite
-- **文档型**？→ MongoDB
-- **缓存**？→ Redis
+> 各预设已给出推荐栈：web-fullstack 见其 PRESET.md（React/Next.js/Hono/Prisma 等）；ai-app 见其 PRESET.md（Claude SDK/pgvector/FastAPI 或 Vercel AI SDK）。
 
-### ORM / 查询构建器
-- **类型安全 + 迁移**？→ Prisma
-- **轻量 + SQL-like**？→ Drizzle
-- **类型安全 + 灵活**？→ Kysely
-- **原生 SQL**？→ pg / better-sqlite3
+## 设计模式（按需，不硬套）
 
-## 设计模式
+| 模式 | 用途 |
+|------|------|
+| Repository | 隔离数据访问，业务层不碰具体存储 |
+| Service / Use Case | 封装业务逻辑 |
+| Middleware / Pipeline | 请求处理链（认证、日志、校验） |
+| Factory | 复杂对象创建 |
+| Observer / 事件 | 解耦的事件驱动 |
 
-### 常用模式
-- **Repository Pattern**：隔离数据访问层
-- **Service Pattern**：封装业务逻辑
-- **Middleware Pattern**：请求处理管道
-- **Observer Pattern**：事件驱动
-- **Factory Pattern**：对象创建
-
-### 避免的模式
-- 过度抽象：不需要模式时别硬套
-- 单例滥用：优先依赖注入
-- God Object：一个类/模块做太多事
+**反模式（避免）**：过度抽象、单例滥用（优先依赖注入）、God Object（一个模块做太多事）、为"将来可能"提前抽象（YAGNI）。
 
 ## 输出要求
-架构文档必须包含：
-1. 系统概述
-2. 架构图（文字或 Mermaid）
-3. 技术栈及选型理由
-4. 模块划分及职责
-5. 数据流描述
-6. 关键决策及理由
-7. 风险和缓解方案
+
+架构决策产出 `architecture.md`（格式见 Architect-Planner agent），必须包含：
+1. 系统概述 + 架构图（文字或 Mermaid）
+2. 模块划分及职责、模块间接口
+3. 数据流
+4. 技术选型及理由（关键决策记 ADR）
+5. 风险与缓解
