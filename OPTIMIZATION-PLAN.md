@@ -217,9 +217,11 @@ P1(AI 预设扩展,你的核心需求)
 [ ] P1.3 (可选)重命名 ai-knowledge-base → ai-app(保留别名)   ← 暂缓(避免大量路径改动)
 
 P2(健壮性收尾)
-[ ] P2.1 验证 Windows 下 hooks 能跑 + README 注明 Git Bash 要求
-[x] P2.2 加 CLI 冒烟测试(init/update × 两预设)   ← 已做(npm test,24 断言)
-[~] P2.3 修 URL、对齐计数、处理 MODIFICATION-REPORT、对齐版本号   ← URL 和版本号已顺手修,其余待办
+[x] P2.1 hooks 改 Node(.mjs),修复无 jq 静默失效 + 跨平台   ← 已做(实测拦截生效)
+[x] P2.2 加 CLI 冒烟测试(init/update × 两预设 + 语言隔离 + hooks)   ← 已做(npm test,50 断言)
+[x] P2.3 重写 USAGE、删 MODIFICATION-REPORT、修 URL、对齐版本号   ← 已做
+
+全部 P0/P1/P2 完成（P1.3 重命名为可选项，暂缓）。
 ```
 
 ---

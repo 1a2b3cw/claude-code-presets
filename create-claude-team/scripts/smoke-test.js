@@ -97,6 +97,11 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     const mcp = JSON.parse(readFileSync(join(claudeDir, '.mcp.json'), 'utf8'));
     assert(mcp.mcpServers && mcp.mcpServers[mcpServer], `init: MCP 已合并 ${mcpServer}`);
 
+    // hooks 是 Node（.mjs），不是旧的 .sh
+    const hooks = fileNames(join(claudeDir, 'hooks'));
+    assert(hooks.includes('security-check.mjs') && hooks.includes('bash-check.mjs'), 'init: Node hooks (.mjs) 存在');
+    assert(!hooks.some((h) => h.endsWith('.sh')), 'init: 无遗留 .sh hooks');
+
     // 记录 update 前的"应保留"内容
     const settingsBefore = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
     const workspaceExists = existsSync(join(claudeDir, 'workspace'));

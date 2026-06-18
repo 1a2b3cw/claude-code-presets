@@ -1,5 +1,29 @@
 # 更新日志
 
+## v3.1.1（2026-06-18）
+
+**安全 hooks 改用 Node（修复 Windows 失效）+ 文档收尾（P2）**
+
+详见 `OPTIMIZATION-PLAN.md` P2。
+
+### 修复
+
+- **P2.1 — 安全 hooks 在无 jq 环境静默失效**：旧 `.sh` hooks 依赖 `jq` 解析 stdin JSON，而 Git for Windows 默认不带 jq，导致 hook 读不到内容、直接 `exit 0` **放行所有代码**——含 `eval()` 的代码不会被拦。安全检查形同虚设。
+  - 重写为 `security-check.mjs` / `bash-check.mjs`（Node 实现，零外部依赖，跨平台），检测逻辑完全对齐旧版。
+  - `settings.json` hook 命令 `bash *.sh` → `node *.mjs`。
+  - 实测确认：含 `eval()` 的写入、含 `rm -rf /` 的命令均被正确拦截（exit 2），干净输入放行。
+- **修复 hook 误报**（hook 真正生效后才暴露的潜伏问题）：
+  - `bash-check`：`(dd|mkfs|fdisk)\s+` 会误拦 `git add`（"add" 含 "dd"）；关机命令组缺边界。改为命令边界锚定。
+  - `security-check`：`eval\s*\(` 会误拦 `retrieval(`、`medieval(` 等标识符。改为 `\beval` 词边界。
+
+### 变更
+
+- **文档收尾**（P2.3）：
+  - 重写 `USAGE.md` 为 v3.1 准确的组件参考（旧版停在 v2.0.2，描述的是 v3.0 之前的单体结构、已移除的 SQLite/Puppeteer、错误的 MCP/技能计数）。
+  - 删除 `MODIFICATION-REPORT.md`（v2.0 一次性产物，已被本 CHANGELOG 覆盖）。
+  - 修正残留的 `claude-team-config` URL。
+- 冒烟测试增加 hooks 迁移断言（`.mjs` 存在、无遗留 `.sh`）。
+
 ## v3.1.0（2026-06-18）
 
 **ai-knowledge-base 双语言路线 + 反框架立场（P1）**

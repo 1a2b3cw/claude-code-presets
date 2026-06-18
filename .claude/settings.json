@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/security-check.sh\""
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/security-check.mjs\""
           }
         ]
       },
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/bash-check.sh\""
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/bash-check.mjs\""
           }
         ]
       }
