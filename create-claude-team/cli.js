@@ -4,28 +4,33 @@ import { parseArgs } from 'node:util';
 import { init } from './lib/init.js';
 import { update } from './lib/update.js';
 
+const PRESETS = ['web-fullstack', 'ai-knowledge-base'];
+
 const HELP = `
-  claude-team — AI 全栈开发团队配置
+  create-claude-team — AI 开发团队配置（可插拔预设）
 
   用法:
-    npx create-claude-team init      初始化 .claude/ 配置到当前项目
-    npx create-claude-team update    更新 .claude/ 配置到最新版
-    npx create-claude-team --help    显示帮助
+    npx create-claude-team init                          初始化（默认 web-fullstack 预设）
+    npx create-claude-team init --preset web-fullstack   Web 全栈预设
+    npx create-claude-team init --preset ai-knowledge-base  AI 知识库预设
+    npx create-claude-team update                        更新到最新版
+    npx create-claude-team --help                        显示帮助
 
   选项:
-    --force    init 时强制覆盖已存在的 .claude/ 目录
+    --preset   技术栈预设（${PRESETS.join(' | ')}）
+    --force    强制覆盖已存在的 .claude/ 目录
     --dry-run  预览操作，不实际修改文件
 
   示例:
-    cd my-project
-    npx create-claude-team init
-    npx create-claude-team init --force
+    cd my-web-app && npx create-claude-team init
+    cd my-rag-app && npx create-claude-team init --preset ai-knowledge-base
     npx create-claude-team update
 `;
 
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
   options: {
+    preset: { type: 'string', default: 'web-fullstack' },
     force: { type: 'boolean', default: false },
     'dry-run': { type: 'boolean', default: false },
     help: { type: 'boolean', short: 'h', default: false },
@@ -40,10 +45,20 @@ if (values.help || !command) {
   process.exit(0);
 }
 
+if (values.preset && !PRESETS.includes(values.preset)) {
+  console.error(`\x1b[31m未知预设: ${values.preset}\x1b[0m`);
+  console.error(`可用预设: ${PRESETS.join(', ')}`);
+  process.exit(1);
+}
+
 try {
   switch (command) {
     case 'init':
-      await init({ force: values.force, dryRun: values['dry-run'] });
+      await init({
+        preset: values.preset,
+        force: values.force,
+        dryRun: values['dry-run'],
+      });
       break;
     case 'update':
       await update({ dryRun: values['dry-run'] });

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "pgvector": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "mcp-pgvector-server"],
+      "env": {
+        "DATABASE_URL": "${DATABASE_URL}"
+      }
+    }
+  }
+}

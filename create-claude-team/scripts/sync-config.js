@@ -1,7 +1,6 @@
 /**
  * prepublishOnly script
- * Copies .claude/ from repo root into the package directory
- * so it gets included in the published npm package.
+ * Syncs .claude/ (base) and presets/ from repo root into the package directory.
  */
 
 import { join, dirname } from 'node:path';
@@ -13,22 +12,25 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageDir = join(__dirname, '..');
 const repoRoot = join(packageDir, '..');
-const sourceClaude = join(repoRoot, '.claude');
-const targetClaude = join(packageDir, '.claude');
 
-if (!existsSync(sourceClaude)) {
-  console.error('错误: 找不到 .claude/ 目录');
-  process.exit(1);
+async function syncDir(srcName, excludes = []) {
+  const src = join(repoRoot, srcName);
+  const dest = join(packageDir, srcName);
+
+  if (!existsSync(src)) {
+    console.error(`错误: 找不到 ${srcName}/ 目录`);
+    process.exit(1);
+  }
+
+  if (existsSync(dest)) {
+    await rm(dest, { recursive: true, force: true });
+  }
+
+  await copyDir(src, dest, { exclude: excludes });
+  console.log(`✓ 同步 ${srcName}/`);
 }
 
-// Clean old copy
-if (existsSync(targetClaude)) {
-  await rm(targetClaude, { recursive: true, force: true });
-}
+await syncDir('.claude', ['workspace', 'settings.local.json']);
+await syncDir('presets');
 
-// Copy fresh
-await copyDir(sourceClaude, targetClaude, {
-  exclude: ['workspace', 'settings.local.json'],
-});
-
-console.log('已同步 .claude/ 到包目录');
+console.log('\n发布前同步完成。');

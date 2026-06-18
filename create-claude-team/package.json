@@ -1,20 +1,22 @@
 {
   "name": "create-claude-team",
-  "version": "2.0.3",
-  "description": "AI 全栈开发团队配置 — 一行命令初始化 Claude Code 团队配置",
-  "keywords": ["claude", "claude-code", "ai-team", "scaffolding", "boilerplate"],
+  "version": "3.0.0",
+  "description": "AI 开发团队配置 — 可插拔预设，一行命令初始化 Claude Code 团队配置",
+  "keywords": ["claude", "claude-code", "ai-team", "scaffolding", "rag", "pgvector", "preset"],
   "homepage": "https://github.com/1a2b3cw/claude-team-config",
   "bugs": { "url": "https://github.com/1a2b3cw/claude-team-config/issues" },
   "license": "MIT",
   "author": "张家豪",
   "type": "module",
   "bin": {
-    "claude-team": "cli.js"
+    "claude-team": "cli.js",
+    "create-claude-team": "cli.js"
   },
   "files": [
     "cli.js",
     "lib/",
-    ".claude/"
+    ".claude/",
+    "presets/"
   ],
   "scripts": {
     "prepublishOnly": "node scripts/sync-config.js"
