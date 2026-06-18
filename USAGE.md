@@ -4,7 +4,7 @@
 >
 > 想知道**怎么用它开发**看 [BEST-PRACTICES.md](BEST-PRACTICES.md)；想要**总览**看 [README.md](README.md)。
 
-> v3.2.0 | 2026-06-18
+> v3.3.0 | 2026-06-18
 
 ---
 
@@ -66,7 +66,7 @@ npx create-claude-team init --force                               # 覆盖已存
 ├── .preset            # 已装预设 + 语言标记
 ├── agents/            # 6 个角色
 ├── skills/            # 公共 6 + 预设 8（按需触发）
-├── commands/          # 6 个斜杠命令
+├── commands/          # 7 个斜杠命令
 ├── rules/             # 始终加载的必守规则
 ├── specs/             # 详细技术参考（AI 按需读取）
 ├── workspace/         # journal.md（会话记忆）+ metrics.md（效能）
@@ -117,11 +117,12 @@ npx create-claude-team init --force                               # 覆盖已存
 
 ---
 
-## 7. Slash 命令（6）
+## 7. Slash 命令（7）
 
 | 命令 | 用途 |
 |------|------|
-| `/dev <需求>` | 完整开发流程（Phase 0 需求确认 → 判级 → 迭代 → 验收 → 记录指标） |
+| `/plan <产品想法>` | 项目开局规划：分析产品 → 输出功能模块清单 `roadmap.md`，不写代码 |
+| `/dev <需求>` | 完整开发流程（Phase 0 需求确认 → 判级 → 迭代 → 验收 → 记录指标）；指定 roadmap 模块时复用其分析 |
 | `/check [路径]` | 写完快检（逻辑/类型/边界），自动修 |
 | `/fix <文件/问题>` | 定点修复，不走流程 |
 | `/review-all [路径]` | 合并前跨文件审查（一致性/完整性/回归/依赖） |

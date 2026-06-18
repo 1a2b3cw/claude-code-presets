@@ -2,7 +2,7 @@
 
 基于 Claude Code 的 AI 协作开发团队配置，支持 **Web 全栈**和 **AI 应用**两种技术栈。
 
-> v3.2.0 | 2026-06-18
+> v3.3.0 | 2026-06-18
 
 ## 一句话
 
@@ -17,7 +17,7 @@
 | **Skill（web-fullstack）** | 8 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
 | **Skill（ai-app）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
 | **MCP 服务器** | 3 个（公共）+ 预设专用 | GitHub、Playwright、Context7；AI 预设加 pgvector |
-| **Slash Command** | 6 个 | `/dev`、`/check`、`/fix`、`/review-all`、`/ship`、`/standup` |
+| **Slash Command** | 7 个 | `/plan`、`/dev`、`/check`、`/fix`、`/review-all`、`/ship`、`/standup` |
 | **Rules** | 2 个公共 + 预设专用 | Git、设计规范；各预设含 4-5 个技术栈规则 |
 | **Specs** | 预设专用 | 详细技术参考（AI 按需读取） |
 | **Hook** | 2 个 | 代码安全检查（Write/Edit）、Bash 命令拦截 |
@@ -95,10 +95,11 @@ npx create-claude-team update
 
 ## 怎么用
 
-### 6 个核心命令
+### 7 个核心命令
 
 | 命令 | 什么时候用 | 例子 |
 |------|-----------|------|
+| `/plan` | 项目开局，分析产品出功能模块清单 | `/plan 做一个 AI 知识库` |
 | `/dev` | 要写代码（完整流程） | `/dev 做一个 RAG 问答接口` |
 | `/check` | 写完一个功能想快检 | `/check` 或 `/check src/retrieval/` |
 | `/fix` | 修一个已知的具体问题 | `/fix src/agents/loop.py 可能无限循环` |
@@ -109,6 +110,8 @@ npx create-claude-team update
 ### 工作流
 
 ```
+（可选）项目开局：/plan 做一个 AI 知识库
+    ↓ AI 输出功能模块清单 roadmap.md，你挑着做
 输入：/dev 做一个文档检索问答功能
     ↓
 AI 先问你 3 个问题（需求确认，最多 3 轮）
@@ -130,7 +133,7 @@ S 级：直接写代码 → 完成
 ├── .preset                # 已安装的预设标记（update 时使用）
 ├── agents/                # 6 个 Agent 角色定义
 ├── skills/                # 公共技能
-├── commands/              # 6 个斜杠命令
+├── commands/              # 7 个斜杠命令
 ├── rules/                 # 公共规则（git、design）+ 预设规则
 ├── specs/                 # 详细技术参考（预设专用，AI 按需读取）
 ├── workspace/             # 会话记忆

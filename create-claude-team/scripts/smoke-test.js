@@ -104,6 +104,9 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     assert(hooks.includes('security-check.mjs') && hooks.includes('bash-check.mjs'), 'init: Node hooks (.mjs) 存在');
     assert(!hooks.some((h) => h.endsWith('.sh')), 'init: 无遗留 .sh hooks');
 
+    const commands = fileNames(join(claudeDir, 'commands'));
+    assert(commands.includes('plan.md') && commands.length === 7, `init: 7 个命令含 plan.md (${commands.length})`);
+
     // 记录 update 前的"应保留"内容
     const settingsBefore = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
     const workspaceExists = existsSync(join(claudeDir, 'workspace'));
