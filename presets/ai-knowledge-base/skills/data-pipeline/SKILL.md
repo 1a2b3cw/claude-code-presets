@@ -1,3 +1,8 @@
+---
+name: data-pipeline
+description: 文档摄入管道——多格式解析（PDF/MD/HTML）、递归分块、去重、批量摄入 CLI，完整可运行代码
+---
+
 # 数据摄入管道
 
 文档解析、清洗、分块的完整实现。

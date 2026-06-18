@@ -1,3 +1,8 @@
+---
+name: llm-evaluation
+description: LLM 系统评估框架——构建评估数据集、检索/答案质量指标、LLM-as-Judge、CI 集成自动评估
+---
+
 # LLM 评估框架
 
 评估 RAG 系统的检索质量和答案质量。

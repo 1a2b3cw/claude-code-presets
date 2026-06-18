@@ -1,3 +1,8 @@
+---
+name: vector-db
+description: pgvector 向量数据库——IVFFlat vs HNSW 索引、混合检索 RRF、Python asyncpg 封装、性能调优
+---
+
 # pgvector 向量数据库
 
 pgvector 的 schema 设计、索引优化、查询调优。

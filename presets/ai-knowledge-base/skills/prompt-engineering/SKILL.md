@@ -1,3 +1,8 @@
+---
+name: prompt-engineering
+description: Prompt 设计与优化——RAG 模板、Few-shot、Chain-of-Thought、结构化输出、Prompt Injection 防护
+---
+
 # Prompt Engineering
 
 设计、优化和版本化 LLM Prompt 模板。

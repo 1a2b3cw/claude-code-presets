@@ -1,5 +1,33 @@
 # 更新日志
 
+## v3.0.1（2026-06-18）
+
+**ai-knowledge-base 预设大幅扩展：覆盖完整 AI 应用开发**
+
+### 新增
+
+- **`ai-agents` Skill**：Claude 工具调用、智能体循环（Agent Loop）、Orchestrator-Worker 多智能体、人机回路（HITL）、工具设计原则
+- **`structured-output` Skill**：工具调用强制结构化、Pydantic schema、批量提取、LLM-as-Judge 评估模式
+- **`rules/agents.md`**：AI Agent 开发规则（循环上限、工具设计规范、安全要求）
+- **`specs/claude-api.md`**：Claude API 完整参考（模型选型、工具调用、流式、Prompt 缓存、Batch API）
+- **`specs/python.md`**：Python AI 项目技术参考（目录结构、uv 工作流、asyncpg、structlog、FastAPI 模式、测试、Docker）
+- **`specs/rag.md`**：RAG 高级技术参考（查询扩展、HyDE、句子窗口检索、重排序、评估数据集构建）
+
+### 改进
+
+- **所有 ai-knowledge-base 技能**：补全 YAML frontmatter（name + description），Claude Code 现在可以正确识别和使用
+- **`rules/llm.md`**：更新模型 ID（Haiku/Sonnet/Opus 最新版本）、新增流式输出示例、补充 agents.md 引用
+- **`PRESET.md`**：从单纯"RAG 知识库"扩展为完整"AI 应用开发"定位，覆盖 Agent、结构化提取、LLM 服务场景
+- **`create-claude-team/.claude/CLAUDE.md`**：同步到 v3.0.0（之前停留在 v2.0.2）
+
+### 修复
+
+- `create-claude-team/lib/init.js`：写入 `.preset` 标记文件，`update` 命令现在能正确识别已安装的预设
+- `create-claude-team/lib/update.js`：读取 `.preset` 标记，update 时同步刷新预设专用的 rules/specs/skills
+- `presets/web-fullstack/preset.mcp.json`：修复 PostgreSQL MCP 包名（`@modelcontextprotocol/server-postgres`）
+
+---
+
 ## v2.0.2（2026-06-17）
 
 **审查体系重构 + CLI 分发工具**

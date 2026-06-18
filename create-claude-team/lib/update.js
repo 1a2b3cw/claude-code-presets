@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
-import { rm, copyFile } from 'node:fs/promises';
+import { rm, copyFile, readFile } from 'node:fs/promises';
 import { copyDir, countFiles, findSourceDir } from './copy.js';
 
 // These directories are safe to overwrite during update
@@ -28,7 +28,8 @@ const PRESERVED = [
 
 export async function update({ dryRun = false }) {
   const cwd = process.cwd();
-  const sourceDir = join(findSourceDir(), '.claude');
+  const pkgRoot = findSourceDir();
+  const sourceDir = join(pkgRoot, '.claude');
   const targetDir = join(cwd, '.claude');
 
   // Check target exists
@@ -45,9 +46,19 @@ export async function update({ dryRun = false }) {
     );
   }
 
+  // Read installed preset from marker file
+  const presetMarker = join(targetDir, '.preset');
+  let preset = null;
+  if (existsSync(presetMarker)) {
+    preset = (await readFile(presetMarker, 'utf8')).trim();
+  }
+
+  const presetSourceDir = preset ? join(pkgRoot, 'presets', preset) : null;
+
   console.log(`\n  claude-team update\n`);
   console.log(`  源: ${sourceDir}`);
   console.log(`  目标: ${targetDir}`);
+  console.log(`  预设: ${preset ?? '未检测到（仅更新底座）'}`);
   console.log(`  更新范围: ${UPDATABLE_DIRS.join(', ')}, ${UPDATABLE_FILES.join(', ')}`);
   console.log(`  保留不变: ${PRESERVED.join(', ')}`);
 
@@ -109,6 +120,21 @@ export async function update({ dryRun = false }) {
     await copyFile(src, dest);
     totalFiles++;
     console.log(`  更新 ${fileName}`);
+  }
+
+  // Update preset-specific dirs (rules, specs, skills overlays)
+  if (presetSourceDir && existsSync(presetSourceDir)) {
+    console.log(`\n  更新预设 [${preset}]...`);
+    for (const dirName of UPDATABLE_DIRS) {
+      const src = join(presetSourceDir, dirName);
+      const dest = join(targetDir, dirName);
+      if (!existsSync(src)) continue;
+      if (existsSync(dest)) await rm(dest, { recursive: true, force: true });
+      const count = await countFiles(src);
+      totalFiles += count;
+      console.log(`  更新预设 ${dirName}/ (${count} 个文件)`);
+      await copyDir(src, dest);
+    }
   }
 
   console.log(`\n  \x1b[32m✓ 更新完成\x1b[0m — ${totalFiles} 个文件已更新`);

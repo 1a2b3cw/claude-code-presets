@@ -1,3 +1,8 @@
+---
+name: rag-pipeline
+description: RAG 管道设计与实现——数据摄入、分块、嵌入、混合检索、重排序到答案生成的完整流程，含常见问题诊断
+---
+
 # RAG Pipeline 设计
 
 设计和实现完整的 RAG（Retrieval-Augmented Generation）管道。

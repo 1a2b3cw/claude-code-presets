@@ -72,6 +72,9 @@ export async function init({ preset = 'web-fullstack', force = false, dryRun = f
     join(presetDir, 'preset.mcp.json')
   );
 
+  // Write preset marker so update knows which preset to refresh
+  await writeFile(join(targetDir, '.preset'), preset + '\n');
+
   // Create workspace
   const workspaceDir = join(targetDir, 'workspace');
   if (!existsSync(workspaceDir)) {
