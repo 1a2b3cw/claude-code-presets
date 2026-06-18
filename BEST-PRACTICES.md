@@ -50,10 +50,10 @@ cd 你的项目
 npx create-claude-team init
 
 # AI 应用 — Python 路线（RAG/Agent，数据后端）
-npx create-claude-team init --preset ai-knowledge-base
+npx create-claude-team init --preset ai-app
 
 # AI 应用 — TypeScript 路线（Vercel AI SDK，你已有 web 栈时选这个）
-npx create-claude-team init --preset ai-knowledge-base --lang typescript
+npx create-claude-team init --preset ai-app --lang typescript
 ```
 
 装完在 Claude Code 里输入 `/mcp` 确认 MCP 已加载。以后升级配置用 `npx create-claude-team update`（保留你的 settings 和 workspace）。
@@ -150,8 +150,8 @@ AI 会自动走 5 个阶段（你只在关键点确认）：
 
 ```
 做 Web 产品（有界面、给人用）────────► init（web-fullstack）
-做 AI 数据后端（知识库/RAG/文档处理）──► init --preset ai-knowledge-base
-做 AI 产品（已有 web 栈/带界面）──────► init --preset ai-knowledge-base --lang typescript
+做 AI 数据后端（知识库/RAG/文档处理）──► init --preset ai-app
+做 AI 产品（已有 web 栈/带界面）──────► init --preset ai-app --lang typescript
 ```
 
 > **AI 项目的语言怎么选**：
@@ -233,7 +233,7 @@ AI 不会卡死，每种情况都有预案：
 ### 剧本二：从零做一个 AI 知识库（TypeScript 路线）
 
 ```
-1. npx create-claude-team init --preset ai-knowledge-base --lang typescript   # 分叉B
+1. npx create-claude-team init --preset ai-app --lang typescript   # 分叉B
 2. docker compose up -d postgres                        # 起 pgvector
 3. 配 DATABASE_URL + ANTHROPIC_API_KEY
 4. /dev 做一个文档上传 + 向量检索问答的接口
@@ -320,8 +320,8 @@ AI 不会卡死，每种情况都有预案：
 
 ```bash
 npx create-claude-team init                                       # Web 全栈
-npx create-claude-team init --preset ai-knowledge-base            # AI / Python
-npx create-claude-team init --preset ai-knowledge-base --lang typescript  # AI / TS
+npx create-claude-team init --preset ai-app            # AI / Python
+npx create-claude-team init --preset ai-app --lang typescript  # AI / TS
 npx create-claude-team update                                     # 升级配置
 ```
 

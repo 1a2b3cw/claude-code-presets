@@ -8,8 +8,10 @@
  */
 
 import { mkdtempSync, rmSync, existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { init } from '../lib/init.js';
 import { update } from '../lib/update.js';
 
@@ -131,15 +133,29 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
 
 console.log('create-claude-team 冒烟测试');
 
-await runScenario('ai-knowledge-base', {
+await runScenario('ai-app', {
   mcpServer: 'pgvector', presetSkillCount: 8,
   lang: 'python', expectRule: 'python.md', absentRule: 'typescript-ai.md',
 });
-await runScenario('ai-knowledge-base', {
+await runScenario('ai-app', {
   mcpServer: 'pgvector', presetSkillCount: 8,
   lang: 'typescript', expectRule: 'typescript-ai.md', absentRule: 'python.md',
 });
 await runScenario('web-fullstack', { mcpServer: 'postgres', presetSkillCount: 8 });
+
+// 旧预设名 ai-knowledge-base 应通过别名解析到 ai-app（向后兼容）
+console.log('\n[别名兼容]');
+{
+  const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-'));
+  const res = spawnSync('node', [cli, 'init', '--preset', 'ai-knowledge-base', '--dry-run'], {
+    cwd: tmp, encoding: 'utf8',
+  });
+  const ok = res.status === 0 && /ai-app/.test(res.stdout);
+  console.log(`  ${ok ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m'} ai-knowledge-base → 解析到 ai-app (exit ${res.status})`);
+  ok ? passed++ : failed++;
+  rmSync(tmp, { recursive: true, force: true });
+}
 
 console.log(`\n结果: ${passed} 通过, ${failed} 失败`);
 process.exit(failed > 0 ? 1 : 0);

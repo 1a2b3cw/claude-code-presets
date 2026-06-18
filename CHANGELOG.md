@@ -1,5 +1,19 @@
 # 更新日志
 
+## v3.2.0（2026-06-18）
+
+**AI 预设更名 `ai-knowledge-base` → `ai-app`**
+
+预设已从单纯的"知识库"成长为覆盖 RAG / AI Agent / 结构化提取 / LLM 服务的通用 AI 应用预设，更名以匹配实际范围。趁 3.1.x 刚发布、尚无用户依赖时完成。
+
+### 变更
+
+- 预设目录 `presets/ai-knowledge-base/` → `presets/ai-app/`。
+- CLI：`--preset ai-app`；旧名 `ai-knowledge-base` 作为**向后兼容别名**保留，自动解析为 `ai-app` 并提示。
+- 文档（README/USAGE/BEST-PRACTICES/PRESET）全部更新为新名。
+- 冒烟测试新增别名解析断言（旧名经 CLI 仍可正确安装）。
+- README 修正配置结构里残留的 `.sh` hooks（实为 `.mjs`）。
+
 ## v3.1.1（2026-06-18）
 
 **安全 hooks 改用 Node（修复 Windows 失效）+ 文档收尾（P2）**

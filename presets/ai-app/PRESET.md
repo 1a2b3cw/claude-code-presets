@@ -1,4 +1,4 @@
-# Preset: ai-knowledge-base
+# Preset: ai-app
 
 > AI 应用开发——RAG 知识库、AI Agent、结构化提取、LLM 集成
 
@@ -14,8 +14,8 @@
 本预设支持两条语言路线，安装时用 `--lang` 选择（默认 python）：
 
 ```bash
-npx create-claude-team init --preset ai-knowledge-base                    # Python（默认）
-npx create-claude-team init --preset ai-knowledge-base --lang typescript  # TypeScript
+npx create-claude-team init --preset ai-app                    # Python（默认）
+npx create-claude-team init --preset ai-app --lang typescript  # TypeScript
 ```
 
 | 路线 | 何时选 | LLM 层 |

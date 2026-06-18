@@ -2,7 +2,7 @@
 
 基于 Claude Code 的 AI 协作开发团队配置，支持 **Web 全栈**和 **AI 应用**两种技术栈。
 
-> v3.0.1 | 2026-06-18
+> v3.2.0 | 2026-06-18
 
 ## 一句话
 
@@ -15,7 +15,7 @@
 | **Agent** | 6 个 | Architect-Planner、Builder、Designer、Reviewer、Researcher、DevOps |
 | **Skill（公共）** | 6 个 | 架构、代码审查、调试、性能、项目规划、测试 |
 | **Skill（web-fullstack）** | 8 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
-| **Skill（ai-knowledge-base）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
+| **Skill（ai-app）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
 | **MCP 服务器** | 3 个（公共）+ 预设专用 | GitHub、Playwright、Context7；AI 预设加 pgvector |
 | **Slash Command** | 6 个 | `/dev`、`/check`、`/fix`、`/review-all`、`/ship`、`/standup` |
 | **Rules** | 2 个公共 + 预设专用 | Git、设计规范；各预设含 4-5 个技术栈规则 |
@@ -41,10 +41,10 @@ cd your-project
 npx create-claude-team init
 
 # AI 应用 — Python 路线（RAG + Agent + Claude API + FastAPI）
-npx create-claude-team init --preset ai-knowledge-base
+npx create-claude-team init --preset ai-app
 
 # AI 应用 — TypeScript 路线（Vercel AI SDK + Hono + pgvector）
-npx create-claude-team init --preset ai-knowledge-base --lang typescript
+npx create-claude-team init --preset ai-app --lang typescript
 ```
 
 ### 更新配置
@@ -70,7 +70,9 @@ npx create-claude-team update
 - 4 个 Spec：typescript、react、node、testing（详细技术参考）
 - MCP：GitHub + Playwright + Context7 + PostgreSQL（可选）
 
-### `ai-knowledge-base`
+### `ai-app`
+
+> 曾用名 `ai-knowledge-base`，仍作为别名可用（`--preset ai-knowledge-base` 会自动解析为 `ai-app`）。
 
 **适用场景**：RAG 知识库、AI Agent、结构化提取、LLM 服务
 
@@ -134,9 +136,9 @@ S 级：直接写代码 → 完成
 ├── workspace/             # 会话记忆
 │   ├── journal.md         # AI 自动追加会话日志
 │   └── metrics.md         # 效能指标
-└── hooks/                 # 安全钩子
-    ├── security-check.sh
-    └── bash-check.sh
+└── hooks/                 # 安全钩子（Node，跨平台）
+    ├── security-check.mjs
+    └── bash-check.mjs
 ```
 
 ## 可选配置

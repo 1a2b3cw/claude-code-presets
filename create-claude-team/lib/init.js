@@ -132,7 +132,7 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
     console.log(`    1. 配置 .claude/.mcp.json 中的 GITHUB_PERSONAL_ACCESS_TOKEN`);
     console.log(`    2. 可选：设置 DATABASE_URL 启用 PostgreSQL MCP`);
     console.log(`    3. 输入 /dev 开始开发\n`);
-  } else if (preset === 'ai-knowledge-base') {
+  } else if (preset === 'ai-app') {
     console.log(`    1. 启动 pgvector：docker compose up -d postgres`);
     console.log(`    2. 配置 DATABASE_URL 与 ANTHROPIC_API_KEY`);
     if (resolvedLang === 'typescript') {

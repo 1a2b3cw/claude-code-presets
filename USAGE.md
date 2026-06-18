@@ -4,7 +4,7 @@
 >
 > 想知道**怎么用它开发**看 [BEST-PRACTICES.md](BEST-PRACTICES.md)；想要**总览**看 [README.md](README.md)。
 
-> v3.1.0 | 2026-06-18
+> v3.2.0 | 2026-06-18
 
 ---
 
@@ -33,8 +33,8 @@
 cd 你的项目
 
 npx create-claude-team init                                       # Web 全栈
-npx create-claude-team init --preset ai-knowledge-base            # AI / Python
-npx create-claude-team init --preset ai-knowledge-base --lang typescript  # AI / TS
+npx create-claude-team init --preset ai-app            # AI / Python
+npx create-claude-team init --preset ai-app --lang typescript  # AI / TS
 
 npx create-claude-team update                                     # 升级（保留 settings/workspace）
 npx create-claude-team init --dry-run                             # 预览不写入
@@ -85,7 +85,7 @@ npx create-claude-team init --force                               # 覆盖已存
 | context7 | stdio | 查最新库文档 | 无 |
 
 **web-fullstack 额外**：`sqlite`（本地 `./data/dev.db`）、`postgres`（`DATABASE_URL`）
-**ai-knowledge-base 额外**：`pgvector`（`DATABASE_URL`）
+**ai-app 额外**：`pgvector`（`DATABASE_URL`）
 
 装完用 `/mcp` 验证。配 token：在 `.claude/settings.json` 的 `env` 加 `GITHUB_PERSONAL_ACCESS_TOKEN`。
 
@@ -110,7 +110,7 @@ npx create-claude-team init --force                               # 覆盖已存
 
 **web-fullstack（8）**：frontend、api-design、database、typescript-advanced、ui-design、ui-prototype、ci-cd-pipelines、microservices-design
 
-**ai-knowledge-base（8）**：rag-pipeline、ai-agents、structured-output、embedding、vector-db、prompt-engineering、llm-evaluation、data-pipeline
+**ai-app（8）**：rag-pipeline、ai-agents、structured-output、embedding、vector-db、prompt-engineering、llm-evaluation、data-pipeline
 > 概念类技能含 Python + TypeScript 两套示例，AI 按你的语言路线取用。
 
 技能由 AI 根据 frontmatter 的 description 自动触发，不用手动调用。
