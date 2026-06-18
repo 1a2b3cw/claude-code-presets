@@ -1,4 +1,8 @@
-# AI Agent 开发规则
+# AI Agent 开发规则（语言无关）
+
+> 默认裸 SDK 构建 Agent，不引入 LangChain/AutoGPT 类框架（见 `rules/llm.md`）。
+> Python 用 anthropic SDK 的 tool use，TypeScript 用 Vercel AI SDK 的 `tool()` + `generateText`（自带 agent loop）。
+> 可直接复用的完整代码见 `ai-agents` 技能（含 Python 与 TS 两套）。
 
 ## 必须做
 

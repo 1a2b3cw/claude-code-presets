@@ -1,6 +1,6 @@
 {
   "name": "create-claude-team",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "description": "AI 开发团队配置 — 可插拔预设，一行命令初始化 Claude Code 团队配置",
   "keywords": ["claude", "claude-code", "ai-team", "scaffolding", "rag", "pgvector", "preset"],
   "homepage": "https://github.com/1a2b3cw/claude-code-presets",
@@ -20,6 +20,7 @@
   ],
   "scripts": {
     "prepack": "node scripts/sync-config.js",
+    "postpack": "node scripts/clean-vendored.js",
     "test": "node scripts/smoke-test.js"
   },
   "engines": {

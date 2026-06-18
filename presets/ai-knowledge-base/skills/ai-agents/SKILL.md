@@ -5,6 +5,8 @@ description: 构建 AI Agent——Claude 工具调用、智能体循环、多智
 
 # AI Agent 开发
 
+> 本技能默认给 Python 实现。**TypeScript 用户**：Vercel AI SDK 自带 agent loop，比手写简单很多——见下方"TypeScript 版"，完整后端参考 `lang/typescript/specs/typescript.md`。
+
 ## 使用时机
 
 - 实现多步推理任务（规划 → 执行 → 验证循环）
@@ -199,3 +201,41 @@ class OrchestratorAgent:
 | 上下文超长 | 工具返回大量文本 | 截断/摘要工具返回值，控制在 2000 字内 |
 | 幻觉工具参数 | 工具 schema 字段描述不清晰 | 给每个字段加详细 description |
 | 并发写冲突 | 并行工具同时写同一资源 | 标记互斥工具，改为串行执行 |
+
+## TypeScript 版（Vercel AI SDK）
+
+SDK 内置 agent loop——传 `tools` 和 `maxSteps`，自动执行多轮工具调用，不用手写循环。
+
+```typescript
+import { generateText, tool } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { z } from 'zod';
+
+const tools = {
+  searchKnowledgeBase: tool({
+    description: '搜索知识库返回相关片段。需要查内部资料时用，不要用于通用知识。',
+    parameters: z.object({
+      query: z.string().describe('搜索关键词'),
+      topK: z.number().default(5),
+    }),
+    execute: async ({ query, topK }) => {
+      const results = await retrieve(query, topK);
+      return results.map((r) => `[${r.source}] ${r.content}`).join('\n\n');
+    },
+  }),
+};
+
+export async function runAgent(userMessage: string): Promise<string> {
+  const { text, steps } = await generateText({
+    model: anthropic('claude-sonnet-4-6'),
+    tools,
+    maxSteps: 10,            // agent loop 上限（等价 Python 的 max_iterations）
+    system: '你是研究助手，用工具查资料后回答。',
+    prompt: userMessage,
+  });
+  // steps 里有每轮的工具调用记录，用于日志/调试
+  return text;
+}
+```
+
+人机回路（HITL）：在 `execute` 里对高风险操作先请求用户确认，未批准则返回提示文本让模型告知用户。多智能体：把不同职责封装成各自的 `runAgent`，用一个 orchestrator 函数串/并联调用（同 Python 思路）。

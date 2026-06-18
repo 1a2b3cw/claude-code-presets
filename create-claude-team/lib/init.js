@@ -1,9 +1,31 @@
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
-import { rm, mkdir, writeFile, readFile } from 'node:fs/promises';
+import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { copyDir, dirHasContent, countFiles, findSourceDir } from './copy.js';
 
-export async function init({ preset = 'web-fullstack', force = false, dryRun = false }) {
+// Resolve the language variant for a preset that has a lang/ folder.
+// Returns null if the preset has no language variants.
+async function resolveLang(presetDir, requested) {
+  const langRoot = join(presetDir, 'lang');
+  if (!existsSync(langRoot)) return null;
+
+  const available = (await readdir(langRoot, { withFileTypes: true }))
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+
+  if (available.length === 0) return null;
+
+  if (requested) {
+    if (!available.includes(requested)) {
+      throw new Error(`预设不支持语言: ${requested}。可选: ${available.join(', ')}`);
+    }
+    return requested;
+  }
+  // Default: prefer python, else first available
+  return available.includes('python') ? 'python' : available[0];
+}
+
+export async function init({ preset = 'web-fullstack', lang = null, force = false, dryRun = false }) {
   const cwd = process.cwd();
   const pkgRoot = findSourceDir();
   const baseDir = join(pkgRoot, '.claude');
@@ -17,6 +39,8 @@ export async function init({ preset = 'web-fullstack', force = false, dryRun = f
   if (!existsSync(presetDir)) {
     throw new Error(`找不到预设目录: presets/${preset}`);
   }
+
+  const resolvedLang = await resolveLang(presetDir, lang);
 
   // Check target
   const targetExists = existsSync(targetDir);
@@ -34,6 +58,7 @@ export async function init({ preset = 'web-fullstack', force = false, dryRun = f
 
   console.log(`\n  create-claude-team init\n`);
   console.log(`  预设:   ${preset}`);
+  if (resolvedLang) console.log(`  语言:   ${resolvedLang}`);
   console.log(`  目标:   ${targetDir}`);
   console.log(`  文件:   底座 ${baseCount} 个 + 预设 ${presetCount} 个`);
 
@@ -41,8 +66,12 @@ export async function init({ preset = 'web-fullstack', force = false, dryRun = f
     console.log(`\n  [dry-run] 预览模式，不会修改文件:\n`);
     console.log(`  [1/3] 底座文件:`);
     await copyDir(baseDir, targetDir, { dryRun: true });
-    console.log(`\n  [2/3] 预设文件（叠加）:`);
-    await copyDir(presetDir, targetDir, { dryRun: true, exclude: ['PRESET.md', 'preset.mcp.json'] });
+    console.log(`\n  [2/3] 预设文件（叠加，排除 lang/）:`);
+    await copyDir(presetDir, targetDir, { dryRun: true, exclude: ['PRESET.md', 'preset.mcp.json', 'lang'] });
+    if (resolvedLang) {
+      console.log(`\n  [2b] 语言文件（${resolvedLang}）:`);
+      await copyDir(join(presetDir, 'lang', resolvedLang), targetDir, { dryRun: true });
+    }
     console.log(`\n  完成（预览）。去掉 --dry-run 执行实际操作。`);
     return;
   }
@@ -59,11 +88,17 @@ export async function init({ preset = 'web-fullstack', force = false, dryRun = f
     exclude: ['workspace', 'settings.local.json'],
   });
 
-  // Step 2: Overlay preset files (rules/, specs/, skills/)
+  // Step 2: Overlay preset files (rules/, specs/, skills/) — EXCLUDE lang/
   console.log(`  [2/3] 叠加预设 [${preset}]...`);
   await copyDir(presetDir, targetDir, {
-    exclude: ['PRESET.md', 'preset.mcp.json'],
+    exclude: ['PRESET.md', 'preset.mcp.json', 'lang'],
   });
+
+  // Step 2b: Overlay language-specific files (rules/specs for the chosen language)
+  if (resolvedLang) {
+    console.log(`  [2b]  叠加语言 [${resolvedLang}]...`);
+    await copyDir(join(presetDir, 'lang', resolvedLang), targetDir);
+  }
 
   // Step 3: Merge preset.mcp.json into .mcp.json
   console.log(`  [3/3] 合并 MCP 配置...`);
@@ -72,8 +107,9 @@ export async function init({ preset = 'web-fullstack', force = false, dryRun = f
     join(presetDir, 'preset.mcp.json')
   );
 
-  // Write preset marker so update knows which preset to refresh
-  await writeFile(join(targetDir, '.preset'), preset + '\n');
+  // Write preset marker so update knows which preset + language to refresh.
+  // Line 1: preset name. Line 2: language (empty if preset has no variants).
+  await writeFile(join(targetDir, '.preset'), preset + '\n' + (resolvedLang ?? '') + '\n');
 
   // Create workspace
   const workspaceDir = join(targetDir, 'workspace');
@@ -98,9 +134,13 @@ export async function init({ preset = 'web-fullstack', force = false, dryRun = f
     console.log(`    3. 输入 /dev 开始开发\n`);
   } else if (preset === 'ai-knowledge-base') {
     console.log(`    1. 启动 pgvector：docker compose up -d postgres`);
-    console.log(`    2. 配置 DATABASE_URL 到 pgvector 实例`);
-    console.log(`    3. 运行迁移：python -m db.migrate`);
-    console.log(`    4. 输入 /dev 开始构建知识库\n`);
+    console.log(`    2. 配置 DATABASE_URL 与 ANTHROPIC_API_KEY`);
+    if (resolvedLang === 'typescript') {
+      console.log(`    3. 安装依赖：pnpm add ai @ai-sdk/anthropic hono zod postgres`);
+    } else {
+      console.log(`    3. 安装依赖：uv add anthropic fastapi asyncpg pydantic-settings`);
+    }
+    console.log(`    4. 输入 /dev 开始构建 AI 应用\n`);
   }
 }
 

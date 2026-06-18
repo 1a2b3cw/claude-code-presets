@@ -9,6 +9,26 @@
 - **结构化提取**：从非结构化文本提取实体、关系、摘要
 - **LLM 服务**：基于 Claude/OpenAI 的 API 后端服务
 
+## 语言路线（安装时选择）
+
+本预设支持两条语言路线，安装时用 `--lang` 选择（默认 python）：
+
+```bash
+npx create-claude-team init --preset ai-knowledge-base                    # Python（默认）
+npx create-claude-team init --preset ai-knowledge-base --lang typescript  # TypeScript
+```
+
+| 路线 | 何时选 | LLM 层 |
+|------|--------|--------|
+| **Python** | 数据/检索后端为主、需强文档解析（乱版 PDF/表格/OCR） | 裸 `anthropic` SDK |
+| **TypeScript** | 已有 web 技术栈、做带界面的 AI 产品 | Vercel AI SDK（`ai` 包，与 Vercel 部署无关） |
+
+> **反框架立场**：两条路线都默认裸 SDK，不引入 LangChain/LlamaIndex（见 `rules/llm.md`）。
+> **混合策略**：TS 项目若遇到复杂文档解析，可单独用 Python 写解析服务，主体保持 TS。
+
+语言相关的 rules/specs 放在 `lang/<语言>/` 下，安装时只叠加所选语言那套；
+语言无关的 skills（概念类）两种语言示例都给，AI 按需取用。
+
 ## 技术栈
 
 ### 核心
@@ -75,11 +95,16 @@ src/
 ```
 
 ## 规则文件
-- `rules/python.md` — Python AI 项目规范（类型、异步、日志）
-- `rules/llm.md` — LLM 集成规则（模型选型、Prompt 规范、安全）
+
+**语言无关（始终加载）**：
+- `rules/llm.md` — LLM 集成规则 + 反框架立场（模型选型、Prompt 规范、安全）
 - `rules/agents.md` — AI Agent 开发规则（循环限制、工具设计、安全）
 - `rules/rag.md` — RAG 管道规则（分块、检索、评估指标）
 - `rules/vector-db.md` — pgvector 使用规则（Schema、索引、查询）
+
+**语言相关（按 `--lang` 叠加其一）**：
+- `lang/python/rules/python.md` — Python 规范（uv、Pydantic、asyncpg、LLM 客户端）
+- `lang/typescript/rules/typescript-ai.md` — TS 规范（Zod、Vercel AI SDK、命名）
 
 ## 包含的 Skills
 - `rag-pipeline` — RAG 完整管道设计与实现
@@ -91,10 +116,16 @@ src/
 - `llm-evaluation` — RAG 评估框架与 CI 集成
 - `data-pipeline` — 文档解析、分块、批量摄入
 
-## Specs（按需读取）
-- `specs/claude-api.md` — Claude API 完整参考（模型、工具、流式、缓存、Batch）
-- `specs/python.md` — Python AI 项目结构、测试、部署参考
-- `specs/rag.md` — 进阶 RAG 技术（查询扩展、HyDE、重排序、评估）
+## Specs（按需读取，按语言叠加）
+
+**Python**（`lang/python/specs/`）：
+- `claude-api.md` — Claude API 完整参考（模型、工具、流式、缓存、Batch）
+- `python.md` — Python AI 项目结构、测试、部署参考
+- `rag.md` — 进阶 RAG 技术（查询扩展、HyDE、重排序、评估）
+
+**TypeScript**（`lang/typescript/specs/`）：
+- `typescript.md` — TS AI 后端参考（Hono + Vercel AI SDK + pgvector + 测试 + Docker）
+- `rag.md` — 进阶 RAG 技术的 TS 实现
 
 ## MCP 服务器
 - **pgvector**：向量数据库操作（需配置 DATABASE_URL）

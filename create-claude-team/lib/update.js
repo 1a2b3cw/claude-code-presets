@@ -46,11 +46,15 @@ export async function update({ dryRun = false }) {
     );
   }
 
-  // Read installed preset from marker file
+  // Read installed preset + language from marker file
+  // Line 1: preset name. Line 2: language (may be empty).
   const presetMarker = join(targetDir, '.preset');
   let preset = null;
+  let lang = null;
   if (existsSync(presetMarker)) {
-    preset = (await readFile(presetMarker, 'utf8')).trim();
+    const lines = (await readFile(presetMarker, 'utf8')).split('\n').map((l) => l.trim());
+    preset = lines[0] || null;
+    lang = lines[1] || null;
   }
 
   const presetSourceDir = preset ? join(pkgRoot, 'presets', preset) : null;
@@ -58,7 +62,7 @@ export async function update({ dryRun = false }) {
   console.log(`\n  claude-team update\n`);
   console.log(`  源: ${sourceDir}`);
   console.log(`  目标: ${targetDir}`);
-  console.log(`  预设: ${preset ?? '未检测到（仅更新底座）'}`);
+  console.log(`  预设: ${preset ?? '未检测到（仅更新底座）'}${lang ? ` (${lang})` : ''}`);
   console.log(`  更新范围: ${UPDATABLE_DIRS.join(', ')}, ${UPDATABLE_FILES.join(', ')}`);
   console.log(`  保留不变: ${PRESERVED.join(', ')}`);
 
@@ -135,6 +139,23 @@ export async function update({ dryRun = false }) {
       totalFiles += count;
       console.log(`  叠加预设 ${dirName}/ (${count} 个文件)`);
       await copyDir(src, dest);
+    }
+
+    // Overlay language-specific files (rules/specs for the installed language)
+    if (lang) {
+      const langDir = join(presetSourceDir, 'lang', lang);
+      if (existsSync(langDir)) {
+        console.log(`  叠加语言 [${lang}]...`);
+        for (const dirName of UPDATABLE_DIRS) {
+          const src = join(langDir, dirName);
+          const dest = join(targetDir, dirName);
+          if (!existsSync(src)) continue;
+          const count = await countFiles(src);
+          totalFiles += count;
+          console.log(`  叠加语言 ${dirName}/ (${count} 个文件)`);
+          await copyDir(src, dest);
+        }
+      }
     }
   }
 

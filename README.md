@@ -40,8 +40,11 @@ cd your-project
 # Web 全栈（React + Node.js + TypeScript）
 npx create-claude-team init
 
-# AI 应用（RAG + Agent + Claude API + Python）
+# AI 应用 — Python 路线（RAG + Agent + Claude API + FastAPI）
 npx create-claude-team init --preset ai-knowledge-base
+
+# AI 应用 — TypeScript 路线（Vercel AI SDK + Hono + pgvector）
+npx create-claude-team init --preset ai-knowledge-base --lang typescript
 ```
 
 ### 更新配置
@@ -69,14 +72,23 @@ npx create-claude-team update
 
 ### `ai-knowledge-base`
 
-**技术栈**：Python 3.11+ + Claude API + pgvector + FastAPI + asyncio
-
 **适用场景**：RAG 知识库、AI Agent、结构化提取、LLM 服务
 
+**两条语言路线**（安装时 `--lang` 选择，默认 python）：
+
+| 路线 | 技术栈 | 何时选 |
+|------|--------|--------|
+| **Python**（默认） | Claude API + pgvector + FastAPI + asyncio | 数据/检索后端，强文档解析 |
+| **TypeScript** | Vercel AI SDK + Hono + pgvector | 已有 web 栈，做 AI 产品 |
+
+> 两条路线都**默认裸 SDK，不上 LangChain**（反框架，见 `rules/llm.md`）。
+> Vercel AI SDK 只是个 TS 库，与 Vercel 部署无关，可部署到任何 Node 环境。
+
 **包含**：
-- 8 个 Skill：rag-pipeline、ai-agents、structured-output、embedding、vector-db、prompt-engineering、llm-evaluation、data-pipeline
-- 5 个 Rule：python、llm、agents、rag、vector-db
-- 3 个 Spec：claude-api、python、rag（详细技术参考）
+- 8 个 Skill：rag-pipeline、ai-agents、structured-output、embedding、vector-db、prompt-engineering、llm-evaluation、data-pipeline（概念类技能含 Python + TS 两套示例）
+- 语言无关 Rule：llm、agents、rag、vector-db
+- 语言相关 Rule：python（Python）/ typescript-ai（TS）
+- Spec：Python 路线 claude-api/python/rag；TS 路线 typescript/rag
 - MCP：GitHub + Playwright + Context7 + pgvector
 
 ## 怎么用

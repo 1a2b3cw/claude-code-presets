@@ -64,23 +64,27 @@ export async function countFiles(dirPath) {
 }
 
 /**
- * Find the source .claude/ directory
- * In development: walk up from package dir to find repo root
- * In published package: .claude/ is bundled alongside lib/
+ * Find the source config directory (holds .claude/ and presets/).
+ *
+ * Development takes priority: the repo root (parent of the package dir) is the
+ * single source of truth. The package dir may contain stale vendored copies
+ * generated transiently by `npm pack` (prepack), which we must NOT prefer.
+ * In a published package there is no repo root with .claude/, so we fall back
+ * to the package dir where the copies are bundled.
  */
 export function findSourceDir() {
   const libDir = dirname(fileURLToPath(import.meta.url));
   const packageDir = join(libDir, '..');
+  const repoRoot = join(packageDir, '..');
 
-  // Published package: .claude/ is inside the package dir
-  if (existsSync(join(packageDir, '.claude', 'CLAUDE.md'))) {
-    return packageDir;
+  // Development: prefer repo root (single source of truth)
+  if (existsSync(join(repoRoot, '.claude', 'CLAUDE.md')) && existsSync(join(repoRoot, 'presets'))) {
+    return repoRoot;
   }
 
-  // Development: .claude/ is at repo root (parent of package dir)
-  const repoRoot = join(packageDir, '..');
-  if (existsSync(join(repoRoot, '.claude', 'CLAUDE.md'))) {
-    return repoRoot;
+  // Published package: copies are bundled inside the package dir
+  if (existsSync(join(packageDir, '.claude', 'CLAUDE.md'))) {
+    return packageDir;
   }
 
   return packageDir;

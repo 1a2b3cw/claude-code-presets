@@ -1,5 +1,32 @@
 # 更新日志
 
+## v3.1.0（2026-06-18）
+
+**ai-knowledge-base 双语言路线 + 反框架立场（P1）**
+
+详见 `OPTIMIZATION-PLAN.md` P1。
+
+### 新增
+
+- **TypeScript 路线**：AI 预设现支持 `--lang typescript`，基于 Vercel AI SDK（`ai` 包，与 Vercel 部署无关）+ Hono + pgvector。
+  - `lang/typescript/rules/typescript-ai.md` — TS AI 规则（Zod、ai SDK、命名）
+  - `lang/typescript/specs/typescript.md` — TS 后端完整参考（Hono + ai SDK + postgres.js + 测试 + Docker）
+  - `lang/typescript/specs/rag.md` — 进阶 RAG 的 TS 实现
+  - `ai-agents` / `structured-output` 技能补完整 TS 代码；`rag-pipeline`/`embedding`/`vector-db` 补 TS 指引
+- **语言选择机制**：`init --lang python|typescript`（默认 python）。语言相关 rules/specs 放 `lang/<语言>/`，安装时只叠加所选语言；`.preset` 标记记录语言，`update` 据此刷新。
+
+### 变更
+
+- **反框架立场**（P1.2）：`rules/llm.md` 重写为语言无关，顶部明确"默认裸 SDK，不引入 LangChain/LlamaIndex"，并列出仅有的例外场景（依据 Anthropic《Building Effective Agents》）。`rules/agents.md` 同步加入。
+- **预设结构重构**：Python 专属的 `rules/python.md` 和 `specs/*` 移入 `lang/python/`；顶层 `rules/` 仅保留语言无关规则（llm/agents/rag/vector-db）。
+- `lib/copy.js` `findSourceDir`：开发时优先仓库根目录（单一真源），不再被 `npm pack` 生成的临时副本干扰。
+- `package.json`：新增 `postpack` 在打包后清理生成的副本；版本 → 3.1.0。
+- 冒烟测试扩展到 48 断言，覆盖两条语言路线的隔离（本语言规则存在、他语言规则不混入）。
+
+### 修复
+
+- `lang/python/rules/python.md`：过时模型 ID `claude-opus-4-5` → `claude-sonnet-4-6`。
+
 ## v3.0.2（2026-06-18）
 
 **修复分发管线的两个致命问题（P0）+ 增加 CLI 冒烟测试**

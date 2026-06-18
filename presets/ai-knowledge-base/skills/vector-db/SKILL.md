@@ -7,6 +7,9 @@ description: pgvector 向量数据库——IVFFlat vs HNSW 索引、混合检索
 
 pgvector 的 schema 设计、索引优化、查询调优。
 
+> Schema、索引（IVFFlat/HNSW）、混合检索 SQL **与语言无关**（都是 SQL），下方封装代码为 Python。
+> **TypeScript**：用 postgres.js 直接写同样的 SQL（不套 ORM 抽象），见 `lang/typescript/specs/typescript.md` 的"pgvector 操作"。
+
 ## 使用时机
 
 - 设计向量存储 schema

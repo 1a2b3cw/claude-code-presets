@@ -209,12 +209,12 @@ P0(发布前必做)
 [x] P0.2 create-claude-team 副本移出 git + gitignore + npm pack 验证   ← 已修
 
 P1(AI 预设扩展,你的核心需求)
-[ ] P1.1 init 增加 --lang 语言选择(Python/TypeScript)
-[ ] P1.1 新增 TS 路线:rules/typescript-ai.md + specs/typescript.md
-[ ] P1.1 技能补 TS 示例(ai-agents/structured-output/rag-pipeline/embedding/vector-db)
-[ ] P1.1 specs/python.md 与 specs/typescript.md 按语言隔离
-[ ] P1.2 rules/llm.md + rules/agents.md 写入"默认裸 SDK,反框架"立场
-[ ] P1.3 (可选)重命名 ai-knowledge-base → ai-app(保留别名)
+[x] P1.1 init 增加 --lang 语言选择(Python/TypeScript)   ← 已做
+[x] P1.1 新增 TS 路线:rules/typescript-ai.md + specs/typescript.md   ← 已做(+ rag.md)
+[x] P1.1 技能补 TS 示例(ai-agents/structured-output 完整;其余加指引)   ← 已做
+[x] P1.1 specs 按语言隔离(lang/python/ 与 lang/typescript/)   ← 已做
+[x] P1.2 rules/llm.md + rules/agents.md 写入"默认裸 SDK,反框架"立场   ← 已做
+[ ] P1.3 (可选)重命名 ai-knowledge-base → ai-app(保留别名)   ← 暂缓(避免大量路径改动)
 
 P2(健壮性收尾)
 [ ] P2.1 验证 Windows 下 hooks 能跑 + README 注明 Git Bash 要求

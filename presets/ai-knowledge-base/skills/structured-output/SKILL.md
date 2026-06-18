@@ -5,6 +5,8 @@ description: 从 LLM 可靠获取结构化 JSON——工具调用强制结构化
 
 # 结构化输出
 
+> 本技能默认给 Python 实现。**TypeScript 用户**：用 Vercel AI SDK 的 `generateObject` + Zod，见下方"TypeScript 版"。
+
 ## 使用时机
 
 - LLM 输出需要解析为 Python 对象（分类、提取、评分等）
@@ -141,3 +143,46 @@ async def judge_rag_answer(question: str, context: str, answer: str) -> JudgeRes
 - **schema 层级不超过 3 层**：嵌套过深时 LLM 填写出错率显著上升
 - **每个字段加 `description`**：LLM 靠 description 理解该填什么，不要依赖字段名称
 - **用 `Field(default_factory=list)` 代替 `= []`**：Pydantic 最佳实践，避免共享默认值
+
+## TypeScript 版（Vercel AI SDK）
+
+`generateObject` 用 Zod schema 强制结构化，等价于 Python 的工具调用强制法，类型自动推导。
+
+```typescript
+import { generateObject } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { z } from 'zod';
+
+const ClassificationSchema = z.object({
+  label: z.string().describe('分类标签，必须是预定义类别之一'),
+  confidence: z.number().min(0).max(1),
+  reasoning: z.string().describe('分类理由，便于调试'),
+});
+
+export async function classify(text: string) {
+  const { object } = await generateObject({
+    model: anthropic('claude-haiku-4-5-20251001'), // 结构化任务用 Haiku
+    schema: ClassificationSchema,
+    prompt: `对以下内容分类：\n\n${text}`,
+    maxRetries: 3, // SDK 内置重试
+  });
+  return object; // 已通过 Zod 校验，完全类型安全
+}
+
+// 批量提取（控制并发）
+export async function batchExtract<T>(
+  texts: string[],
+  fn: (t: string) => Promise<T>,
+  concurrency = 10,
+): Promise<(T | null)[]> {
+  const results: (T | null)[] = [];
+  for (let i = 0; i < texts.length; i += concurrency) {
+    const batch = texts.slice(i, i + concurrency);
+    const settled = await Promise.allSettled(batch.map(fn));
+    results.push(...settled.map((s) => (s.status === 'fulfilled' ? s.value : null)));
+  }
+  return results;
+}
+```
+
+避坑同 Python：schema 层级不超 3 层、每个字段加 `.describe()`、不要让模型输出裸 JSON 字符串再 parse（用 `generateObject` 而非解析 `text`）。

@@ -7,6 +7,10 @@ description: RAG 管道设计与实现——数据摄入、分块、嵌入、混
 
 设计和实现完整的 RAG（Retrieval-Augmented Generation）管道。
 
+> 本技能的管道架构、诊断表、分块/检索/生成策略**与语言无关**，下方代码为 Python。
+> **TypeScript 实现**（Hono + Vercel AI SDK + postgres.js）见 `lang/typescript/specs/typescript.md`，进阶技术见 `lang/typescript/specs/rag.md`。
+> 注：**文档解析**（乱版 PDF、表格、扫描件）Python 库更强，TS 项目可单独用 Python 写解析服务，其余主体保持 TS。
+
 ## 使用时机
 
 当你需要：

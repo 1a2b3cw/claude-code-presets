@@ -55,8 +55,9 @@ async function silent(fn) {
   }
 }
 
-async function runScenario(preset, { mcpServer, presetSkillCount }) {
-  console.log(`\n[${preset}]`);
+async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, expectRule = null, absentRule = null }) {
+  const title = lang ? `${preset} (${lang})` : preset;
+  console.log(`\n[${title}]`);
   const tmp = mkdtempSync(join(tmpdir(), 'cct-'));
   const claudeDir = join(tmp, '.claude');
   const skillsDir = join(claudeDir, 'skills');
@@ -67,11 +68,13 @@ async function runScenario(preset, { mcpServer, presetSkillCount }) {
     process.chdir(tmp);
 
     // --- init ---
-    await silent(() => init({ preset }));
+    await silent(() => init({ preset, lang }));
 
     assert(existsSync(join(claudeDir, 'CLAUDE.md')), 'init: CLAUDE.md 存在');
     assert(existsSync(join(claudeDir, '.preset')), 'init: .preset 标记存在');
-    assert(readFileSync(join(claudeDir, '.preset'), 'utf8').trim() === preset, `init: .preset 内容为 ${preset}`);
+    const marker = readFileSync(join(claudeDir, '.preset'), 'utf8').split('\n').map((l) => l.trim());
+    assert(marker[0] === preset, `init: .preset 预设为 ${preset}`);
+    if (lang) assert(marker[1] === lang, `init: .preset 语言为 ${lang}`);
 
     const expectedSkills = PUBLIC_SKILLS.length + presetSkillCount;
     const initSkills = countDirs(skillsDir);
@@ -83,6 +86,14 @@ async function runScenario(preset, { mcpServer, presetSkillCount }) {
     const initRules = fileNames(rulesDir);
     assert(PUBLIC_RULES.every((r) => initRules.includes(r)), 'init: 公共规则（git/design）齐全');
 
+    // 语言隔离断言
+    if (expectRule) assert(initRules.includes(expectRule), `init: 含本语言规则 ${expectRule}`);
+    if (absentRule) assert(!initRules.includes(absentRule), `init: 不含他语言规则 ${absentRule}`);
+    if (lang) {
+      const specs = fileNames(join(claudeDir, 'specs'));
+      assert(specs.length > 0, `init: specs/ 非空（${specs.length} 个）`);
+    }
+
     const mcp = JSON.parse(readFileSync(join(claudeDir, '.mcp.json'), 'utf8'));
     assert(mcp.mcpServers && mcp.mcpServers[mcpServer], `init: MCP 已合并 ${mcpServer}`);
 
@@ -90,7 +101,7 @@ async function runScenario(preset, { mcpServer, presetSkillCount }) {
     const settingsBefore = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
     const workspaceExists = existsSync(join(claudeDir, 'workspace'));
 
-    // --- update ---（关键：P0.1 守护点）
+    // --- update ---（关键：P0.1 守护点 + 语言保持）
     await silent(() => update({}));
 
     const updSkills = countDirs(skillsDir);
@@ -101,6 +112,8 @@ async function runScenario(preset, { mcpServer, presetSkillCount }) {
 
     const updRules = fileNames(rulesDir);
     assert(PUBLIC_RULES.every((r) => updRules.includes(r)), 'update: 公共规则未被删除');
+    if (expectRule) assert(updRules.includes(expectRule), `update: 本语言规则 ${expectRule} 保留`);
+    if (absentRule) assert(!updRules.includes(absentRule), `update: 未混入他语言规则 ${absentRule}`);
 
     const settingsAfter = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
     assert(settingsAfter === settingsBefore, 'update: settings.json 保持不变');
@@ -113,7 +126,14 @@ async function runScenario(preset, { mcpServer, presetSkillCount }) {
 
 console.log('create-claude-team 冒烟测试');
 
-await runScenario('ai-knowledge-base', { mcpServer: 'pgvector', presetSkillCount: 8 });
+await runScenario('ai-knowledge-base', {
+  mcpServer: 'pgvector', presetSkillCount: 8,
+  lang: 'python', expectRule: 'python.md', absentRule: 'typescript-ai.md',
+});
+await runScenario('ai-knowledge-base', {
+  mcpServer: 'pgvector', presetSkillCount: 8,
+  lang: 'typescript', expectRule: 'typescript-ai.md', absentRule: 'python.md',
+});
 await runScenario('web-fullstack', { mcpServer: 'postgres', presetSkillCount: 8 });
 
 console.log(`\n结果: ${passed} 通过, ${failed} 失败`);

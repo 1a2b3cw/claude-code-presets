@@ -23,12 +23,49 @@ class Settings(BaseSettings):
     openai_api_key: str
     anthropic_api_key: str
     embedding_model: str = "text-embedding-3-small"
-    llm_model: str = "claude-opus-4-5"
+    llm_model: str = "claude-sonnet-4-6"
 
     class Config:
         env_file = ".env"
 
 settings = Settings()
+```
+
+## 统一 LLM 客户端（裸 anthropic SDK）
+
+```python
+import anthropic
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+class LLMClient:
+    def __init__(self) -> None:
+        self._client = anthropic.AsyncAnthropic()
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    async def generate(self, prompt: str, system: str = "",
+                       max_tokens: int = 2048, model: str = "claude-sonnet-4-6") -> str:
+        msg = await self._client.messages.create(
+            model=model, max_tokens=max_tokens, system=system,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return msg.content[0].text
+```
+
+## Prompt Injection 清洗
+
+```python
+import re
+
+INJECTION_PATTERNS = [
+    r'ignore (all |previous |above )?instructions?',
+    r'you are now', r'new (system |role |persona)',
+    r'<\|.*?\|>', r'\[INST\]', r'###\s*(System|Human|Assistant)',
+]
+
+def sanitize_user_input(text: str, max_length: int = 2000) -> str:
+    for pattern in INJECTION_PATTERNS:
+        text = re.sub(pattern, '[REMOVED]', text, flags=re.IGNORECASE)
+    return text[:max_length].strip()
 ```
 
 ## 错误处理

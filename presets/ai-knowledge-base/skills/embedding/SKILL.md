@@ -7,6 +7,9 @@ description: 嵌入模型选型与优化——API vs 本地模型、批量嵌入
 
 选择合适的嵌入模型，优化嵌入成本和质量。
 
+> 模型选型表与成本优化策略**与语言无关**，下方代码为 Python。
+> **TypeScript**：用 `ai` 包的 `embedMany`（`openai.embedding('text-embedding-3-small')`），见 `lang/typescript/specs/typescript.md` 的"嵌入生成"。
+
 ## 使用时机
 
 - 选择嵌入模型（API vs 本地）
