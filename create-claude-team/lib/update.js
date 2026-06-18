@@ -122,17 +122,18 @@ export async function update({ dryRun = false }) {
     console.log(`  更新 ${fileName}`);
   }
 
-  // Update preset-specific dirs (rules, specs, skills overlays)
+  // Overlay preset-specific dirs (rules, specs, skills) ON TOP of base.
+  // Must MERGE (not rm first) — otherwise this would delete the base files
+  // (public skills/rules) that were just copied above.
   if (presetSourceDir && existsSync(presetSourceDir)) {
-    console.log(`\n  更新预设 [${preset}]...`);
+    console.log(`\n  叠加预设 [${preset}]...`);
     for (const dirName of UPDATABLE_DIRS) {
       const src = join(presetSourceDir, dirName);
       const dest = join(targetDir, dirName);
       if (!existsSync(src)) continue;
-      if (existsSync(dest)) await rm(dest, { recursive: true, force: true });
       const count = await countFiles(src);
       totalFiles += count;
-      console.log(`  更新预设 ${dirName}/ (${count} 个文件)`);
+      console.log(`  叠加预设 ${dirName}/ (${count} 个文件)`);
       await copyDir(src, dest);
     }
   }

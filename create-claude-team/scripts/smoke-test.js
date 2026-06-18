@@ -1,0 +1,120 @@
+/**
+ * 冒烟测试 — 验证 init / update 的核心契约。
+ *
+ * 重点守护 P0.1：update 不能删掉底座的公共 skills/rules。
+ * 用法：npm test（在 create-claude-team/ 目录）
+ *
+ * 不依赖任何测试框架，纯 node 断言 + 退出码。
+ */
+
+import { mkdtempSync, rmSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { init } from '../lib/init.js';
+import { update } from '../lib/update.js';
+
+const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'testing'];
+const PUBLIC_RULES = ['git.md', 'design.md'];
+
+let passed = 0;
+let failed = 0;
+
+function assert(cond, msg) {
+  if (cond) {
+    passed++;
+    console.log(`  \x1b[32m✓\x1b[0m ${msg}`);
+  } else {
+    failed++;
+    console.log(`  \x1b[31m✗ ${msg}\x1b[0m`);
+  }
+}
+
+function countDirs(p) {
+  if (!existsSync(p)) return 0;
+  return readdirSync(p, { withFileTypes: true }).filter((e) => e.isDirectory()).length;
+}
+
+function dirNames(p) {
+  if (!existsSync(p)) return [];
+  return readdirSync(p, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+}
+
+function fileNames(p) {
+  if (!existsSync(p)) return [];
+  return readdirSync(p, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name);
+}
+
+// 静默 init/update 的日志，保持测试输出干净
+async function silent(fn) {
+  const orig = console.log;
+  console.log = () => {};
+  try {
+    return await fn();
+  } finally {
+    console.log = orig;
+  }
+}
+
+async function runScenario(preset, { mcpServer, presetSkillCount }) {
+  console.log(`\n[${preset}]`);
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-'));
+  const claudeDir = join(tmp, '.claude');
+  const skillsDir = join(claudeDir, 'skills');
+  const rulesDir = join(claudeDir, 'rules');
+  const prevCwd = process.cwd();
+
+  try {
+    process.chdir(tmp);
+
+    // --- init ---
+    await silent(() => init({ preset }));
+
+    assert(existsSync(join(claudeDir, 'CLAUDE.md')), 'init: CLAUDE.md 存在');
+    assert(existsSync(join(claudeDir, '.preset')), 'init: .preset 标记存在');
+    assert(readFileSync(join(claudeDir, '.preset'), 'utf8').trim() === preset, `init: .preset 内容为 ${preset}`);
+
+    const expectedSkills = PUBLIC_SKILLS.length + presetSkillCount;
+    const initSkills = countDirs(skillsDir);
+    assert(initSkills === expectedSkills, `init: 技能数 = ${initSkills}（期望 ${expectedSkills}）`);
+
+    const initSkillNames = dirNames(skillsDir);
+    assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), 'init: 6 个公共技能齐全');
+
+    const initRules = fileNames(rulesDir);
+    assert(PUBLIC_RULES.every((r) => initRules.includes(r)), 'init: 公共规则（git/design）齐全');
+
+    const mcp = JSON.parse(readFileSync(join(claudeDir, '.mcp.json'), 'utf8'));
+    assert(mcp.mcpServers && mcp.mcpServers[mcpServer], `init: MCP 已合并 ${mcpServer}`);
+
+    // 记录 update 前的"应保留"内容
+    const settingsBefore = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
+    const workspaceExists = existsSync(join(claudeDir, 'workspace'));
+
+    // --- update ---（关键：P0.1 守护点）
+    await silent(() => update({}));
+
+    const updSkills = countDirs(skillsDir);
+    assert(updSkills === expectedSkills, `update: 技能数仍 = ${updSkills}（P0.1 守护，期望 ${expectedSkills}）`);
+
+    const updSkillNames = dirNames(skillsDir);
+    assert(PUBLIC_SKILLS.every((s) => updSkillNames.includes(s)), 'update: 公共技能未被预设叠加删除');
+
+    const updRules = fileNames(rulesDir);
+    assert(PUBLIC_RULES.every((r) => updRules.includes(r)), 'update: 公共规则未被删除');
+
+    const settingsAfter = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
+    assert(settingsAfter === settingsBefore, 'update: settings.json 保持不变');
+    assert(workspaceExists && existsSync(join(claudeDir, 'workspace')), 'update: workspace/ 保持不变');
+  } finally {
+    process.chdir(prevCwd);
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+console.log('create-claude-team 冒烟测试');
+
+await runScenario('ai-knowledge-base', { mcpServer: 'pgvector', presetSkillCount: 8 });
+await runScenario('web-fullstack', { mcpServer: 'postgres', presetSkillCount: 8 });
+
+console.log(`\n结果: ${passed} 通过, ${failed} 失败`);
+process.exit(failed > 0 ? 1 : 0);

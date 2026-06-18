@@ -1,5 +1,24 @@
 # 更新日志
 
+## v3.0.2（2026-06-18）
+
+**修复分发管线的两个致命问题（P0）+ 增加 CLI 冒烟测试**
+
+详见 `OPTIMIZATION-PLAN.md`。
+
+### 修复
+
+- **P0.1 — `update` 命令会删除公共 skills/rules**：预设叠加阶段在复制前多了一次 `rm`，把刚复制的 6 个公共技能和公共规则删掉，导致用户每次 update 都丢内容。改为合并式叠加（与 init 一致）。
+- **P0.2 — 配置双源漂移**：`create-claude-team/.claude/` 是仓库根目录的过期副本（停在 v3.0 之前的旧结构）却被 git 跟踪，且 `findSourceDir` 优先使用它，导致开发时 CLI 读到的是旧配置、发布出去的可能是错的。现在副本从 git 移除并加入 `.gitignore`，仅在 `prepack` 时由 `scripts/sync-config.js` 从根目录（唯一真源）重新生成。
+
+### 新增
+
+- **CLI 冒烟测试**（`scripts/smoke-test.js`，`npm test`）：验证 init/update × 两个预设，断言技能数量、公共内容保留、MCP 合并、`.preset` 标记、settings/workspace 不被覆盖。专门守护 P0.1 不再回归。
+
+### 变更
+
+- `package.json`：发布钩子 `prepublishOnly` → `prepack`（`npm pack` 也会重新生成副本，便于发布前验证）；修正 `homepage`/`bugs` URL（`claude-team-config` → `claude-code-presets`）；版本 → 3.0.2。
+
 ## v3.0.1（2026-06-18）
 
 **ai-knowledge-base 预设大幅扩展：覆盖完整 AI 应用开发**
