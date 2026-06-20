@@ -41,7 +41,7 @@ L/XL 级：
   ┌─────────────────────────────────────────────────┐
   │           Phase 1: Plan                          │
   │   Architect-Planner 输出 spec.md + tasks.md       │
-  │   Designer 确定设计方向（涉及 UI 时）               │
+  │   Designer 定方向（涉及 UI；无方向先 /taste）       │
   │   用户确认后进入迭代                               │
   └──────────┬──────────────────────────────────────┘
              ↓
@@ -86,6 +86,7 @@ L/XL 级：
 | 你说的话 | 用什么 | AI 行为 |
 |----------|--------|---------|
 | `/plan 我想做个产品` | /plan | 分析产品，输出功能模块清单（roadmap.md），不写代码 |
+| `/taste 给项目定设计风格` | /taste | 带你找到想要的 UI 审美，产出设计方向（preview/），不写代码 |
 | `/dev 做一个功能` | /dev | 走完全流程，你只管确认 |
 | `/check` | /check | 快检当前代码，1 分钟出结果 |
 | `/fix 这个函数有问题` | /fix | 直接改这一处，不走流程 |
@@ -100,6 +101,10 @@ L/XL 级：
 - Builder 实现 UI 后自行做设计自检
 - L/XL 级任务由 Designer Agent 审查视觉效果
 - 没有明确设计方向时，默认使用白底简约风格
+
+### 设计方向从哪来 — `/taste`
+
+不知道项目该用什么风格时，用 `/taste` 探索定向：它带你（生成情绪板 / 快问快答 / 逛真实参考三选一）找到想要的审美，产出写进 `preview/design-direction.md`。**这是 Phase 1（写第一行 UI 代码之前）该做的事**——避免做完才发现"丑"再返工。已有 `preview/` 方向则跳过。详见 `commands/taste.md`。
 
 ### `preview/` 目录 — 设计权威来源
 
@@ -140,7 +145,7 @@ L/XL 级：
 
 ## 安全要求
 
-安全检查由 hooks 自动执行（`security-check.sh` + `bash-check.sh`），覆盖：
+安全检查由 hooks 自动执行（`security-check.mjs` + `bash-check.mjs`），覆盖：
 - 代码注入（eval、动态代码执行）
 - XSS（innerHTML、未经 sanitize 的 HTML 输出）
 - 数据安全（SQL 拼接、硬编码密钥）

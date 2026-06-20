@@ -41,8 +41,7 @@
       "Bash(rm -rf $HOME/*)",
       "Bash(rm -Rf /)",
       "Bash(rm -Rf ~)",
-      "Bash(rm -Rf $HOME)",
-      "Bash(:(){ :|:& };:)"
+      "Bash(rm -Rf $HOME)"
     ]
   },
   "hooks": {
