@@ -4,7 +4,7 @@
 >
 > 想知道**怎么用它开发**看 [BEST-PRACTICES.md](BEST-PRACTICES.md)；想要**总览**看 [README.md](README.md)。
 
-> v3.3.0 | 2026-06-18
+> v3.4.0 | 2026-06-20
 
 ---
 
