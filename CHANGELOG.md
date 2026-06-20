@@ -1,5 +1,26 @@
 # 更新日志
 
+## v3.4.0（2026-06-20）
+
+**新增 `/taste` 设计方向探索命令，统一设计定向入口**
+
+填补"设计方向从哪来"的缺口：体系规定涉及 UI 必须先声明设计方向，却没有探索它的过程，常常做完才发现"丑"再返工。`/taste` 补上这个过程，并取代原先零散的预设风格菜单机制。
+
+### 新增
+
+- **`/taste` 命令**：通过情绪板 / 快问快答 / 逛真实参考三选一帮用户找到审美 → 产出 `preview/design-direction.md`（具体到色板、字体、圆角、阴影）。**只定方向不写代码**。图像 MCP 不可用时自动降级到快问快答 / 逛参考。
+- CLAUDE.md 粒度速查、设计章节、L/XL 流程图（Phase 1）接入 `/taste`。
+
+### 变更
+
+- 命令数 7 → 8。README/USAGE/BEST-PRACTICES 全部更新（命令表、主线骨架、决策树）。
+- **移除 `ui-prototype/styles/` 预设风格机制**（apple-minimal / dark-gradient / neobrutal / wireframe）：设计定向统一走 `/taste`，不再维护固定风格菜单。
+  - `rules/design.md` 优先级链去掉 styles 一级（4 级 → 3 级），改以 `preview/`（含 `/taste` 产出）为权威。
+  - `agents/designer.md`「风格选项」改为引导用户走 `/taste`。
+  - `ui-prototype` 技能保留（仍可生成 HTML 原型），改为按 `preview/design-direction.md` 的方向渲染，不再读 `styles/`。
+- 修复 base 的 `design.md`/`designer.md` 引用 web preset 专属路径 `skills/ui-prototype/styles/` 的耦合 bug（纯 base / ai-app 安装时该路径不存在）。
+- CLAUDE.md：修正过时的 hook 文件名（`.sh` → `.mjs`）。
+
 ## v3.3.0（2026-06-18）
 
 **新增 `/plan` 项目开局规划命令**

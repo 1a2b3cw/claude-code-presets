@@ -17,7 +17,7 @@
 | **Skill（web-fullstack）** | 8 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
 | **Skill（ai-app）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
 | **MCP 服务器** | 3 个（公共）+ 预设专用 | GitHub、Playwright、Context7；AI 预设加 pgvector |
-| **Slash Command** | 7 个 | `/plan`、`/dev`、`/check`、`/fix`、`/review-all`、`/ship`、`/standup` |
+| **Slash Command** | 8 个 | `/plan`、`/taste`、`/dev`、`/check`、`/fix`、`/review-all`、`/ship`、`/standup` |
 | **Rules** | 2 个公共 + 预设专用 | Git、设计规范；各预设含 4-5 个技术栈规则 |
 | **Specs** | 预设专用 | 详细技术参考（AI 按需读取） |
 | **Hook** | 2 个 | 代码安全检查（Write/Edit）、Bash 命令拦截 |
