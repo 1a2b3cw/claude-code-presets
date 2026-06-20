@@ -13,8 +13,8 @@
 | 组件 | 数量 | 说明 |
 |------|------|------|
 | **Agent** | 6 个 | Architect-Planner、Builder、Designer、Reviewer、Researcher、DevOps |
-| **Skill（公共）** | 6 个 | 架构、代码审查、调试、性能、项目规划、测试 |
-| **Skill（web-fullstack）** | 8 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
+| **Skill（公共）** | 7 个 | 架构、代码审查、调试、性能、项目规划、测试、UI 原型 |
+| **Skill（web-fullstack）** | 7 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
 | **Skill（ai-app）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
 | **MCP 服务器** | 3 个（公共）+ 预设专用 | GitHub、Playwright、Context7；AI 预设加 pgvector |
 | **Slash Command** | 8 个 | `/plan`、`/taste`、`/dev`、`/check`、`/fix`、`/review-all`、`/ship`、`/standup` |
@@ -65,7 +65,7 @@ npx create-claude-team update
 **技术栈**：TypeScript + React 18+ / Next.js 14+ + Node.js 20+ + Hono + Prisma / Drizzle + PostgreSQL
 
 **包含**：
-- 8 个 Skill：frontend、api-design、database、typescript-advanced、ui-design、ui-prototype、ci-cd-pipelines、microservices-design
+- 7 个 Skill：frontend、api-design、database、typescript-advanced、ui-design、ci-cd-pipelines、microservices-design
 - 4 个 Rule：typescript、react、node、testing
 - 4 个 Spec：typescript、react、node、testing（详细技术参考）
 - MCP：GitHub + Playwright + Context7 + PostgreSQL（可选）
@@ -95,11 +95,12 @@ npx create-claude-team update
 
 ## 怎么用
 
-### 7 个核心命令
+### 8 个核心命令
 
 | 命令 | 什么时候用 | 例子 |
 |------|-----------|------|
 | `/plan` | 项目开局，分析产品出功能模块清单 | `/plan 做一个 AI 知识库` |
+| `/taste` | 写 UI 前定设计方向（出 `preview/`） | `/taste 面向年轻人的服饰电商` |
 | `/dev` | 要写代码（完整流程） | `/dev 做一个 RAG 问答接口` |
 | `/check` | 写完一个功能想快检 | `/check` 或 `/check src/retrieval/` |
 | `/fix` | 修一个已知的具体问题 | `/fix src/agents/loop.py 可能无限循环` |
@@ -133,7 +134,7 @@ S 级：直接写代码 → 完成
 ├── .preset                # 已安装的预设标记（update 时使用）
 ├── agents/                # 6 个 Agent 角色定义
 ├── skills/                # 公共技能
-├── commands/              # 7 个斜杠命令
+├── commands/              # 8 个斜杠命令
 ├── rules/                 # 公共规则（git、design）+ 预设规则
 ├── specs/                 # 详细技术参考（预设专用，AI 按需读取）
 ├── workspace/             # 会话记忆

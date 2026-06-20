@@ -58,7 +58,7 @@ src/
 - `rules/testing.md` — 测试规则
 
 ## 包含的 Skills
-frontend, api-design, typescript-advanced, database, ci-cd-pipelines, microservices-design, ui-design, ui-prototype
+frontend, api-design, typescript-advanced, database, ci-cd-pipelines, microservices-design, ui-design
 
 ## MCP 服务器
 - **SQLite**：本地开发数据库

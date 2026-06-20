@@ -65,8 +65,8 @@ npx create-claude-team init --force                               # 覆盖已存
 ├── .mcp.json          # MCP 服务器（底座 + 预设合并结果）
 ├── .preset            # 已装预设 + 语言标记
 ├── agents/            # 6 个角色
-├── skills/            # 公共 6 + 预设 8（按需触发）
-├── commands/          # 7 个斜杠命令
+├── skills/            # 公共 7 + 预设 7/8（按需触发）
+├── commands/          # 8 个斜杠命令
 ├── rules/             # 始终加载的必守规则
 ├── specs/             # 详细技术参考（AI 按需读取）
 ├── workspace/         # journal.md（会话记忆）+ metrics.md（效能）
@@ -106,9 +106,9 @@ npx create-claude-team init --force                               # 覆盖已存
 
 ## 6. Skill 技能
 
-**公共（6，所有预设）**：architecture、code-review、debugging、performance、project-planning、testing
+**公共（7，所有预设）**：architecture、code-review、debugging、performance、project-planning、testing、ui-prototype
 
-**web-fullstack（8）**：frontend、api-design、database、typescript-advanced、ui-design、ui-prototype、ci-cd-pipelines、microservices-design
+**web-fullstack（7）**：frontend、api-design、database、typescript-advanced、ui-design、ci-cd-pipelines、microservices-design
 
 **ai-app（8）**：rag-pipeline、ai-agents、structured-output、embedding、vector-db、prompt-engineering、llm-evaluation、data-pipeline
 > 概念类技能含 Python + TypeScript 两套示例，AI 按你的语言路线取用。

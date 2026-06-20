@@ -15,7 +15,7 @@ import { spawnSync } from 'node:child_process';
 import { init } from '../lib/init.js';
 import { update } from '../lib/update.js';
 
-const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'testing'];
+const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'testing', 'ui-prototype'];
 const PUBLIC_RULES = ['git.md', 'design.md'];
 
 let passed = 0;
@@ -83,7 +83,7 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     assert(initSkills === expectedSkills, `init: 技能数 = ${initSkills}（期望 ${expectedSkills}）`);
 
     const initSkillNames = dirNames(skillsDir);
-    assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), 'init: 6 个公共技能齐全');
+    assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), 'init: 7 个公共技能齐全');
 
     const initRules = fileNames(rulesDir);
     assert(PUBLIC_RULES.every((r) => initRules.includes(r)), 'init: 公共规则（git/design）齐全');
@@ -144,7 +144,7 @@ await runScenario('ai-app', {
   mcpServer: 'pgvector', presetSkillCount: 8,
   lang: 'typescript', expectRule: 'typescript-ai.md', absentRule: 'python.md',
 });
-await runScenario('web-fullstack', { mcpServer: 'postgres', presetSkillCount: 8 });
+await runScenario('web-fullstack', { mcpServer: 'postgres', presetSkillCount: 7 });
 
 // 旧预设名 ai-knowledge-base 应通过别名解析到 ai-app（向后兼容）
 console.log('\n[别名兼容]');

@@ -18,6 +18,7 @@
   - `rules/design.md` 优先级链去掉 styles 一级（4 级 → 3 级），改以 `preview/`（含 `/taste` 产出）为权威。
   - `agents/designer.md`「风格选项」改为引导用户走 `/taste`。
   - `ui-prototype` 技能保留（仍可生成 HTML 原型），改为按 `preview/design-direction.md` 的方向渲染，不再读 `styles/`。
+- **`ui-prototype` 从 web-fullstack 预设上移到公共层**：去掉 styles 依赖后它已是 stack 无关（单文件内联 CSS、从设计方向渲染），与设计工具链其余部分（`/taste`、`design.md`、`designer.md`）一致放公共层，ai-app 等其他预设的 UI 也能用。公共技能 6 → 7，web-fullstack 预设技能 8 → 7。
 - 修复 base 的 `design.md`/`designer.md` 引用 web preset 专属路径 `skills/ui-prototype/styles/` 的耦合 bug（纯 base / ai-app 安装时该路径不存在）。
 - CLAUDE.md：修正过时的 hook 文件名（`.sh` → `.mjs`）。
 
