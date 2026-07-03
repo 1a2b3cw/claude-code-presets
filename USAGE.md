@@ -50,7 +50,7 @@ npx create-claude-team init --force                               # 覆盖已存
   + MCP 合并            → preset.mcp.json 合并进 .mcp.json
   + 写 .preset 标记     → 记录预设名 + 语言（update 据此刷新）
   + 建 workspace/       → journal.md + metrics.md
-  + 同步 Codex 入口      → AGENTS.md + .agents/ + .codex/
+  + 同步 Codex 入口      → AGENTS.md + .agents/ + .codex/config.toml + .codex/agents + .codex/hooks
 ```
 
 `update` 只刷新 agents/skills/commands/rules/specs/hooks 和 CLAUDE.md，并同步 `AGENTS.md`、`.agents/`、`.codex/`；**保留** settings.json、.mcp.json、workspace/（CLAUDE.md 覆盖前自动备份 .bak）。
@@ -76,11 +76,13 @@ npx create-claude-team init --force                               # 覆盖已存
 AGENTS.md              # Codex 入口指令（从 CLAUDE.md 同步生成）
 .agents/
 ├── agents/            # 角色定义镜像
-├── skills/            # Codex Skill
-├── commands/          # 命令说明（Codex 中作为流程参考）
-├── rules/             # 规则镜像
+├── skills/            # Codex Skill（含 team-command-* 工作流）
+├── commands/          # Claude 命令说明镜像
+├── rules/             # 团队规则参考
 └── specs/             # 技术参考镜像
 .codex/
+├── config.toml        # Codex MCP 配置
+├── agents/            # Codex custom agents
 ├── hooks.json         # Codex hooks 配置
 └── hooks/             # hooks 镜像
 ```
@@ -99,7 +101,7 @@ AGENTS.md              # Codex 入口指令（从 CLAUDE.md 同步生成）
 **web-fullstack 额外**：`sqlite`（本地 `./data/dev.db`）、`postgres`（`DATABASE_URL`）
 **ai-app 额外**：`pgvector`（`DATABASE_URL`）
 
-Claude Code 装完用 `/mcp` 验证。Codex 装完检查根目录 `AGENTS.md` 与 `.agents/skills/` 是否存在。配 token：在 `.claude/settings.json` 的 `env` 加 `GITHUB_PERSONAL_ACCESS_TOKEN`。
+Claude Code 装完用 `/mcp` 验证。Codex 装完检查根目录 `AGENTS.md`、`.agents/skills/`、`.codex/config.toml` 是否存在，再用 Codex 的 `/mcp` 查看 MCP。配 token：在 `.claude/settings.json` 的 `env` 加 `GITHUB_PERSONAL_ACCESS_TOKEN`，或在 Codex 启动环境中提供同名环境变量。
 
 ---
 
@@ -129,18 +131,20 @@ Claude Code 装完用 `/mcp` 验证。Codex 装完检查根目录 `AGENTS.md` �
 
 ---
 
-## 7. Slash 命令（8）
+## 7. 工作流命令（8）
 
-| 命令 | 用途 |
-|------|------|
-| `/plan <产品想法>` | 项目开局规划：分析产品 → 输出功能模块清单 `roadmap.md`，不写代码 |
-| `/taste [项目背景]` | 设计方向探索：情绪板 / 快问快答 / 逛参考找到审美 → 输出 `preview/design-direction.md`，不写代码 |
-| `/dev <需求>` | 完整开发流程（Phase 0 需求确认 → 判级 → 迭代 → 验收 → 记录指标）；指定 roadmap 模块时复用其分析 |
-| `/check [路径]` | 写完快检（逻辑/类型/边界），自动修 |
-| `/fix <文件/问题>` | 定点修复，不走流程 |
-| `/review-all [路径]` | 合并前跨文件审查（一致性/完整性/回归/依赖） |
-| `/ship [--dry-run]` | 发布门禁（8 道关卡 + 回滚检查） |
-| `/standup` | 进度 + 效能趋势分析 |
+Claude Code 使用 slash command；Codex 使用自动生成的 skill，避免与 Codex 内置 `/plan` 等命令冲突。
+
+| Claude Code | Codex | 用途 |
+|------|------|------|
+| `/plan <产品想法>` | `$team-command-plan` | 项目开局规划：分析产品 → 输出功能模块清单 `roadmap.md`，不写代码 |
+| `/taste [项目背景]` | `$team-command-taste` | 设计方向探索：情绪板 / 快问快答 / 逛参考找到审美 → 输出 `preview/design-direction.md`，不写代码 |
+| `/dev <需求>` | `$team-command-dev` | 完整开发流程（Phase 0 需求确认 → 判级 → 迭代 → 验收 → 记录指标）；指定 roadmap 模块时复用其分析 |
+| `/check [路径]` | `$team-command-check` | 写完快检（逻辑/类型/边界），自动修 |
+| `/fix <文件/问题>` | `$team-command-fix` | 定点修复，不走流程 |
+| `/review-all [路径]` | `$team-command-review-all` | 合并前跨文件审查（一致性/完整性/回归/依赖） |
+| `/ship [--dry-run]` | `$team-command-ship` | 发布门禁（8 道关卡 + 回滚检查） |
+| `/standup` | `$team-command-standup` | 进度 + 效能趋势分析 |
 
 > 完整工作流和使用时机见 [BEST-PRACTICES.md](BEST-PRACTICES.md)。
 
@@ -189,6 +193,7 @@ PreToolUse 自动执行，Node 实现（跨平台，无外部依赖）：
 | 禁用 MCP | 编辑 `.claude/.mcp.json` 删对应项 |
 
 > 自定义写进 CLAUDE.md / spec / 项目内文件，别直接改会被 `update` 刷新的目录（`.claude/` 的 agents/skills/commands/rules/specs/hooks，以及同步生成的 `.agents/`、`.codex/`）。
+> Codex 的 `.codex/config.toml`、`.codex/agents/*.toml`、`team-command-*` skills 都由 `.claude/` 源文件生成。
 
 ---
 
@@ -196,7 +201,7 @@ PreToolUse 自动执行，Node 实现（跨平台，无外部依赖）：
 
 | 现象 | 排查 |
 |------|------|
-| `/mcp` 看不到服务器 | 检查 `.mcp.json` 语法、token 是否配置、`npx` 能否联网 |
+| `/mcp` 看不到服务器 | Claude Code 检查 `.mcp.json`；Codex 检查 `.codex/config.toml`、token 是否配置、`npx` 能否联网 |
 | GitHub MCP 401 | `GITHUB_PERSONAL_ACCESS_TOKEN` 权限需 `repo` + `read:org` |
 | pgvector 连不上 | `docker compose up -d postgres`，确认 `DATABASE_URL` |
 | hooks 没反应 | 确认 `node` 在 PATH；hooks 是 `.mjs`，settings.json 用 `node` 调用 |

@@ -13,13 +13,13 @@ description: UI 原型产出技能，按项目设计方向生成静态 HTML 原�
 ## 工作流程
 
 ### Step 1：确定设计方向
-原型必须按项目已定的设计方向来画，不凭空发挥。按优先级取方向（见 `rules/design.md` 优先级链）：
+原型必须按项目已定的设计方向来画，不凭空发挥。按优先级取方向（见 `.agents/rules/design.md` 优先级链）：
 
 1. `preview/design-direction.md`（由 `/taste` 探索产出）——最高权威，直接读它的色板、字体、圆角、阴影
 2. 项目 spec.md 中声明的设计方向
-3. 都没有 → `rules/design.md` 的白底简约默认
+3. 都没有 → `.agents/rules/design.md` 的白底简约默认
 
-> **还没有设计方向？** 先让用户走 `/taste` 定向（详见 `commands/taste.md`），再回来生成原型——避免做完才发现"不对味"返工。不强制，用户也可直接用 design.md 默认先跑。
+> **还没有设计方向？** 先让用户走 `/taste` 定向（详见 `.agents/commands/taste.md`），再回来生成原型——避免做完才发现"不对味"返工。不强制，用户也可直接用 design.md 默认先跑。
 
 ### Step 2：产出原型
 根据用户描述的页面需求 + 上一步确定的设计方向，生成静态 HTML 原型：
@@ -44,4 +44,4 @@ description: UI 原型产出技能，按项目设计方向生成静态 HTML 原�
 - 原型不是最终代码，是设计契约
 - Builder 实现时应还原原型的视觉效果，而非复制原型代码
 - 设计方向由 `/taste` 探索、`preview/design-direction.md` 固化；本技能只负责把方向渲染成 HTML，不自己定方向
-- 缺设计方向时，按 `rules/design.md` 白底简约默认产出，并提示用户可用 `/taste` 定向
+- 缺设计方向时，按 `.agents/rules/design.md` 白底简约默认产出，并提示用户可用 `/taste` 定向

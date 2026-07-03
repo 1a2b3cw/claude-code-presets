@@ -21,7 +21,8 @@ try {
   process.exit(0);
 }
 
-const command = input.tool_input?.command ?? '';
+const ti = input.tool_input ?? input.toolInput ?? input.params?.tool_input ?? input.params?.toolInput ?? input.input ?? {};
+const command = ti.command ?? input.command ?? input.params?.command ?? '';
 if (!command) process.exit(0);
 
 // 🔴 严重：命中即拒绝

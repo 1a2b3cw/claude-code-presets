@@ -1,3 +1,14 @@
+---
+name: team-command-dev
+description: Execute the dev workflow from this AI development team preset. Use when the user writes /dev, asks for dev, or wants the corresponding team process in Codex.
+---
+
+# team-command-dev
+
+This skill ports the Claude Code `/dev` command workflow to Codex.
+
+In Codex, invoke this as `$team-command-dev`. Do not rely on `/dev` unless Codex itself defines that slash command with the same meaning.
+
 # /dev - 开发流程
 
 一句话需求进，可运行代码出。你只管确认，AI 管流程。

@@ -6,7 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"D:\\\\CD\\\\MY2\\\\.codex\\\\hooks\\\\security-check.mjs\""
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/security-check.mjs\"",
+            "statusMessage": "Checking code security"
           }
         ]
       },
@@ -15,7 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"D:\\\\CD\\\\MY2\\\\.codex\\\\hooks\\\\bash-check.mjs\""
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/bash-check.mjs\"",
+            "statusMessage": "Checking shell command"
           }
         ]
       }

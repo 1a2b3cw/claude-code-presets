@@ -1,10 +1,21 @@
 {
   "name": "create-claude-team",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "description": "AI 开发团队配置 — 可插拔预设，一行命令初始化 Claude Code 与 Codex 团队配置",
-  "keywords": ["claude", "claude-code", "codex", "ai-team", "scaffolding", "rag", "pgvector", "preset"],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "codex",
+    "ai-team",
+    "scaffolding",
+    "rag",
+    "pgvector",
+    "preset"
+  ],
   "homepage": "https://github.com/1a2b3cw/claude-code-presets",
-  "bugs": { "url": "https://github.com/1a2b3cw/claude-code-presets/issues" },
+  "bugs": {
+    "url": "https://github.com/1a2b3cw/claude-code-presets/issues"
+  },
   "license": "MIT",
   "author": "张家豪",
   "type": "module",

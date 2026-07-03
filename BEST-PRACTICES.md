@@ -38,8 +38,8 @@
   /语言      preview/   （新项目可选）   需求→代码    自动修       跨文件一致性    回滚检查   越用越准
 ```
 
-> ③ `/plan` 是**新项目开局**用的:把产品想法拆成功能模块清单(roadmap.md),你挑着做。已经知道做什么、或老项目改东西,可跳过。
-> ④ `/dev` 内部**已自动包含** ⑤`/check` 和 ⑥`/review-all`(见下方 Phase 2)。日常大多只需 **`/plan`(一次)→ `/dev`(每个模块)→ `/ship`**;⑤⑥ 是想手动补查时单独用的。
+> ③ Claude Code 的 `/plan` 是**新项目开局**用的；Codex 中请用 `$team-command-plan`，避免和 Codex 内置 `/plan` 混淆。
+> ④ Claude Code 的 `/dev` 内部**已自动包含** ⑤`/check` 和 ⑥`/review-all`；Codex 中对应 `$team-command-dev`。
 
 ### ① 装配置
 
@@ -56,7 +56,7 @@ npx create-claude-team init --preset ai-app
 npx create-claude-team init --preset ai-app --lang typescript
 ```
 
-装完在 Claude Code 里输入 `/mcp` 确认 MCP 已加载；在 Codex 里确认根目录有 `AGENTS.md`，且 `.agents/skills/` 已生成。以后升级配置用 `npx create-claude-team update`（保留你的 settings 和 workspace，并同步 Codex 入口）。
+装完在 Claude Code 里输入 `/mcp` 确认 MCP 已加载；在 Codex 里确认根目录有 `AGENTS.md`，且 `.agents/skills/`、`.codex/config.toml` 已生成，再用 Codex 的 `/mcp` 查看 MCP。以后升级配置用 `npx create-claude-team update`（保留你的 settings 和 workspace，并同步 Codex 入口）。
 
 ### ② 定方向（只做一次，但很关键）
 

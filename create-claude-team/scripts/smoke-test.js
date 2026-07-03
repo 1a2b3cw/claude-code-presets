@@ -17,6 +17,8 @@ import { update } from '../lib/update.js';
 
 const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'testing', 'ui-prototype'];
 const PUBLIC_RULES = ['git.md', 'design.md'];
+const COMMAND_SKILL_COUNT = 8;
+const AGENT_COUNT = 6;
 
 let passed = 0;
 let failed = 0;
@@ -81,10 +83,11 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     assert(marker[0] === preset, `init: .preset 预设为 ${preset}`);
     if (lang) assert(marker[1] === lang, `init: .preset 语言为 ${lang}`);
 
-    const expectedSkills = PUBLIC_SKILLS.length + presetSkillCount;
+    const expectedSkills = PUBLIC_SKILLS.length + presetSkillCount + COMMAND_SKILL_COUNT;
     const initSkills = countDirs(skillsDir);
-    assert(initSkills === expectedSkills, `init: 技能数 = ${initSkills}（期望 ${expectedSkills}）`);
+    assert(initSkills === expectedSkills - COMMAND_SKILL_COUNT, `init: Claude 技能数 = ${initSkills}（期望 ${expectedSkills - COMMAND_SKILL_COUNT}）`);
     assert(countDirs(join(agentsDir, 'skills')) === expectedSkills, `init: Codex 技能数 = ${expectedSkills}`);
+    assert(existsSync(join(agentsDir, 'skills', 'team-command-dev', 'SKILL.md')), 'init: Codex 命令 skill 已生成');
 
     const initSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), 'init: 7 个公共技能齐全');
@@ -109,6 +112,15 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     assert(!hooks.some((h) => h.endsWith('.sh')), 'init: 无遗留 .sh hooks');
     assert(existsSync(join(codexDir, 'hooks.json')), 'init: Codex hooks.json 存在');
     assert(fileNames(join(codexDir, 'hooks')).includes('security-check.mjs'), 'init: Codex hooks 已同步');
+    assert(existsSync(join(codexDir, 'config.toml')), 'init: Codex config.toml 存在');
+    assert(fileNames(join(codexDir, 'agents')).filter((name) => name.endsWith('.toml')).length === AGENT_COUNT, `init: Codex custom agents = ${AGENT_COUNT}`);
+    const codexConfig = readFileSync(join(codexDir, 'config.toml'), 'utf8');
+    assert(codexConfig.includes(`[mcp_servers.${mcpServer}]`), `init: Codex MCP 已生成 ${mcpServer}`);
+    if (mcpServer === 'postgres') {
+      assert(codexConfig.includes("process.argv.slice"), 'init: Codex MCP 参数环境变量通过 wrapper 展开');
+    }
+    const codexBuilder = readFileSync(join(agentsDir, 'agents', 'builder.md'), 'utf8');
+    assert(!codexBuilder.includes('.claude/rules'), 'init: Codex agent 文档不再指向 .claude/rules');
 
     const commands = fileNames(join(claudeDir, 'commands'));
     assert(commands.includes('plan.md') && commands.includes('taste.md') && commands.length === 8, `init: 8 个命令含 plan.md + taste.md (${commands.length})`);
@@ -121,7 +133,7 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     await silent(() => update({}));
 
     const updSkills = countDirs(skillsDir);
-    assert(updSkills === expectedSkills, `update: 技能数仍 = ${updSkills}（P0.1 守护，期望 ${expectedSkills}）`);
+    assert(updSkills === expectedSkills - COMMAND_SKILL_COUNT, `update: Claude 技能数仍 = ${updSkills}（P0.1 守护，期望 ${expectedSkills - COMMAND_SKILL_COUNT}）`);
     assert(countDirs(join(agentsDir, 'skills')) === expectedSkills, `update: Codex 技能数仍 = ${expectedSkills}`);
 
     const updSkillNames = dirNames(skillsDir);
@@ -135,7 +147,7 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     const settingsAfter = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
     assert(settingsAfter === settingsBefore, 'update: settings.json 保持不变');
     assert(workspaceExists && existsSync(join(claudeDir, 'workspace')), 'update: workspace/ 保持不变');
-    assert(existsSync(join(tmp, 'AGENTS.md')) && existsSync(join(codexDir, 'hooks.json')), 'update: Codex 入口保持同步');
+    assert(existsSync(join(tmp, 'AGENTS.md')) && existsSync(join(codexDir, 'hooks.json')) && existsSync(join(codexDir, 'config.toml')), 'update: Codex 入口保持同步');
   } finally {
     process.chdir(prevCwd);
     rmSync(tmp, { recursive: true, force: true });
@@ -166,6 +178,25 @@ console.log('\n[别名兼容]');
   console.log(`  ${ok ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m'} ai-knowledge-base → 解析到 ai-app (exit ${res.status})`);
   ok ? passed++ : failed++;
   rmSync(tmp, { recursive: true, force: true });
+}
+
+console.log('\n[源目录保护]');
+{
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const prevCwd = process.cwd();
+  try {
+    process.chdir(repoRoot);
+    let blocked = false;
+    try {
+      await silent(() => init({ preset: 'web-fullstack', force: true }));
+    } catch (err) {
+      blocked = /配置源/.test(err.message);
+    }
+    assert(blocked, 'init --force: 拒绝覆盖 create-claude-team 配置源');
+    assert(existsSync(join(repoRoot, '.claude', 'CLAUDE.md')), 'init --force: 源 .claude/ 未被删除');
+  } finally {
+    process.chdir(prevCwd);
+  }
 }
 
 console.log(`\n结果: ${passed} 通过, ${failed} 失败`);

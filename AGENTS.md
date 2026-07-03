@@ -196,8 +196,8 @@ L/XL 级：
 
 ## 规范注入机制
 
-- **rules/**：始终加载的必须遵守规则
-- **specs/**：详细技术参考，AI 在需要深入参考时主动读取
+- **.agents/rules/**：始终加载的必须遵守规则
+- **.agents/specs/**：详细技术参考，AI 在需要深入参考时主动读取
 - **presets/**：可插拔技术栈配置，安装时叠加到 `.agents/` 与 `.claude/`
 - **workspace/journal.md**：会话记忆，新会话开始时读取
 - **workspace/metrics.md**：效能指标，/dev 完成后追加
@@ -205,6 +205,8 @@ L/XL 级：
 ## Codex 兼容说明
 
 - Codex 入口文件是根目录 `AGENTS.md`，本文件由 `.claude/CLAUDE.md` 同步生成。
-- Codex skills 位于 `.agents/skills/`；规则、技术参考、命令说明分别位于 `.agents/rules/`、`.agents/specs/`、`.agents/commands/`。
+- Codex skills 位于 `.agents/skills/`；团队规则、技术参考、命令说明分别位于 `.agents/rules/`、`.agents/specs/`、`.agents/commands/`。
+- Claude 命令文档会额外包装为 `.agents/skills/team-command-*/`，在 Codex 中用 `$team-command-dev`、`$team-command-review-all` 等方式调用。
+- Codex MCP、hooks、custom agents 位于 `.codex/config.toml`、`.codex/hooks.json`、`.codex/agents/*.toml`。
 - Claude Code 仍使用 `.claude/`；两套入口共享同一份源配置，运行 `npx create-claude-team update` 会同步刷新。
-- 斜杠命令在 Codex 中作为工作流约定参考；如果当前 Codex 环境没有对应命令工具，按命令文档描述的流程执行。
+- `/plan` 是 Codex 内置命令，含义不同；要执行本项目的产品规划流程，请用 `$team-command-plan`。

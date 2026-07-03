@@ -44,7 +44,7 @@ description: 工作分解方法——把需求拆成模块/任务、定优先级
 
 ## 产出格式
 
-- 产品级 → `roadmap.md`（格式见 `commands/plan.md`）
+- 产品级 → `roadmap.md`（格式见 `.agents/commands/plan.md`）
 - 功能级 → `tasks.md` / `spec.md`（格式见 Architect-Planner agent）
 
 本技能只提供方法，**具体输出模板以调用方为准**，不在此另立一套。

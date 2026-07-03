@@ -2,7 +2,7 @@
 // 安全检查 Hook - PreToolUse (Write|Edit)
 // 在写代码前检查安全性。严重问题 → exit 2（阻止操作）；中等问题 → exit 0 + 警告。
 //
-// 用 Node 实现（不依赖 bash / jq），跨平台。Claude Code 通过 stdin 传入 JSON。
+// 用 Node 实现（不依赖 bash / jq），跨平台。Claude Code / Codex 通过 stdin 传入 JSON。
 
 import { readFileSync } from 'node:fs';
 
@@ -22,7 +22,7 @@ try {
   process.exit(0);
 }
 
-const ti = input.tool_input ?? {};
+const ti = input.tool_input ?? input.toolInput ?? input.params?.tool_input ?? input.params?.toolInput ?? input.input ?? {};
 const filePath = ti.file_path ?? '';
 const content = ti.content ?? ti.new_string ?? '';
 

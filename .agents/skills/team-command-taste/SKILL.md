@@ -1,3 +1,14 @@
+---
+name: team-command-taste
+description: Execute the taste workflow from this AI development team preset. Use when the user writes /taste, asks for taste, or wants the corresponding team process in Codex.
+---
+
+# team-command-taste
+
+This skill ports the Claude Code `/taste` command workflow to Codex.
+
+In Codex, invoke this as `$team-command-taste`. Do not rely on `/taste` unless Codex itself defines that slash command with the same meaning.
+
 # /taste - 设计方向探索
 
 不知道想要什么 UI 风格？这个命令带你**找到**它，并把它**固化成项目的设计方向**。**只定方向，不写代码。**

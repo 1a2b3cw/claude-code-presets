@@ -10,7 +10,7 @@
 
 当 `preview/` 或 spec.md 中的设计方向与本文件的通用规则冲突时，**以项目方向为准**。例如：本文件说"禁止蓝色主按钮"，但项目方向定义了蓝色为主色，则遵循项目方向。本文件的规则仅在没有明确设计方向时生效。
 
-> 不知道项目该用什么风格时，用 `/taste` 探索定向（详见 `commands/taste.md`）——它产出 `preview/design-direction.md`，即上面优先级链里的第 1 项。
+> 不知道项目该用什么风格时，用 `/taste` 探索定向（详见 `.agents/commands/taste.md`）——它产出 `preview/design-direction.md`，即上面优先级链里的第 1 项。
 
 ## 必须做的事
 

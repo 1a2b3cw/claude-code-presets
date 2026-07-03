@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { copyDir, dirHasContent, countFiles, findSourceDir } from './copy.js';
@@ -32,6 +32,7 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
   const baseDir = join(pkgRoot, '.claude');
   const presetDir = join(pkgRoot, 'presets', preset);
   const targetDir = join(cwd, '.claude');
+  const isSourceProject = resolve(baseDir) === resolve(targetDir);
 
   // Validate source
   if (!existsSync(baseDir)) {
@@ -86,6 +87,11 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
 
   // Clean target if force
   if (targetExists && force) {
+    if (isSourceProject) {
+      throw new Error(
+        '当前目录是 create-claude-team 配置源，不能对源目录执行 init --force。请在目标项目运行 init，或在本仓库运行 update 同步 Codex 入口。'
+      );
+    }
     console.log(`\n  清理已有 .claude/ ...`);
     await rm(targetDir, { recursive: true, force: true });
   }

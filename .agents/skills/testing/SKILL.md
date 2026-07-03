@@ -6,8 +6,8 @@ description: 测试方法（语言无关）——TDD、测试金字塔、Mock �
 # 测试方法
 
 > 这是**通用方法**，不绑定测试框架。具体工具与可运行示例见所用预设：
-> - web-fullstack：`rules/testing.md` + `specs/testing.md`（Vitest / Playwright）
-> - ai-app：`lang/python/specs/python.md`（pytest）/ `lang/typescript/specs/typescript.md`（Vitest）
+> - web-fullstack：`.agents/rules/testing.md` + `.agents/specs/testing.md`（Vitest / Playwright）
+> - ai-app：`.agents/specs/python.md`（pytest）/ `.agents/specs/typescript.md`（Vitest）
 
 ## TDD 核心循环：Red-Green-Refactor
 

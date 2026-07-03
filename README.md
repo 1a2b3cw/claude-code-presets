@@ -17,11 +17,11 @@
 | **Skill（web-fullstack）** | 7 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
 | **Skill（ai-app）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
 | **MCP 服务器** | 3 个（公共）+ 预设专用 | GitHub、Playwright、Context7；AI 预设加 pgvector |
-| **Slash Command** | 8 个 | `/plan`、`/taste`、`/dev`、`/check`、`/fix`、`/review-all`、`/ship`、`/standup` |
+| **工作流命令** | 8 个 | Claude Code 用 `/plan` 等 slash command；Codex 用 `$team-command-plan` 等 skill |
 | **Rules** | 2 个公共 + 预设专用 | Git、设计规范；各预设含 4-5 个技术栈规则 |
 | **Specs** | 预设专用 | 详细技术参考（AI 按需读取） |
 | **Hook** | 2 个 | 代码安全检查（Write/Edit）、Bash 命令拦截 |
-| **Codex 入口** | 3 类 | `AGENTS.md`、`.agents/skills`、`.codex/hooks` |
+| **Codex 入口** | 5 类 | `AGENTS.md`、`.agents/skills`、`.codex/config.toml`、`.codex/hooks`、`.codex/agents` |
 | **CLI 工具** | 1 个 | `npx create-claude-team init` 一行命令初始化 |
 
 ## 快速开始
@@ -59,7 +59,7 @@ npx create-claude-team update
 
 在 Claude Code 中输入 `/mcp`，确认 MCP 服务器已加载。
 
-在 Codex 中打开项目，确认根目录存在 `AGENTS.md`，且 `.agents/skills/` 已生成。
+在 Codex 中打开项目，确认根目录存在 `AGENTS.md`，且 `.agents/skills/`、`.codex/config.toml` 已生成。
 
 ## 两种预设
 
@@ -98,25 +98,25 @@ npx create-claude-team update
 
 ## 怎么用
 
-### 8 个核心命令
+### 8 个核心工作流
 
-| 命令 | 什么时候用 | 例子 |
+| Claude Code | Codex | 什么时候用 |
 |------|-----------|------|
-| `/plan` | 项目开局，分析产品出功能模块清单 | `/plan 做一个 AI 知识库` |
-| `/taste` | 写 UI 前定设计方向（出 `preview/`） | `/taste 面向年轻人的服饰电商` |
-| `/dev` | 要写代码（完整流程） | `/dev 做一个 RAG 问答接口` |
-| `/check` | 写完一个功能想快检 | `/check` 或 `/check src/retrieval/` |
-| `/fix` | 修一个已知的具体问题 | `/fix src/agents/loop.py 可能无限循环` |
-| `/review-all` | 合并前全面审查 | `/review-all src/` |
-| `/ship` | 准备上线 | `/ship` |
-| `/standup` | 看进度 | `/standup` |
+| `/plan` | `$team-command-plan` | 项目开局，分析产品出功能模块清单 |
+| `/taste` | `$team-command-taste` | 写 UI 前定设计方向（出 `preview/`） |
+| `/dev` | `$team-command-dev` | 要写代码（完整流程） |
+| `/check` | `$team-command-check` | 写完一个功能想快检 |
+| `/fix` | `$team-command-fix` | 修一个已知的具体问题 |
+| `/review-all` | `$team-command-review-all` | 合并前全面审查 |
+| `/ship` | `$team-command-ship` | 准备上线 |
+| `/standup` | `$team-command-standup` | 看进度 |
 
 ### 工作流
 
 ```
-（可选）项目开局：/plan 做一个 AI 知识库
+（可选）项目开局：/plan 做一个 AI 知识库（Codex 用 $team-command-plan）
     ↓ AI 输出功能模块清单 roadmap.md，你挑着做
-输入：/dev 做一个文档检索问答功能
+输入：/dev 做一个文档检索问答功能（Codex 用 $team-command-dev）
     ↓
 AI 先问你 3 个问题（需求确认，最多 3 轮）
     ↓
@@ -151,10 +151,12 @@ AGENTS.md                  # Codex 入口指令（由 CLAUDE.md 同步）
 .agents/
 ├── agents/                # 角色定义镜像
 ├── skills/                # Codex 可读取的 Skill
-├── commands/              # 斜杠命令说明（Codex 中作为流程参考）
-├── rules/                 # Codex 规则镜像
+├── commands/              # Claude 命令说明镜像
+├── rules/                 # 团队规则参考
 └── specs/                 # Codex 技术参考镜像
 .codex/
+├── config.toml            # Codex MCP 配置
+├── agents/                # Codex custom agents
 ├── hooks.json             # Codex hooks 配置
 └── hooks/                 # 安全 hooks 镜像
 ```
@@ -172,7 +174,7 @@ Token 权限需要 `repo`、`read:org`。
 
 ### PostgreSQL / pgvector
 
-编辑 `.claude/.mcp.json`，设置 `DATABASE_URL` 环境变量：
+编辑 `.claude/.mcp.json`，再运行 `npx create-claude-team update` 同步到 `.codex/config.toml`。需要数据库时设置 `DATABASE_URL` 环境变量：
 
 ```bash
 DATABASE_URL=postgresql://user:pass@localhost:5432/mydb

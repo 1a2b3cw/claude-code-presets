@@ -5,7 +5,7 @@ description: 架构设计方法（语言无关）——分层、模块边界、�
 
 # 架构设计方法
 
-> 这是**通用方法**，不绑定语言/框架。具体技术栈的选型（如 web 用 Next.js/Hono/Prisma，AI 用 FastAPI/pgvector）见所用预设的 `PRESET.md` 和 `rules/`。
+> 这是**通用方法**，不绑定语言/框架。具体技术栈的选型（如 web 用 Next.js/Hono/Prisma，AI 用 FastAPI/pgvector）见所用预设的 `PRESET.md` 和 `.agents/rules/`。
 > 本技能是 Architect-Planner 在做架构决策时使用的方法库。
 
 ## 何时用
