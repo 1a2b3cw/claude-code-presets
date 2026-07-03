@@ -1,0 +1,34 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"D:\\\\CD\\\\MY2\\\\.codex\\\\hooks\\\\security-check.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"D:\\\\CD\\\\MY2\\\\.codex\\\\hooks\\\\bash-check.mjs\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '请确认所有任务已完成，使用任务列表检查进度'"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 # AI 开发团队
 
-基于 Claude Code 的 AI 协作开发团队配置，支持 **Web 全栈**和 **AI 应用**两种技术栈。
+基于 Claude Code 与 Codex 的 AI 协作开发团队配置，支持 **Web 全栈**和 **AI 应用**两种技术栈。
 
 > v3.4.0 | 2026-06-20
 
@@ -21,6 +21,7 @@
 | **Rules** | 2 个公共 + 预设专用 | Git、设计规范；各预设含 4-5 个技术栈规则 |
 | **Specs** | 预设专用 | 详细技术参考（AI 按需读取） |
 | **Hook** | 2 个 | 代码安全检查（Write/Edit）、Bash 命令拦截 |
+| **Codex 入口** | 3 类 | `AGENTS.md`、`.agents/skills`、`.codex/hooks` |
 | **CLI 工具** | 1 个 | `npx create-claude-team init` 一行命令初始化 |
 
 ## 快速开始
@@ -29,7 +30,7 @@
 
 - **Node.js** 18+
 - **Git** 2.30+
-- **Claude Code** 最新版
+- **Claude Code** 或 **Codex** 最新版
 
 ### 安装
 
@@ -57,6 +58,8 @@ npx create-claude-team update
 ### 验证
 
 在 Claude Code 中输入 `/mcp`，确认 MCP 服务器已加载。
+
+在 Codex 中打开项目，确认根目录存在 `AGENTS.md`，且 `.agents/skills/` 已生成。
 
 ## 两种预设
 
@@ -143,6 +146,17 @@ S 级：直接写代码 → 完成
 └── hooks/                 # 安全钩子（Node，跨平台）
     ├── security-check.mjs
     └── bash-check.mjs
+
+AGENTS.md                  # Codex 入口指令（由 CLAUDE.md 同步）
+.agents/
+├── agents/                # 角色定义镜像
+├── skills/                # Codex 可读取的 Skill
+├── commands/              # 斜杠命令说明（Codex 中作为流程参考）
+├── rules/                 # Codex 规则镜像
+└── specs/                 # Codex 技术参考镜像
+.codex/
+├── hooks.json             # Codex hooks 配置
+└── hooks/                 # 安全 hooks 镜像
 ```
 
 ## 可选配置

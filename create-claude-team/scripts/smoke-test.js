@@ -62,6 +62,8 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
   console.log(`\n[${title}]`);
   const tmp = mkdtempSync(join(tmpdir(), 'cct-'));
   const claudeDir = join(tmp, '.claude');
+  const agentsDir = join(tmp, '.agents');
+  const codexDir = join(tmp, '.codex');
   const skillsDir = join(claudeDir, 'skills');
   const rulesDir = join(claudeDir, 'rules');
   const prevCwd = process.cwd();
@@ -73,6 +75,7 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     await silent(() => init({ preset, lang }));
 
     assert(existsSync(join(claudeDir, 'CLAUDE.md')), 'init: CLAUDE.md 存在');
+    assert(existsSync(join(tmp, 'AGENTS.md')), 'init: Codex AGENTS.md 存在');
     assert(existsSync(join(claudeDir, '.preset')), 'init: .preset 标记存在');
     const marker = readFileSync(join(claudeDir, '.preset'), 'utf8').split('\n').map((l) => l.trim());
     assert(marker[0] === preset, `init: .preset 预设为 ${preset}`);
@@ -81,6 +84,7 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     const expectedSkills = PUBLIC_SKILLS.length + presetSkillCount;
     const initSkills = countDirs(skillsDir);
     assert(initSkills === expectedSkills, `init: 技能数 = ${initSkills}（期望 ${expectedSkills}）`);
+    assert(countDirs(join(agentsDir, 'skills')) === expectedSkills, `init: Codex 技能数 = ${expectedSkills}`);
 
     const initSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), 'init: 7 个公共技能齐全');
@@ -103,6 +107,8 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     const hooks = fileNames(join(claudeDir, 'hooks'));
     assert(hooks.includes('security-check.mjs') && hooks.includes('bash-check.mjs'), 'init: Node hooks (.mjs) 存在');
     assert(!hooks.some((h) => h.endsWith('.sh')), 'init: 无遗留 .sh hooks');
+    assert(existsSync(join(codexDir, 'hooks.json')), 'init: Codex hooks.json 存在');
+    assert(fileNames(join(codexDir, 'hooks')).includes('security-check.mjs'), 'init: Codex hooks 已同步');
 
     const commands = fileNames(join(claudeDir, 'commands'));
     assert(commands.includes('plan.md') && commands.includes('taste.md') && commands.length === 8, `init: 8 个命令含 plan.md + taste.md (${commands.length})`);
@@ -116,6 +122,7 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
 
     const updSkills = countDirs(skillsDir);
     assert(updSkills === expectedSkills, `update: 技能数仍 = ${updSkills}（P0.1 守护，期望 ${expectedSkills}）`);
+    assert(countDirs(join(agentsDir, 'skills')) === expectedSkills, `update: Codex 技能数仍 = ${expectedSkills}`);
 
     const updSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => updSkillNames.includes(s)), 'update: 公共技能未被预设叠加删除');
@@ -128,6 +135,7 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     const settingsAfter = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
     assert(settingsAfter === settingsBefore, 'update: settings.json 保持不变');
     assert(workspaceExists && existsSync(join(claudeDir, 'workspace')), 'update: workspace/ 保持不变');
+    assert(existsSync(join(tmp, 'AGENTS.md')) && existsSync(join(codexDir, 'hooks.json')), 'update: Codex 入口保持同步');
   } finally {
     process.chdir(prevCwd);
     rmSync(tmp, { recursive: true, force: true });

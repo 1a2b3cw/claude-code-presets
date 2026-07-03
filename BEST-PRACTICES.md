@@ -56,11 +56,11 @@ npx create-claude-team init --preset ai-app
 npx create-claude-team init --preset ai-app --lang typescript
 ```
 
-装完在 Claude Code 里输入 `/mcp` 确认 MCP 已加载。以后升级配置用 `npx create-claude-team update`（保留你的 settings 和 workspace）。
+装完在 Claude Code 里输入 `/mcp` 确认 MCP 已加载；在 Codex 里确认根目录有 `AGENTS.md`，且 `.agents/skills/` 已生成。以后升级配置用 `npx create-claude-team update`（保留你的 settings 和 workspace，并同步 Codex 入口）。
 
 ### ② 定方向（只做一次，但很关键）
 
-AI 不是读心术。开工前把"项目级约定"写进 `.claude/CLAUDE.md` 末尾或一个 `spec.md`：
+AI 不是读心术。开工前把"项目级约定"写进 `.claude/CLAUDE.md` 末尾或一个 `spec.md`，再运行 `npx create-claude-team update` 同步到 Codex 的 `AGENTS.md`：
 
 - **技术栈**：框架、数据库、部署目标（不写默认按预设走）
 - **设计方向**（有 UI 时必填）：风格、主色、目标用户。例：`Apple 风格白底简约，黑白灰主色，面向 18-35 岁`
@@ -208,7 +208,7 @@ AI 会找根因（不只治表面）、修完写回归测试、发现同类问�
 1. 有设计稿 → 丢进 `preview/`（最高权威）
 2. 没设计稿 → 在 spec 里声明设计方向，否则 AI 默认白底简约
 3. L/XL 级 UI → Designer Agent 会做视觉审查
-4. 全程遵守 `.claude/rules/design.md`（留白、60-30-10 配色、圆角一致、禁 AI 廉价感）
+4. 全程遵守 `.claude/rules/design.md` / `.agents/rules/design.md`（留白、60-30-10 配色、圆角一致、禁 AI 廉价感）
 
 ### 分叉 F：出问题了（异常路径）
 
@@ -265,7 +265,7 @@ AI 不会卡死，每种情况都有预案：
 ### 剧本三：接手已有项目改 bug
 
 ```
-1. （项目已有 .claude/）直接干活
+1. （项目已有 .claude/ 与 Codex 入口）直接干活
 2. /standup                          # 先看 AI 记得做到哪了
 3. /fix 订单详情页刷新后金额显示错误   # 分叉C：定点修
    → AI 找根因 + 修 + 写回归测试
@@ -302,7 +302,7 @@ AI 不会卡死，每种情况都有预案：
 | 攒一大堆改动最后一次提交 | 每个逻辑单元一次 commit（AI 会自动这么做） |
 | 跳过 `/ship` 直接发 | M 级以上必过 `/ship`，含回滚检查 |
 | UI 全凭文字描述 | 有稿放 `preview/`，无稿先定设计方向 |
-| 手动改 `.claude/` 后被 `update` 覆盖 | 项目定制写 CLAUDE.md/spec；配置升级走 `update` |
+| 手动改 `.claude/` / `.agents/` 后被 `update` 覆盖 | 项目定制写 CLAUDE.md/spec；配置升级走 `update` |
 | AI 报告"做完了"就盲信 | 看 Phase 3 验收结果（测试/类型/lint 是否真过） |
 | 让 AI 上 LangChain 图省事 | 默认裸 SDK，框架是例外不是默认（见 rules/llm.md） |
 | 安全敏感改动当 S 级随手改 | 认证/支付/密钥类强制按 M 级走，要审查 |
@@ -349,4 +349,4 @@ npx create-claude-team update                                     # 升级配置
 
 ---
 
-> 更多：[README.md](README.md) 总览 · [USAGE.md](USAGE.md) 完整功能 · [CHANGELOG.md](CHANGELOG.md) 版本历史 · `.claude/CLAUDE.md` 工作流定义
+> 更多：[README.md](README.md) 总览 · [USAGE.md](USAGE.md) 完整功能 · [CHANGELOG.md](CHANGELOG.md) 版本历史 · `.claude/CLAUDE.md` / `AGENTS.md` 工作流定义

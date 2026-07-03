@@ -11,7 +11,7 @@ const LANGS = ['python', 'typescript'];
 const PRESET_ALIASES = { 'ai-knowledge-base': 'ai-app' };
 
 const HELP = `
-  create-claude-team — AI 开发团队配置（可插拔预设）
+  create-claude-team — AI 开发团队配置（Claude Code + Codex，可插拔预设）
 
   用法:
     npx create-claude-team init                          初始化（默认 web-fullstack 预设）
@@ -24,7 +24,7 @@ const HELP = `
   选项:
     --preset   技术栈预设（${PRESETS.join(' | ')}）
     --lang     主语言，仅 ai-app 支持（${LANGS.join(' | ')}，默认 python）
-    --force    强制覆盖已存在的 .claude/ 目录
+    --force    强制覆盖已存在的 .claude/ 目录，并重新同步 Codex 入口
     --dry-run  预览操作，不实际修改文件
 
   示例:

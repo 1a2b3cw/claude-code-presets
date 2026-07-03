@@ -14,7 +14,7 @@
 |------|------|------|
 | Node.js | 18+ | CLI、安全 hooks、MCP 服务器 |
 | Git | 2.30+ | 版本控制 |
-| Claude Code | 最新 | 运行环境 |
+| Claude Code 或 Codex | 最新 | 运行环境 |
 
 按需安装：
 - **Docker**（AI 预设用 pgvector，Web 预设可选 PostgreSQL）
@@ -38,7 +38,7 @@ npx create-claude-team init --preset ai-app --lang typescript  # AI / TS
 
 npx create-claude-team update                                     # 升级（保留 settings/workspace）
 npx create-claude-team init --dry-run                             # 预览不写入
-npx create-claude-team init --force                               # 覆盖已存在的 .claude/
+npx create-claude-team init --force                               # 覆盖已存在的 .claude/ 并同步 Codex 入口
 ```
 
 ### 安装时发生了什么
@@ -50,9 +50,10 @@ npx create-claude-team init --force                               # 覆盖已存
   + MCP 合并            → preset.mcp.json 合并进 .mcp.json
   + 写 .preset 标记     → 记录预设名 + 语言（update 据此刷新）
   + 建 workspace/       → journal.md + metrics.md
+  + 同步 Codex 入口      → AGENTS.md + .agents/ + .codex/
 ```
 
-`update` 只刷新 agents/skills/commands/rules/specs/hooks 和 CLAUDE.md；**保留** settings.json、.mcp.json、workspace/（CLAUDE.md 覆盖前自动备份 .bak）。
+`update` 只刷新 agents/skills/commands/rules/specs/hooks 和 CLAUDE.md，并同步 `AGENTS.md`、`.agents/`、`.codex/`；**保留** settings.json、.mcp.json、workspace/（CLAUDE.md 覆盖前自动备份 .bak）。
 
 ---
 
@@ -71,6 +72,17 @@ npx create-claude-team init --force                               # 覆盖已存
 ├── specs/             # 详细技术参考（AI 按需读取）
 ├── workspace/         # journal.md（会话记忆）+ metrics.md（效能）
 └── hooks/             # security-check.mjs + bash-check.mjs（Node）
+
+AGENTS.md              # Codex 入口指令（从 CLAUDE.md 同步生成）
+.agents/
+├── agents/            # 角色定义镜像
+├── skills/            # Codex Skill
+├── commands/          # 命令说明（Codex 中作为流程参考）
+├── rules/             # 规则镜像
+└── specs/             # 技术参考镜像
+.codex/
+├── hooks.json         # Codex hooks 配置
+└── hooks/             # hooks 镜像
 ```
 
 ---
@@ -87,7 +99,7 @@ npx create-claude-team init --force                               # 覆盖已存
 **web-fullstack 额外**：`sqlite`（本地 `./data/dev.db`）、`postgres`（`DATABASE_URL`）
 **ai-app 额外**：`pgvector`（`DATABASE_URL`）
 
-装完用 `/mcp` 验证。配 token：在 `.claude/settings.json` 的 `env` 加 `GITHUB_PERSONAL_ACCESS_TOKEN`。
+Claude Code 装完用 `/mcp` 验证。Codex 装完检查根目录 `AGENTS.md` 与 `.agents/skills/` 是否存在。配 token：在 `.claude/settings.json` 的 `env` 加 `GITHUB_PERSONAL_ACCESS_TOKEN`。
 
 ---
 
@@ -176,7 +188,7 @@ PreToolUse 自动执行，Node 实现（跨平台，无外部依赖）：
 | 改规则 | 编辑 `.claude/rules/`，或项目约定写进 CLAUDE.md |
 | 禁用 MCP | 编辑 `.claude/.mcp.json` 删对应项 |
 
-> 自定义写进 CLAUDE.md / spec / 项目内文件，别直接改会被 `update` 刷新的目录（agents/skills/commands/rules/specs/hooks）。
+> 自定义写进 CLAUDE.md / spec / 项目内文件，别直接改会被 `update` 刷新的目录（`.claude/` 的 agents/skills/commands/rules/specs/hooks，以及同步生成的 `.agents/`、`.codex/`）。
 
 ---
 

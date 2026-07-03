@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { copyDir, dirHasContent, countFiles, findSourceDir } from './copy.js';
+import { syncCodexConfig } from './codex.js';
 
 // Resolve the language variant for a preset that has a lang/ folder.
 // Returns null if the preset has no language variants.
@@ -72,6 +73,13 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
       console.log(`\n  [2b] 语言文件（${resolvedLang}）:`);
       await copyDir(join(presetDir, 'lang', resolvedLang), targetDir, { dryRun: true });
     }
+    console.log(`\n  [codex] Codex 入口:`);
+    await syncCodexConfig({
+      cwd,
+      claudeDir: baseDir,
+      availableDirs: codexDirsForDryRun(baseDir, presetDir, resolvedLang),
+      dryRun: true,
+    });
     console.log(`\n  完成（预览）。去掉 --dry-run 执行实际操作。`);
     return;
   }
@@ -125,13 +133,16 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
     );
   }
 
+  console.log(`  [codex] 生成 Codex 入口...`);
+  await syncCodexConfig({ cwd });
+
   console.log(`\n  \x1b[32m✓ 初始化完成\x1b[0m`);
   console.log(`\n  下一步:`);
 
   if (preset === 'web-fullstack') {
     console.log(`    1. 配置 .claude/.mcp.json 中的 GITHUB_PERSONAL_ACCESS_TOKEN`);
     console.log(`    2. 可选：设置 DATABASE_URL 启用 PostgreSQL MCP`);
-    console.log(`    3. 输入 /dev 开始开发\n`);
+    console.log(`    3. 在 Claude Code 或 Codex 中输入 /dev 开始开发\n`);
   } else if (preset === 'ai-app') {
     console.log(`    1. 启动 pgvector：docker compose up -d postgres`);
     console.log(`    2. 配置 DATABASE_URL 与 ANTHROPIC_API_KEY`);
@@ -140,7 +151,7 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
     } else {
       console.log(`    3. 安装依赖：uv add anthropic fastapi asyncpg pydantic-settings`);
     }
-    console.log(`    4. 输入 /dev 开始构建 AI 应用\n`);
+    console.log(`    4. 在 Claude Code 或 Codex 中输入 /dev 开始构建 AI 应用\n`);
   }
 }
 
@@ -167,4 +178,13 @@ async function mergeMcpConfig(basePath, presetPath) {
   };
 
   await writeFile(basePath, JSON.stringify(merged, null, 2) + '\n');
+}
+
+function codexDirsForDryRun(baseDir, presetDir, lang) {
+  const dirs = ['agents', 'commands', 'rules', 'skills', 'specs'];
+  return dirs.filter((dirName) => (
+    existsSync(join(baseDir, dirName)) ||
+    existsSync(join(presetDir, dirName)) ||
+    (lang && existsSync(join(presetDir, 'lang', lang, dirName)))
+  ));
 }
