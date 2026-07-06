@@ -54,6 +54,9 @@ npx create-claude-team init --preset ai-app
 
 # AI 应用 — TypeScript 路线（Vercel AI SDK，你已有 web 栈时选这个）
 npx create-claude-team init --preset ai-app --lang typescript
+
+# 移动 App — Expo + React Native + TypeScript
+npx create-claude-team init --preset mobile-app
 ```
 
 装完在 Claude Code 里输入 `/mcp` 确认 MCP 已加载；在 Codex 里确认根目录有 `AGENTS.md`，且 `.agents/skills/`、`.codex/config.toml` 已生成，再用 Codex 的 `/mcp` 查看 MCP。以后升级配置用 `npx create-claude-team update`（保留你的 settings 和 workspace，并同步 Codex 入口）。
@@ -166,6 +169,7 @@ AI 会自动走 5 个阶段（你只在关键点确认）：
 做 Web 产品（有界面、给人用）────────► init（web-fullstack）
 做 AI 数据后端（知识库/RAG/文档处理）──► init --preset ai-app
 做 AI 产品（已有 web 栈/带界面）──────► init --preset ai-app --lang typescript
+做移动 App（iOS/Android/Expo）────────► init --preset mobile-app
 ```
 
 > **AI 项目的语言怎么选**：
@@ -344,6 +348,7 @@ AI 不会卡死，每种情况都有预案：
 npx create-claude-team init                                       # Web 全栈
 npx create-claude-team init --preset ai-app            # AI / Python
 npx create-claude-team init --preset ai-app --lang typescript  # AI / TS
+npx create-claude-team init --preset mobile-app        # Mobile / Expo
 npx create-claude-team update                                     # 升级配置
 ```
 

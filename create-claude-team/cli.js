@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util';
 import { init } from './lib/init.js';
 import { update } from './lib/update.js';
 
-const PRESETS = ['web-fullstack', 'ai-app'];
+const PRESETS = ['web-fullstack', 'ai-app', 'mobile-app'];
 const LANGS = ['python', 'typescript'];
 
 // 向后兼容：旧预设名 → 新名（3.1.x 用的是 ai-knowledge-base）
@@ -18,6 +18,7 @@ const HELP = `
     npx create-claude-team init --preset web-fullstack   Web 全栈预设
     npx create-claude-team init --preset ai-app                   AI 应用（默认 Python）
     npx create-claude-team init --preset ai-app --lang typescript AI 应用（TypeScript）
+    npx create-claude-team init --preset mobile-app      移动 App（Expo + React Native）
     npx create-claude-team update                        更新到最新版
     npx create-claude-team --help                        显示帮助
 
@@ -31,6 +32,7 @@ const HELP = `
     cd my-web-app && npx create-claude-team init
     cd my-rag-app && npx create-claude-team init --preset ai-app
     cd my-ts-ai  && npx create-claude-team init --preset ai-app --lang typescript
+    cd my-app    && npx create-claude-team init --preset mobile-app
     npx create-claude-team update
 `;
 

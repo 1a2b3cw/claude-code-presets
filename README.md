@@ -1,6 +1,6 @@
 # AI 开发团队
 
-基于 Claude Code 与 Codex 的 AI 协作开发团队配置，支持 **Web 全栈**和 **AI 应用**两种技术栈。
+基于 Claude Code 与 Codex 的 AI 协作开发团队配置，支持 **Web 全栈**、**AI 应用**和 **移动 App** 三种技术栈。
 
 > v3.4.0 | 2026-06-20
 
@@ -16,6 +16,7 @@
 | **Skill（公共）** | 7 个 | 架构、代码审查、调试、性能、项目规划、测试、UI 原型 |
 | **Skill（web-fullstack）** | 7 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
 | **Skill（ai-app）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
+| **Skill（mobile-app）** | 6 个 | 移动 UI、导航、原生能力、离线优先、测试、发布 |
 | **MCP 服务器** | 3 个（公共）+ 预设专用 | GitHub、Playwright、Context7；AI 预设加 pgvector |
 | **工作流命令** | 8 个 | Claude Code 用 `/plan` 等 slash command；Codex 用 `$team-command-plan` 等 skill |
 | **Rules** | 2 个公共 + 预设专用 | Git、设计规范；各预设含 4-5 个技术栈规则 |
@@ -46,6 +47,9 @@ npx create-claude-team init --preset ai-app
 
 # AI 应用 — TypeScript 路线（Vercel AI SDK + Hono + pgvector）
 npx create-claude-team init --preset ai-app --lang typescript
+
+# 移动 App — Expo + React Native + TypeScript
+npx create-claude-team init --preset mobile-app
 ```
 
 ### 更新配置
@@ -61,7 +65,7 @@ npx create-claude-team update
 
 在 Codex 中打开项目，确认根目录存在 `AGENTS.md`，且 `.agents/skills/`、`.codex/config.toml` 已生成。
 
-## 两种预设
+## 三种预设
 
 ### `web-fullstack`（默认）
 
@@ -95,6 +99,18 @@ npx create-claude-team update
 - 语言相关 Rule：python（Python）/ typescript-ai（TS）
 - Spec：Python 路线 claude-api/python/rag；TS 路线 typescript/rag
 - MCP：GitHub + Playwright + Context7 + pgvector
+
+### `mobile-app`
+
+**适用场景**：Expo App、React Native 跨平台应用、移动端 AI 产品、需要真机验证的 App 原型
+
+**技术栈**：TypeScript + React Native + Expo + Expo Router + EAS Build/EAS Submit
+
+**包含**：
+- 6 个 Skill：mobile-ui、app-navigation、native-capabilities、offline-first、app-testing、app-release
+- 5 个 Rule：react-native、expo、mobile-ui、mobile-testing、app-release
+- 5 个 Spec：react-native、expo、navigation、state-management、app-store-release
+- MCP：GitHub + Playwright + Context7（第一版不新增移动端专用 MCP）
 
 ## 怎么用
 

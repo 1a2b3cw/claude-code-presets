@@ -46,7 +46,7 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
 
   // Check target
   const targetExists = existsSync(targetDir);
-  if (targetExists && !force) {
+  if (!dryRun && targetExists && !force) {
     const hasContent = await dirHasContent(targetDir);
     if (hasContent) {
       throw new Error(
@@ -158,6 +158,11 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
       console.log(`    3. 安装依赖：uv add anthropic fastapi asyncpg pydantic-settings`);
     }
     console.log(`    4. 在 Claude Code 或 Codex 中输入 /dev 开始构建 AI 应用\n`);
+  } else if (preset === 'mobile-app') {
+    console.log(`    1. 创建或进入 Expo 项目：npx create-expo-app@latest my-app --template`);
+    console.log(`    2. 可选：登录 EAS：npx eas login`);
+    console.log(`    3. 在 Claude Code 输入 /dev，或在 Codex 输入 $team-command-dev 开始构建 App`);
+    console.log(`    4. 发布前运行 /ship（Codex 用 $team-command-ship）检查移动端门禁\n`);
   }
 }
 

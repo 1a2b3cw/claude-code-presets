@@ -1,5 +1,21 @@
 # 更新日志
 
+## Unreleased
+
+**新增 `mobile-app` 预设，支持 Expo + React Native + TypeScript 移动 App 开发**
+
+### 新增
+
+- CLI 支持 `--preset mobile-app`，用于初始化移动 App 开发团队配置。
+- 新增 mobile-app rules：React Native、Expo、移动端 UI、移动端测试、App 发布。
+- 新增 mobile-app specs：React Native、Expo、导航、状态管理、商店发布。
+- 新增 6 个移动端 skill：mobile-ui、app-navigation、native-capabilities、offline-first、app-testing、app-release。
+- 冒烟测试覆盖 mobile preset 的 init/update/Codex 同步。
+
+### 变更
+
+- `init --dry-run` 在已有 `.claude/` 的项目中也允许预览，不再被已有目录阻止；实际 init 仍保持原安全限制。
+
 ## v3.4.0（2026-06-20）
 
 **新增 `/taste` 设计方向探索命令，统一设计定向入口**

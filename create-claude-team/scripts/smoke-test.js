@@ -59,7 +59,15 @@ async function silent(fn) {
   }
 }
 
-async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, expectRule = null, absentRule = null }) {
+async function runScenario(preset, {
+  mcpServer,
+  presetSkillCount,
+  lang = null,
+  expectRule = null,
+  absentRule = null,
+  requiredRules = [],
+  expectSpecs = Boolean(lang),
+}) {
   const title = lang ? `${preset} (${lang})` : preset;
   console.log(`\n[${title}]`);
   const tmp = mkdtempSync(join(tmpdir(), 'cct-'));
@@ -98,7 +106,10 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     // 语言隔离断言
     if (expectRule) assert(initRules.includes(expectRule), `init: 含本语言规则 ${expectRule}`);
     if (absentRule) assert(!initRules.includes(absentRule), `init: 不含他语言规则 ${absentRule}`);
-    if (lang) {
+    for (const rule of requiredRules) {
+      assert(initRules.includes(rule), `init: 含规则 ${rule}`);
+    }
+    if (expectSpecs) {
       const specs = fileNames(join(claudeDir, 'specs'));
       assert(specs.length > 0, `init: specs/ 非空（${specs.length} 个）`);
     }
@@ -143,6 +154,9 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     assert(PUBLIC_RULES.every((r) => updRules.includes(r)), 'update: 公共规则未被删除');
     if (expectRule) assert(updRules.includes(expectRule), `update: 本语言规则 ${expectRule} 保留`);
     if (absentRule) assert(!updRules.includes(absentRule), `update: 未混入他语言规则 ${absentRule}`);
+    for (const rule of requiredRules) {
+      assert(updRules.includes(rule), `update: 规则 ${rule} 保留`);
+    }
 
     const settingsAfter = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
     assert(settingsAfter === settingsBefore, 'update: settings.json 保持不变');
@@ -165,6 +179,12 @@ await runScenario('ai-app', {
   lang: 'typescript', expectRule: 'typescript-ai.md', absentRule: 'python.md',
 });
 await runScenario('web-fullstack', { mcpServer: 'postgres', presetSkillCount: 7 });
+await runScenario('mobile-app', {
+  mcpServer: 'github',
+  presetSkillCount: 6,
+  requiredRules: ['react-native.md', 'expo.md', 'mobile-ui.md', 'mobile-testing.md', 'app-release.md'],
+  expectSpecs: true,
+});
 
 // 旧预设名 ai-knowledge-base 应通过别名解析到 ai-app（向后兼容）
 console.log('\n[别名兼容]');

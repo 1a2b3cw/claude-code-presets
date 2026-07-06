@@ -20,6 +20,7 @@
 - **Docker**（AI 预设用 pgvector，Web 预设可选 PostgreSQL）
 - **uv / Python 3.11+**（AI 预设 Python 路线）
 - **pnpm**（推荐的 Node 包管理器）
+- **Expo/EAS CLI**（移动 App 预设按需使用）
 
 > 安全 hooks 用 Node 实现，无需 bash/jq，Windows/Mac/Linux 通用。
 
@@ -35,6 +36,7 @@ cd 你的项目
 npx create-claude-team init                                       # Web 全栈
 npx create-claude-team init --preset ai-app            # AI / Python
 npx create-claude-team init --preset ai-app --lang typescript  # AI / TS
+npx create-claude-team init --preset mobile-app        # Expo / React Native
 
 npx create-claude-team update                                     # 升级（保留 settings/workspace）
 npx create-claude-team init --dry-run                             # 预览不写入
@@ -66,7 +68,7 @@ npx create-claude-team init --force                               # 覆盖已存
 ├── .mcp.json          # MCP 服务器（底座 + 预设合并结果）
 ├── .preset            # 已装预设 + 语言标记
 ├── agents/            # 6 个角色
-├── skills/            # 公共 7 + 预设 7/8（按需触发）
+├── skills/            # 公共 7 + 预设 6/7/8（按需触发）
 ├── commands/          # 8 个斜杠命令
 ├── rules/             # 始终加载的必守规则
 ├── specs/             # 详细技术参考（AI 按需读取）
@@ -100,6 +102,7 @@ AGENTS.md              # Codex 入口指令（从 CLAUDE.md 同步生成）
 
 **web-fullstack 额外**：`sqlite`（本地 `./data/dev.db`）、`postgres`（`DATABASE_URL`）
 **ai-app 额外**：`pgvector`（`DATABASE_URL`）
+**mobile-app 额外**：无，沿用底座 MCP；最新 Expo/React Native 文档通过 Context7 查询。
 
 Claude Code 装完用 `/mcp` 验证。Codex 装完检查根目录 `AGENTS.md`、`.agents/skills/`、`.codex/config.toml` 是否存在，再用 Codex 的 `/mcp` 查看 MCP。配 token：在 `.claude/settings.json` 的 `env` 加 `GITHUB_PERSONAL_ACCESS_TOKEN`，或在 Codex 启动环境中提供同名环境变量。
 
@@ -127,6 +130,8 @@ Claude Code 装完用 `/mcp` 验证。Codex 装完检查根目录 `AGENTS.md`、
 **ai-app（8）**：rag-pipeline、ai-agents、structured-output、embedding、vector-db、prompt-engineering、llm-evaluation、data-pipeline
 > 概念类技能含 Python + TypeScript 两套示例，AI 按你的语言路线取用。
 
+**mobile-app（6）**：mobile-ui、app-navigation、native-capabilities、offline-first、app-testing、app-release
+
 技能由 AI 根据 frontmatter 的 description 自动触发，不用手动调用。
 
 ---
@@ -152,7 +157,7 @@ Claude Code 使用 slash command；Codex 使用自动生成的 skill，避免与
 
 ## 8. Rules 与 Specs（规范注入机制）
 
-- **rules/**：始终加载的必守规则。公共：git、design；预设按技术栈叠加（TS/React/Node/测试 或 llm/agents/rag/vector-db + 语言规则）。
+- **rules/**：始终加载的必守规则。公共：git、design；预设按技术栈叠加（TS/React/Node/测试，或 llm/agents/rag/vector-db + 语言规则，或 React Native/Expo/mobile UI/发布规则）。
 - **specs/**：详细技术参考，AI 在需要深入时主动读取（不常驻上下文）。
 - **优先级**（设计相关）：`preview/` 目录 > spec.md 设计方向 > 风格定义 > design.md 默认规范。
 
