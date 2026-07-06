@@ -10,11 +10,14 @@
 - 新增 mobile-app rules：React Native、Expo、移动端 UI、移动端测试、App 发布。
 - 新增 mobile-app specs：React Native、Expo、导航、状态管理、商店发布。
 - 新增 6 个移动端 skill：mobile-ui、app-navigation、native-capabilities、offline-first、app-testing、app-release。
+- 新增公共 `skill-curator` skill，用于评估、改写和采纳 GitHub/community skills、agents、commands、hooks。
+- 新增 `EXTERNAL-SKILLS.md`，记录成熟生态参考源和采纳策略。
 - 冒烟测试覆盖 mobile preset 的 init/update/Codex 同步。
 
 ### 变更
 
 - `init --dry-run` 在已有 `.claude/` 的项目中也允许预览，不再被已有目录阻止；实际 init 仍保持原安全限制。
+- 冒烟测试新增 `SKILL.md` frontmatter 校验，确保生成到 Claude/Codex 的 skills 都有有效 `name`、`description`，且 `name` 与目录名一致。
 
 ## v3.4.0（2026-06-20）
 

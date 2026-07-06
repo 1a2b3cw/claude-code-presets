@@ -15,7 +15,7 @@ import { spawnSync } from 'node:child_process';
 import { init } from '../lib/init.js';
 import { update } from '../lib/update.js';
 
-const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'testing', 'ui-prototype'];
+const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'skill-curator', 'testing', 'ui-prototype'];
 const PUBLIC_RULES = ['git.md', 'design.md'];
 const COMMAND_SKILL_COUNT = 8;
 const AGENT_COUNT = 6;
@@ -46,6 +46,36 @@ function dirNames(p) {
 function fileNames(p) {
   if (!existsSync(p)) return [];
   return readdirSync(p, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name);
+}
+
+function skillDirs(p) {
+  if (!existsSync(p)) return [];
+  return readdirSync(p, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && existsSync(join(p, e.name, 'SKILL.md')))
+    .map((e) => join(p, e.name));
+}
+
+function validateSkillDir(skillDir) {
+  const skillName = skillDir.split(/[\\/]/).at(-1);
+  const skillPath = join(skillDir, 'SKILL.md');
+  const content = readFileSync(skillPath, 'utf8');
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+  if (!match) return `${skillName}: 缺少 YAML frontmatter`;
+
+  const name = match[1].match(/^name:\s*(.+)$/m)?.[1]?.trim();
+  const description = match[1].match(/^description:\s*(.+)$/m)?.[1]?.trim();
+  if (!name) return `${skillName}: 缺少 name`;
+  if (!description) return `${skillName}: 缺少 description`;
+  if (name !== skillName) return `${skillName}: name 应为 ${skillName}，实际为 ${name}`;
+  if (description.length < 20) return `${skillName}: description 过短`;
+  return null;
+}
+
+function validateSkills(root) {
+  return skillDirs(root).flatMap((skillDir) => {
+    const issue = validateSkillDir(skillDir);
+    return issue ? [issue] : [];
+  });
 }
 
 // 静默 init/update 的日志，保持测试输出干净
@@ -98,7 +128,9 @@ async function runScenario(preset, {
     assert(existsSync(join(agentsDir, 'skills', 'team-command-dev', 'SKILL.md')), 'init: Codex 命令 skill 已生成');
 
     const initSkillNames = dirNames(skillsDir);
-    assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), 'init: 7 个公共技能齐全');
+    assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), `init: ${PUBLIC_SKILLS.length} 个公共技能齐全`);
+    assert(validateSkills(skillsDir).length === 0, 'init: Claude skills frontmatter 有效');
+    assert(validateSkills(join(agentsDir, 'skills')).length === 0, 'init: Codex skills frontmatter 有效');
 
     const initRules = fileNames(rulesDir);
     assert(PUBLIC_RULES.every((r) => initRules.includes(r)), 'init: 公共规则（git/design）齐全');
@@ -149,6 +181,8 @@ async function runScenario(preset, {
 
     const updSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => updSkillNames.includes(s)), 'update: 公共技能未被预设叠加删除');
+    assert(validateSkills(skillsDir).length === 0, 'update: Claude skills frontmatter 有效');
+    assert(validateSkills(join(agentsDir, 'skills')).length === 0, 'update: Codex skills frontmatter 有效');
 
     const updRules = fileNames(rulesDir);
     assert(PUBLIC_RULES.every((r) => updRules.includes(r)), 'update: 公共规则未被删除');

@@ -68,7 +68,7 @@ npx create-claude-team init --force                               # 覆盖已存
 ├── .mcp.json          # MCP 服务器（底座 + 预设合并结果）
 ├── .preset            # 已装预设 + 语言标记
 ├── agents/            # 6 个角色
-├── skills/            # 公共 7 + 预设 6/7/8（按需触发）
+├── skills/            # 公共 8 + 预设 6/7/8（按需触发）
 ├── commands/          # 8 个斜杠命令
 ├── rules/             # 始终加载的必守规则
 ├── specs/             # 详细技术参考（AI 按需读取）
@@ -123,7 +123,7 @@ Claude Code 装完用 `/mcp` 验证。Codex 装完检查根目录 `AGENTS.md`、
 
 ## 6. Skill 技能
 
-**公共（7，所有预设）**：architecture、code-review、debugging、performance、project-planning、testing、ui-prototype
+**公共（8，所有预设）**：architecture、code-review、debugging、performance、project-planning、skill-curator、testing、ui-prototype
 
 **web-fullstack（7）**：frontend、api-design、database、typescript-advanced、ui-design、ci-cd-pipelines、microservices-design
 
@@ -133,6 +133,8 @@ Claude Code 装完用 `/mcp` 验证。Codex 装完检查根目录 `AGENTS.md`、
 **mobile-app（6）**：mobile-ui、app-navigation、native-capabilities、offline-first、app-testing、app-release
 
 技能由 AI 根据 frontmatter 的 description 自动触发，不用手动调用。
+
+外部 skills/agents 参考与采纳策略见 [EXTERNAL-SKILLS.md](EXTERNAL-SKILLS.md)。新增或借鉴社区 skill 时，先用 `skill-curator` 做筛选、分类和安全检查。
 
 ---
 

@@ -13,7 +13,7 @@
 | 组件 | 数量 | 说明 |
 |------|------|------|
 | **Agent** | 6 个 | Architect-Planner、Builder、Designer、Reviewer、Researcher、DevOps |
-| **Skill（公共）** | 7 个 | 架构、代码审查、调试、性能、项目规划、测试、UI 原型 |
+| **Skill（公共）** | 8 个 | 架构、代码审查、调试、性能、项目规划、Skill 策展、测试、UI 原型 |
 | **Skill（web-fullstack）** | 7 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
 | **Skill（ai-app）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
 | **Skill（mobile-app）** | 6 个 | 移动 UI、导航、原生能力、离线优先、测试、发布 |
@@ -200,6 +200,7 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/mydb
 
 - [USAGE.md](USAGE.md) - 完整使用文档
 - [BEST-PRACTICES.md](BEST-PRACTICES.md) - 最佳实践指南
+- [EXTERNAL-SKILLS.md](EXTERNAL-SKILLS.md) - 外部 skills/agents 生态参考与采纳策略
 - [CHANGELOG.md](CHANGELOG.md) - 版本更新日志
 
 ## License
