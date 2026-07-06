@@ -1,0 +1,21 @@
+{
+  "name": "web-fullstack",
+  "order": 10,
+  "default": true,
+  "displayName": "Web 全栈",
+  "help": "Web 全栈预设",
+  "description": "TypeScript + React + Node.js 全栈 Web 开发",
+  "skillCount": 7,
+  "rules": ["typescript.md", "react.md", "node.md", "testing.md"],
+  "expectSpecs": false,
+  "mcpSmokeServer": "postgres",
+  "codexConfigIncludes": "process.argv.slice",
+  "examples": [
+    "cd my-web-app && npx create-claude-team init"
+  ],
+  "nextSteps": [
+    "配置 .claude/.mcp.json 中的 GITHUB_PERSONAL_ACCESS_TOKEN",
+    "可选：设置 DATABASE_URL 启用 PostgreSQL MCP",
+    "在 Claude Code 或 Codex 中输入 /dev 开始开发"
+  ]
+}

@@ -12,12 +12,15 @@
 - 新增 6 个移动端 skill：mobile-ui、app-navigation、native-capabilities、offline-first、app-testing、app-release。
 - 新增公共 `skill-curator` skill，用于评估、改写和采纳 GitHub/community skills、agents、commands、hooks。
 - 新增 `EXTERNAL-SKILLS.md`，记录成熟生态参考源和采纳策略。
+- 新增 `presets/<name>/preset.json` manifest，集中声明 preset 名称、技能数量、规则清单、语言变体、测试入口和初始化提示。
+- 新增 `create-claude-team validate` / `npm run validate`，校验 preset manifest、skill frontmatter、rules/specs 声明和技能数量。
 - 冒烟测试覆盖 mobile preset 的 init/update/Codex 同步。
 
 ### 变更
 
 - `init --dry-run` 在已有 `.claude/` 的项目中也允许预览，不再被已有目录阻止；实际 init 仍保持原安全限制。
 - 冒烟测试新增 `SKILL.md` frontmatter 校验，确保生成到 Claude/Codex 的 skills 都有有效 `name`、`description`，且 `name` 与目录名一致。
+- CLI help、init 下一步提示、smoke test 场景改为从 preset manifest 读取，减少硬编码计数漂移。
 
 ## v3.4.0（2026-06-20）
 

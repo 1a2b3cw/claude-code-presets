@@ -57,6 +57,9 @@ npx create-claude-team init --preset mobile-app
 ```bash
 # 更新到最新版（保留 settings.json 和 workspace）
 npx create-claude-team update
+
+# 校验 preset / skill / manifest 完整性
+npx create-claude-team validate
 ```
 
 ### 验证
@@ -176,6 +179,8 @@ AGENTS.md                  # Codex 入口指令（由 CLAUDE.md 同步）
 ├── hooks.json             # Codex hooks 配置
 └── hooks/                 # 安全 hooks 镜像
 ```
+
+每个 `presets/<name>/` 都有 `preset.json`，用于声明 preset 名称、技能数量、规则清单、语言变体、测试入口和初始化提示。CLI help、validate、smoke test 都从 manifest 读取，减少手写计数漂移。
 
 ## 可选配置
 

@@ -39,6 +39,7 @@ npx create-claude-team init --preset ai-app --lang typescript  # AI / TS
 npx create-claude-team init --preset mobile-app        # Expo / React Native
 
 npx create-claude-team update                                     # 升级（保留 settings/workspace）
+npx create-claude-team validate                                   # 校验 preset / skill / manifest
 npx create-claude-team init --dry-run                             # 预览不写入
 npx create-claude-team init --force                               # 覆盖已存在的 .claude/ 并同步 Codex 入口
 ```
@@ -48,6 +49,7 @@ npx create-claude-team init --force                               # 覆盖已存
 ```
 底座 .claude/          → 复制（公共 agents/skills/commands/rules + CLAUDE.md + hooks）
   + 预设叠加            → presets/<preset>/ 的 rules/specs/skills 合并进来
+  + 读取 manifest        → preset.json 声明名称、技能数、规则、语言、测试入口
   + 语言叠加（仅 AI）   → lang/<python|typescript>/ 的 rules/specs 合并进来
   + MCP 合并            → preset.mcp.json 合并进 .mcp.json
   + 写 .preset 标记     → 记录预设名 + 语言（update 据此刷新）
@@ -56,6 +58,8 @@ npx create-claude-team init --force                               # 覆盖已存
 ```
 
 `update` 只刷新 agents/skills/commands/rules/specs/hooks 和 CLAUDE.md，并同步 `AGENTS.md`、`.agents/`、`.codex/`；**保留** settings.json、.mcp.json、workspace/（CLAUDE.md 覆盖前自动备份 .bak）。
+
+`validate` 会检查 preset manifest、`preset.mcp.json`、rules/specs 声明、skill frontmatter 和 skill 数量，适合在发版或合并前运行。
 
 ---
 

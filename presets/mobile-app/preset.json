@@ -1,0 +1,20 @@
+{
+  "name": "mobile-app",
+  "order": 30,
+  "displayName": "移动 App",
+  "help": "移动 App（Expo + React Native）",
+  "description": "Expo + React Native + TypeScript 移动 App 开发",
+  "skillCount": 6,
+  "rules": ["react-native.md", "expo.md", "mobile-ui.md", "mobile-testing.md", "app-release.md"],
+  "expectSpecs": true,
+  "mcpSmokeServer": "github",
+  "examples": [
+    "cd my-app    && npx create-claude-team init --preset mobile-app"
+  ],
+  "nextSteps": [
+    "创建或进入 Expo 项目：npx create-expo-app@latest my-app --template",
+    "可选：登录 EAS：npx eas login",
+    "在 Claude Code 输入 /dev，或在 Codex 输入 $team-command-dev 开始构建 App",
+    "发布前运行 /ship（Codex 用 $team-command-ship）检查移动端门禁"
+  ]
+}

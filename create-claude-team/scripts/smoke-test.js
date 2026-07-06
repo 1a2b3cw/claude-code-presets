@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { init } from '../lib/init.js';
 import { update } from '../lib/update.js';
+import { readPresetCatalog } from '../lib/presets.js';
+import { validateProject } from '../lib/validate.js';
 
 const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'skill-curator', 'testing', 'ui-prototype'];
 const PUBLIC_RULES = ['git.md', 'design.md'];
@@ -89,15 +91,15 @@ async function silent(fn) {
   }
 }
 
-async function runScenario(preset, {
-  mcpServer,
-  presetSkillCount,
+async function runScenario(manifest, {
   lang = null,
-  expectRule = null,
-  absentRule = null,
-  requiredRules = [],
-  expectSpecs = Boolean(lang),
-}) {
+} = {}) {
+  const preset = manifest.name;
+  const langConfig = lang ? manifest.languages?.[lang] ?? {} : {};
+  const requiredRules = manifest.rules ?? [];
+  const absentRules = langConfig.absentRules ?? [];
+  const expectRule = langConfig.expectRule ?? null;
+  const expectSpecs = manifest.expectSpecs || Boolean(lang);
   const title = lang ? `${preset} (${lang})` : preset;
   console.log(`\n[${title}]`);
   const tmp = mkdtempSync(join(tmpdir(), 'cct-'));
@@ -121,7 +123,7 @@ async function runScenario(preset, {
     assert(marker[0] === preset, `init: .preset 预设为 ${preset}`);
     if (lang) assert(marker[1] === lang, `init: .preset 语言为 ${lang}`);
 
-    const expectedSkills = PUBLIC_SKILLS.length + presetSkillCount + COMMAND_SKILL_COUNT;
+    const expectedSkills = PUBLIC_SKILLS.length + manifest.skillCount + COMMAND_SKILL_COUNT;
     const initSkills = countDirs(skillsDir);
     assert(initSkills === expectedSkills - COMMAND_SKILL_COUNT, `init: Claude 技能数 = ${initSkills}（期望 ${expectedSkills - COMMAND_SKILL_COUNT}）`);
     assert(countDirs(join(agentsDir, 'skills')) === expectedSkills, `init: Codex 技能数 = ${expectedSkills}`);
@@ -137,7 +139,9 @@ async function runScenario(preset, {
 
     // 语言隔离断言
     if (expectRule) assert(initRules.includes(expectRule), `init: 含本语言规则 ${expectRule}`);
-    if (absentRule) assert(!initRules.includes(absentRule), `init: 不含他语言规则 ${absentRule}`);
+    for (const absentRule of absentRules) {
+      assert(!initRules.includes(absentRule), `init: 不含他语言规则 ${absentRule}`);
+    }
     for (const rule of requiredRules) {
       assert(initRules.includes(rule), `init: 含规则 ${rule}`);
     }
@@ -147,7 +151,7 @@ async function runScenario(preset, {
     }
 
     const mcp = JSON.parse(readFileSync(join(claudeDir, '.mcp.json'), 'utf8'));
-    assert(mcp.mcpServers && mcp.mcpServers[mcpServer], `init: MCP 已合并 ${mcpServer}`);
+    assert(mcp.mcpServers && mcp.mcpServers[manifest.mcpSmokeServer], `init: MCP 已合并 ${manifest.mcpSmokeServer}`);
 
     // hooks 是 Node（.mjs），不是旧的 .sh
     const hooks = fileNames(join(claudeDir, 'hooks'));
@@ -158,9 +162,9 @@ async function runScenario(preset, {
     assert(existsSync(join(codexDir, 'config.toml')), 'init: Codex config.toml 存在');
     assert(fileNames(join(codexDir, 'agents')).filter((name) => name.endsWith('.toml')).length === AGENT_COUNT, `init: Codex custom agents = ${AGENT_COUNT}`);
     const codexConfig = readFileSync(join(codexDir, 'config.toml'), 'utf8');
-    assert(codexConfig.includes(`[mcp_servers.${mcpServer}]`), `init: Codex MCP 已生成 ${mcpServer}`);
-    if (mcpServer === 'postgres') {
-      assert(codexConfig.includes("process.argv.slice"), 'init: Codex MCP 参数环境变量通过 wrapper 展开');
+    assert(codexConfig.includes(`[mcp_servers.${manifest.mcpSmokeServer}]`), `init: Codex MCP 已生成 ${manifest.mcpSmokeServer}`);
+    if (manifest.codexConfigIncludes) {
+      assert(codexConfig.includes(manifest.codexConfigIncludes), 'init: Codex MCP 参数环境变量通过 wrapper 展开');
     }
     const codexBuilder = readFileSync(join(agentsDir, 'agents', 'builder.md'), 'utf8');
     assert(!codexBuilder.includes('.claude/rules'), 'init: Codex agent 文档不再指向 .claude/rules');
@@ -187,7 +191,9 @@ async function runScenario(preset, {
     const updRules = fileNames(rulesDir);
     assert(PUBLIC_RULES.every((r) => updRules.includes(r)), 'update: 公共规则未被删除');
     if (expectRule) assert(updRules.includes(expectRule), `update: 本语言规则 ${expectRule} 保留`);
-    if (absentRule) assert(!updRules.includes(absentRule), `update: 未混入他语言规则 ${absentRule}`);
+    for (const absentRule of absentRules) {
+      assert(!updRules.includes(absentRule), `update: 未混入他语言规则 ${absentRule}`);
+    }
     for (const rule of requiredRules) {
       assert(updRules.includes(rule), `update: 规则 ${rule} 保留`);
     }
@@ -204,21 +210,20 @@ async function runScenario(preset, {
 
 console.log('create-claude-team 冒烟测试');
 
-await runScenario('ai-app', {
-  mcpServer: 'pgvector', presetSkillCount: 8,
-  lang: 'python', expectRule: 'python.md', absentRule: 'typescript-ai.md',
-});
-await runScenario('ai-app', {
-  mcpServer: 'pgvector', presetSkillCount: 8,
-  lang: 'typescript', expectRule: 'typescript-ai.md', absentRule: 'python.md',
-});
-await runScenario('web-fullstack', { mcpServer: 'postgres', presetSkillCount: 7 });
-await runScenario('mobile-app', {
-  mcpServer: 'github',
-  presetSkillCount: 6,
-  requiredRules: ['react-native.md', 'expo.md', 'mobile-ui.md', 'mobile-testing.md', 'app-release.md'],
-  expectSpecs: true,
-});
+console.log('\n[配置校验]');
+await silent(() => validateProject());
+assert(true, 'validate: manifest / skill 结构通过');
+
+for (const manifest of readPresetCatalog()) {
+  const languages = Object.keys(manifest.languages ?? {});
+  if (languages.length > 0) {
+    for (const lang of languages) {
+      await runScenario(manifest, { lang });
+    }
+  } else {
+    await runScenario(manifest);
+  }
+}
 
 // 旧预设名 ai-knowledge-base 应通过别名解析到 ai-app（向后兼容）
 console.log('\n[别名兼容]');

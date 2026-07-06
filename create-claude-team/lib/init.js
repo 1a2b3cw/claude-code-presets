@@ -3,10 +3,11 @@ import { existsSync } from 'node:fs';
 import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { copyDir, dirHasContent, countFiles, findSourceDir } from './copy.js';
 import { syncCodexConfig } from './codex.js';
+import { getDefaultLanguage, getNextSteps, readPresetManifest } from './presets.js';
 
 // Resolve the language variant for a preset that has a lang/ folder.
 // Returns null if the preset has no language variants.
-async function resolveLang(presetDir, requested) {
+async function resolveLang(presetDir, requested, manifest) {
   const langRoot = join(presetDir, 'lang');
   if (!existsSync(langRoot)) return null;
 
@@ -22,8 +23,8 @@ async function resolveLang(presetDir, requested) {
     }
     return requested;
   }
-  // Default: prefer python, else first available
-  return available.includes('python') ? 'python' : available[0];
+  const defaultLang = getDefaultLanguage(manifest);
+  return defaultLang && available.includes(defaultLang) ? defaultLang : available[0];
 }
 
 export async function init({ preset = 'web-fullstack', lang = null, force = false, dryRun = false }) {
@@ -42,7 +43,8 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
     throw new Error(`找不到预设目录: presets/${preset}`);
   }
 
-  const resolvedLang = await resolveLang(presetDir, lang);
+  const manifest = readPresetManifest(pkgRoot, preset);
+  const resolvedLang = await resolveLang(presetDir, lang, manifest);
 
   // Check target
   const targetExists = existsSync(targetDir);
@@ -55,8 +57,9 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
     }
   }
 
+  const presetExclude = ['PRESET.md', 'preset.mcp.json', 'preset.json', 'lang'];
   const baseCount = await countFiles(baseDir);
-  const presetCount = await countFiles(presetDir);
+  const presetCount = await countFiles(presetDir, { exclude: presetExclude });
 
   console.log(`\n  create-claude-team init\n`);
   console.log(`  预设:   ${preset}`);
@@ -69,7 +72,7 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
     console.log(`  [1/3] 底座文件:`);
     await copyDir(baseDir, targetDir, { dryRun: true });
     console.log(`\n  [2/3] 预设文件（叠加，排除 lang/）:`);
-    await copyDir(presetDir, targetDir, { dryRun: true, exclude: ['PRESET.md', 'preset.mcp.json', 'lang'] });
+    await copyDir(presetDir, targetDir, { dryRun: true, exclude: presetExclude });
     if (resolvedLang) {
       console.log(`\n  [2b] 语言文件（${resolvedLang}）:`);
       await copyDir(join(presetDir, 'lang', resolvedLang), targetDir, { dryRun: true });
@@ -105,7 +108,7 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
   // Step 2: Overlay preset files (rules/, specs/, skills/) — EXCLUDE lang/
   console.log(`  [2/3] 叠加预设 [${preset}]...`);
   await copyDir(presetDir, targetDir, {
-    exclude: ['PRESET.md', 'preset.mcp.json', 'lang'],
+    exclude: presetExclude,
   });
 
   // Step 2b: Overlay language-specific files (rules/specs for the chosen language)
@@ -145,25 +148,10 @@ export async function init({ preset = 'web-fullstack', lang = null, force = fals
   console.log(`\n  \x1b[32m✓ 初始化完成\x1b[0m`);
   console.log(`\n  下一步:`);
 
-  if (preset === 'web-fullstack') {
-    console.log(`    1. 配置 .claude/.mcp.json 中的 GITHUB_PERSONAL_ACCESS_TOKEN`);
-    console.log(`    2. 可选：设置 DATABASE_URL 启用 PostgreSQL MCP`);
-    console.log(`    3. 在 Claude Code 或 Codex 中输入 /dev 开始开发\n`);
-  } else if (preset === 'ai-app') {
-    console.log(`    1. 启动 pgvector：docker compose up -d postgres`);
-    console.log(`    2. 配置 DATABASE_URL 与 ANTHROPIC_API_KEY`);
-    if (resolvedLang === 'typescript') {
-      console.log(`    3. 安装依赖：pnpm add ai @ai-sdk/anthropic hono zod postgres`);
-    } else {
-      console.log(`    3. 安装依赖：uv add anthropic fastapi asyncpg pydantic-settings`);
-    }
-    console.log(`    4. 在 Claude Code 或 Codex 中输入 /dev 开始构建 AI 应用\n`);
-  } else if (preset === 'mobile-app') {
-    console.log(`    1. 创建或进入 Expo 项目：npx create-expo-app@latest my-app --template`);
-    console.log(`    2. 可选：登录 EAS：npx eas login`);
-    console.log(`    3. 在 Claude Code 输入 /dev，或在 Codex 输入 $team-command-dev 开始构建 App`);
-    console.log(`    4. 发布前运行 /ship（Codex 用 $team-command-ship）检查移动端门禁\n`);
-  }
+  getNextSteps(manifest, resolvedLang).forEach((step, index) => {
+    console.log(`    ${index + 1}. ${step}`);
+  });
+  console.log('');
 }
 
 async function mergeMcpConfig(basePath, presetPath) {

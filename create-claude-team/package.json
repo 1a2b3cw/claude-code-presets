@@ -32,7 +32,8 @@
   "scripts": {
     "prepack": "node scripts/sync-config.js",
     "postpack": "node scripts/clean-vendored.js",
-    "test": "node scripts/smoke-test.js"
+    "test": "node scripts/smoke-test.js",
+    "validate": "node scripts/validate.js"
   },
   "engines": {
     "node": ">=18.0.0"

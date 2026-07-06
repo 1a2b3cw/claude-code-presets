@@ -1,0 +1,38 @@
+{
+  "name": "ai-app",
+  "order": 20,
+  "displayName": "AI 应用",
+  "help": "AI 应用（默认 Python）",
+  "description": "RAG 知识库、AI Agent、结构化提取、LLM 服务",
+  "skillCount": 8,
+  "rules": ["llm.md", "agents.md", "rag.md", "vector-db.md"],
+  "expectSpecs": true,
+  "mcpSmokeServer": "pgvector",
+  "examples": [
+    "cd my-rag-app && npx create-claude-team init --preset ai-app",
+    "cd my-ts-ai  && npx create-claude-team init --preset ai-app --lang typescript"
+  ],
+  "languages": {
+    "python": {
+      "default": true,
+      "expectRule": "python.md",
+      "absentRules": ["typescript-ai.md"],
+      "nextSteps": [
+        "启动 pgvector：docker compose up -d postgres",
+        "配置 DATABASE_URL 与 ANTHROPIC_API_KEY",
+        "安装依赖：uv add anthropic fastapi asyncpg pydantic-settings",
+        "在 Claude Code 或 Codex 中输入 /dev 开始构建 AI 应用"
+      ]
+    },
+    "typescript": {
+      "expectRule": "typescript-ai.md",
+      "absentRules": ["python.md"],
+      "nextSteps": [
+        "启动 pgvector：docker compose up -d postgres",
+        "配置 DATABASE_URL 与 ANTHROPIC_API_KEY",
+        "安装依赖：pnpm add ai @ai-sdk/anthropic hono zod postgres",
+        "在 Claude Code 或 Codex 中输入 /dev 开始构建 AI 应用"
+      ]
+    }
+  }
+}
