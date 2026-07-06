@@ -16,7 +16,7 @@
 | **Skill（公共）** | 8 个 | 架构、代码审查、调试、性能、项目规划、Skill 策展、测试、UI 原型 |
 | **Skill（web-fullstack）** | 7 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
 | **Skill（ai-app）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
-| **Skill（mobile-app）** | 6 个 | 移动 UI、导航、原生能力、离线优先、测试、发布 |
+| **Skill（mobile-app）** | 9 个 | 移动 UI、导航、原生能力、离线优先、性能、升级、设备验证、测试、发布 |
 | **MCP 服务器** | 3 个（公共）+ 预设专用 | GitHub、Playwright、Context7；AI 预设加 pgvector |
 | **工作流命令** | 8 个 | Claude Code 用 `/plan` 等 slash command；Codex 用 `$team-command-plan` 等 skill |
 | **Rules** | 2 个公共 + 预设专用 | Git、设计规范；各预设含 4-5 个技术栈规则 |
@@ -110,9 +110,9 @@ npx create-claude-team validate
 **技术栈**：TypeScript + React Native + Expo + Expo Router + EAS Build/EAS Submit
 
 **包含**：
-- 6 个 Skill：mobile-ui、app-navigation、native-capabilities、offline-first、app-testing、app-release
-- 5 个 Rule：react-native、expo、mobile-ui、mobile-testing、app-release
-- 5 个 Spec：react-native、expo、navigation、state-management、app-store-release
+- 9 个 Skill：mobile-ui、app-navigation、native-capabilities、offline-first、app-performance、rn-upgrade、device-verification、app-testing、app-release
+- 8 个 Rule：react-native、expo、mobile-ui、mobile-testing、mobile-performance、mobile-security、device-verification、app-release
+- 8 个 Spec：react-native、expo、navigation、state-management、mobile-performance、react-native-upgrade、device-verification、app-store-release
 - MCP：GitHub + Playwright + Context7（第一版不新增移动端专用 MCP）
 
 ## 怎么用

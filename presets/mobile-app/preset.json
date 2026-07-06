@@ -4,8 +4,8 @@
   "displayName": "移动 App",
   "help": "移动 App（Expo + React Native）",
   "description": "Expo + React Native + TypeScript 移动 App 开发",
-  "skillCount": 6,
-  "rules": ["react-native.md", "expo.md", "mobile-ui.md", "mobile-testing.md", "app-release.md"],
+  "skillCount": 9,
+  "rules": ["react-native.md", "expo.md", "mobile-ui.md", "mobile-testing.md", "mobile-performance.md", "mobile-security.md", "device-verification.md", "app-release.md"],
   "expectSpecs": true,
   "mcpSmokeServer": "github",
   "examples": [

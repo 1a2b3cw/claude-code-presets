@@ -7,9 +7,9 @@
 ### 新增
 
 - CLI 支持 `--preset mobile-app`，用于初始化移动 App 开发团队配置。
-- 新增 mobile-app rules：React Native、Expo、移动端 UI、移动端测试、App 发布。
-- 新增 mobile-app specs：React Native、Expo、导航、状态管理、商店发布。
-- 新增 6 个移动端 skill：mobile-ui、app-navigation、native-capabilities、offline-first、app-testing、app-release。
+- 新增 mobile-app rules：React Native、Expo、移动端 UI、移动端测试、移动性能、移动安全、设备验证、App 发布。
+- 新增 mobile-app specs：React Native、Expo、导航、状态管理、移动性能、React Native 升级、设备验证、商店发布。
+- 新增 9 个移动端 skill：mobile-ui、app-navigation、native-capabilities、offline-first、app-performance、rn-upgrade、device-verification、app-testing、app-release。
 - 新增公共 `skill-curator` skill，用于评估、改写和采纳 GitHub/community skills、agents、commands、hooks。
 - 新增 `EXTERNAL-SKILLS.md`，记录成熟生态参考源和采纳策略。
 - 新增 `presets/<name>/preset.json` manifest，集中声明 preset 名称、技能数量、规则清单、语言变体、测试入口和初始化提示。

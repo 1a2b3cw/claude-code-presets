@@ -31,6 +31,8 @@
 - **单元测试**：Jest / Vitest，跟随项目已有工具
 - **组件测试**：React Native Testing Library
 - **E2E**：Maestro（默认推荐）/ Detox（需要更强原生控制时）
+- **真机验证**：Expo Go / development build / 内部分发，按原生能力复杂度选择
+- **性能画像**：React DevTools Profiler、Flipper/原生工具、EAS build 产物验证
 - **构建发布**：EAS Build / EAS Submit
 
 ## 文件组织
@@ -65,6 +67,9 @@ src/
 - `rules/expo.md` - Expo Router、配置、prebuild 边界
 - `rules/mobile-ui.md` - 移动端 UI、安全区、触控、无障碍
 - `rules/mobile-testing.md` - 单测、组件测试、E2E
+- `rules/mobile-performance.md` - 启动、列表、动画、图片和 JS 线程性能
+- `rules/mobile-security.md` - 移动端密钥、存储、权限和隐私
+- `rules/device-verification.md` - Expo Go、development build、模拟器和真机验证
 - `rules/app-release.md` - EAS、版本、权限、商店发布
 
 ## 包含的 Skills
@@ -74,6 +79,9 @@ src/
 - `native-capabilities` - 相机、位置、通知、文件、权限
 - `offline-first` - 本地缓存、同步、弱网体验
 - `app-testing` - React Native 测试与 E2E
+- `app-performance` - 移动端性能画像和优化
+- `rn-upgrade` - React Native/Expo SDK 升级与依赖迁移
+- `device-verification` - 真机、模拟器、development build 验证矩阵
 - `app-release` - EAS 构建、提交与发布门禁
 
 ## Specs
@@ -82,6 +90,9 @@ src/
 - `expo.md` - Expo 详细参考
 - `navigation.md` - 路由、认证流、deep link
 - `state-management.md` - Zustand、TanStack Query、本地存储
+- `mobile-performance.md` - 启动、列表、图片、动画和包体积性能参考
+- `react-native-upgrade.md` - Expo SDK / React Native 版本升级参考
+- `device-verification.md` - 设备验证矩阵和验收记录模板
 - `app-store-release.md` - iOS/Android 发布检查
 
 ## MCP 服务器

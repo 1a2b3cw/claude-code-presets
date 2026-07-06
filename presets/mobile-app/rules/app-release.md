@@ -6,6 +6,7 @@
 - 权限声明与实际功能一致，没有多余权限。
 - 隐私政策、数据收集说明和第三方 SDK 使用说明已准备。
 - 生产环境 API、日志级别、错误追踪和 feature flags 已确认。
+- 崩溃上报、性能监控、analytics consent 和隐私开关已确认。
 
 ## EAS
 - 使用 `eas.json` 区分 development、preview、production。
@@ -17,6 +18,7 @@
 - iOS `buildNumber` 与 Android `versionCode` 必须递增。
 - 用户可见版本与内部构建号分开管理。
 - 每次发布记录变更摘要、测试结果和回滚方案。
+- 移动端 API 需要兼容至少一个旧版本 App，不能只按最新版客户端设计。
 
 ## 商店提交
 - iOS 注意 App Privacy、tracking、sign in、订阅/内购规则。

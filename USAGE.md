@@ -134,7 +134,7 @@ Claude Code 装完用 `/mcp` 验证。Codex 装完检查根目录 `AGENTS.md`、
 **ai-app（8）**：rag-pipeline、ai-agents、structured-output、embedding、vector-db、prompt-engineering、llm-evaluation、data-pipeline
 > 概念类技能含 Python + TypeScript 两套示例，AI 按你的语言路线取用。
 
-**mobile-app（6）**：mobile-ui、app-navigation、native-capabilities、offline-first、app-testing、app-release
+**mobile-app（9）**：mobile-ui、app-navigation、native-capabilities、offline-first、app-performance、rn-upgrade、device-verification、app-testing、app-release
 
 技能由 AI 根据 frontmatter 的 description 自动触发，不用手动调用。
 

@@ -12,6 +12,16 @@ This project should learn from mature community repositories without becoming a 
 | contains-studio/agents: https://github.com/contains-studio/agents | Frontmatter consistency, examples, testing notes for agents | Use as a quality model for future agent metadata |
 | Build with Claude: https://www.buildwithclaude.com/ | Marketplace-style classification across plugins, commands, hooks, agents, skills | Use categories to improve docs and discovery |
 
+## Mobile Sources
+
+| Source | What To Borrow | How To Use It |
+|--------|----------------|---------------|
+| Expo docs and Expo GitHub org: https://github.com/expo/expo | Expo Router, EAS, development builds, SDK upgrade guidance | Prefer Expo-first defaults and avoid unnecessary bare workflow |
+| React Native Community Upgrade Helper: https://github.com/react-native-community/upgrade-helper | Upgrade diff thinking and version migration discipline | Use for RN upgrade planning and rollback checkpoints |
+| React Native Testing Library: https://github.com/callstack/react-native-testing-library | User-centric component testing patterns | Prefer accessibility/text queries and avoid implementation details |
+| Obytes React Native template: https://github.com/obytes/react-native-template-obytes | Production template practices around Expo, TypeScript, testing, linting, navigation | Borrow structure and quality gates selectively |
+| Software Mansion React Native stack: https://github.com/software-mansion | Reanimated, Gesture Handler, Screens ecosystem expertise | Use for performance and interaction-heavy UI guidance |
+
 ## Upgrade Principles
 
 1. Prefer curation over volume.
