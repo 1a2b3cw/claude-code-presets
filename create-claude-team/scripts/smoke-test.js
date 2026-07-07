@@ -19,7 +19,7 @@ import { validateProject } from '../lib/validate.js';
 
 const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'skill-curator', 'testing', 'ui-prototype'];
 const PUBLIC_RULES = ['git.md', 'design.md'];
-const COMMAND_SKILL_COUNT = 8;
+const COMMAND_SKILL_COUNT = 9;
 const AGENT_COUNT = 6;
 
 let passed = 0;
@@ -168,9 +168,17 @@ async function runScenario(manifest, {
     }
     const codexBuilder = readFileSync(join(agentsDir, 'agents', 'builder.md'), 'utf8');
     assert(!codexBuilder.includes('.claude/rules'), 'init: Codex agent 文档不再指向 .claude/rules');
+    const projectPresetSkill = readFileSync(join(agentsDir, 'skills', 'team-command-project-preset', 'SKILL.md'), 'utf8');
+    assert(!projectPresetSkill.includes('project-preset/.agents/'), 'init: project-preset 子目录不被 Codex 路径重写误伤');
 
     const commands = fileNames(join(claudeDir, 'commands'));
-    assert(commands.includes('plan.md') && commands.includes('taste.md') && commands.length === 8, `init: 8 个命令含 plan.md + taste.md (${commands.length})`);
+    assert(
+      commands.includes('plan.md') &&
+        commands.includes('taste.md') &&
+        commands.includes('project-preset.md') &&
+        commands.length === 9,
+      `init: 9 个命令含 plan.md + taste.md + project-preset.md (${commands.length})`
+    );
 
     // 记录 update 前的"应保留"内容
     const settingsBefore = readFileSync(join(claudeDir, 'settings.json'), 'utf8');

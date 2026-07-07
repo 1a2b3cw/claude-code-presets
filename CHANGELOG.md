@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+**新增 `/project-preset` 项目专属预设生成工作流**
+
+### 新增
+
+- 新增 `base` preset：只安装公共团队底座，不叠加任何技术栈 rules/specs/skills，适合非内置技术栈或已有项目先生成项目专属 preset。
+- 新增 `/project-preset` 命令：把新项目讨论、已有项目扫描或已有方案导入，沉淀为 `project-profile/` 与 `project-preset/`。
+- Codex 同步生成 `$team-command-project-preset`，用于在 Codex 中执行同一套项目预设生成流程。
+- 新增 Project Preset 产物契约：`project-profile/` 记录项目画像，`project-preset/` 记录项目级规则、specs 和技能规划。
+- README/USAGE/BEST-PRACTICES 增加“基础配置 → 项目预设 → roadmap/dev”的新主线。
+
+### 变更
+
+- 工作流命令数 8 → 9，冒烟测试同步校验 `project-preset.md` 与 Codex command skill。
+- README/USAGE/BEST-PRACTICES 增加 `init --preset base → /project-preset` 推荐路径。
+- 明确 project preset 优先于通用技术栈 preset，但不写入会被 `update` 覆盖的 `.claude/`、`.agents/`、`.codex/`。
+
 **新增 `mobile-app` 预设，支持 Expo + React Native + TypeScript 移动 App 开发**
 
 ### 新增

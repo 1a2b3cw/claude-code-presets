@@ -163,6 +163,8 @@ function toCodexText(source) {
     .replaceAll('.agents/.agents/rules/', '.agents/rules/')
     .replaceAll('.agents/.agents/skills/', '.agents/skills/')
     .replaceAll('.agents/.agents/specs/', '.agents/specs/')
+    .replaceAll('project-preset/.agents/rules/', 'project-preset/rules/')
+    .replaceAll('project-preset/.agents/specs/', 'project-preset/specs/')
     .replace(/lang\/[^/\s]+\/\.agents\/specs\//g, '.agents/specs/')
     .replace(/lang\\[^\\\s]+\\\.agents\\specs\\/g, '.agents\\specs\\');
 }

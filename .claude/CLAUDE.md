@@ -86,6 +86,7 @@ L/XL 级：
 | 你说的话 | 用什么 | AI 行为 |
 |----------|--------|---------|
 | `/plan 我想做个产品` | /plan | 分析产品，输出功能模块清单（roadmap.md），不写代码 |
+| `/project-preset 生成项目预设` | /project-preset | 讨论/扫描项目，生成 project-profile/ 与 project-preset/，不写业务代码 |
 | `/taste 给项目定设计风格` | /taste | 带你找到想要的 UI 审美，产出设计方向（preview/），不写代码 |
 | `/dev 做一个功能` | /dev | 走完全流程，你只管确认 |
 | `/check` | /check | 快检当前代码，1 分钟出结果 |
@@ -199,5 +200,7 @@ L/XL 级：
 - **rules/**：始终加载的必须遵守规则
 - **specs/**：详细技术参考，AI 在需要深入参考时主动读取
 - **presets/**：可插拔技术栈配置，安装时叠加到 `.claude/`
+- **project-profile/**：项目画像，由 `/project-preset` 生成，记录产品、技术栈、架构、质量与验收
+- **project-preset/**：项目专属预设，由 `/project-preset` 生成，优先于通用技术栈 preset
 - **workspace/journal.md**：会话记忆，新会话开始时读取
 - **workspace/metrics.md**：效能指标，/dev 完成后追加

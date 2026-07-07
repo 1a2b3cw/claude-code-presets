@@ -1,6 +1,6 @@
 # AI 开发团队
 
-基于 Claude Code 与 Codex 的 AI 协作开发团队配置，支持 **Web 全栈**、**AI 应用**和 **移动 App** 三种技术栈。
+基于 Claude Code 与 Codex 的 AI 协作开发团队配置，支持无技术栈底座，以及 **Web 全栈**、**AI 应用**和 **移动 App** 三种技术栈。
 
 > v3.4.0 | 2026-06-20
 
@@ -14,13 +14,14 @@
 |------|------|------|
 | **Agent** | 6 个 | Architect-Planner、Builder、Designer、Reviewer、Researcher、DevOps |
 | **Skill（公共）** | 8 个 | 架构、代码审查、调试、性能、项目规划、Skill 策展、测试、UI 原型 |
+| **Preset（base）** | 1 个 | 无技术栈偏见，只安装团队底座，配合 `/project-preset` 生成项目专属预设 |
 | **Skill（web-fullstack）** | 7 个 | 前端、API 设计、数据库、UI 设计、TypeScript 进阶等 |
 | **Skill（ai-app）** | 8 个 | RAG 管道、AI Agent、结构化输出、向量数据库、Prompt 工程等 |
 | **Skill（mobile-app）** | 9 个 | 移动 UI、导航、原生能力、离线优先、性能、升级、设备验证、测试、发布 |
 | **MCP 服务器** | 3 个（公共）+ 预设专用 | GitHub、Playwright、Context7；AI 预设加 pgvector |
-| **工作流命令** | 8 个 | Claude Code 用 `/plan` 等 slash command；Codex 用 `$team-command-plan` 等 skill |
-| **Rules** | 2 个公共 + 预设专用 | Git、设计规范；各预设含 4-5 个技术栈规则 |
-| **Specs** | 预设专用 | 详细技术参考（AI 按需读取） |
+| **工作流命令** | 9 个 | Claude Code 用 `/plan` 等 slash command；Codex 用 `$team-command-plan` 等 skill |
+| **Rules** | 2 个公共 + 预设专用 | Git、设计规范；技术栈 preset 按需叠加规则 |
+| **Specs** | 预设专用 | 技术栈详细参考（AI 按需读取；base 不叠加） |
 | **Hook** | 2 个 | 代码安全检查（Write/Edit）、Bash 命令拦截 |
 | **Codex 入口** | 5 类 | `AGENTS.md`、`.agents/skills`、`.codex/config.toml`、`.codex/hooks`、`.codex/agents` |
 | **CLI 工具** | 1 个 | `npx create-claude-team init` 一行命令初始化 |
@@ -38,6 +39,9 @@
 ```bash
 # 进入你的项目目录
 cd your-project
+
+# 基础底座（不预设技术栈，推荐给非内置技术栈项目）
+npx create-claude-team init --preset base
 
 # Web 全栈（React + Node.js + TypeScript）
 npx create-claude-team init
@@ -68,7 +72,16 @@ npx create-claude-team validate
 
 在 Codex 中打开项目，确认根目录存在 `AGENTS.md`，且 `.agents/skills/`、`.codex/config.toml` 已生成。
 
-## 三种预设
+## 四种预设
+
+### `base`
+
+**定位**：无技术栈偏见的团队底座，适合 Go、Rust、Django、Spring、Flutter、Unity、已有老项目等非内置技术栈场景。
+
+**包含**：
+- 公共 Agent、公共 Skill、9 个工作流命令、Git/设计规则、安全 hooks、Codex 同步入口
+- 不叠加任何技术栈 rules/specs/skills
+- 推荐后续立即运行 `/project-preset`（Codex 用 `$team-command-project-preset`）生成项目自己的专项预设
 
 ### `web-fullstack`（默认）
 
@@ -117,11 +130,12 @@ npx create-claude-team validate
 
 ## 怎么用
 
-### 8 个核心工作流
+### 9 个核心工作流
 
 | Claude Code | Codex | 什么时候用 |
 |------|-----------|------|
 | `/plan` | `$team-command-plan` | 项目开局，分析产品出功能模块清单 |
+| `/project-preset` | `$team-command-project-preset` | 讨论/扫描项目，生成项目专属 `project-profile/` 与 `project-preset/` |
 | `/taste` | `$team-command-taste` | 写 UI 前定设计方向（出 `preview/`） |
 | `/dev` | `$team-command-dev` | 要写代码（完整流程） |
 | `/check` | `$team-command-check` | 写完一个功能想快检 |
@@ -135,6 +149,8 @@ npx create-claude-team validate
 ```
 （可选）项目开局：/plan 做一个 AI 知识库（Codex 用 $team-command-plan）
     ↓ AI 输出功能模块清单 roadmap.md，你挑着做
+（推荐）生成项目预设：/project-preset（Codex 用 $team-command-project-preset）
+    ↓ AI 输出 project-profile/ + project-preset/
 输入：/dev 做一个文档检索问答功能（Codex 用 $team-command-dev）
     ↓
 AI 先问你 3 个问题（需求确认，最多 3 轮）
@@ -156,7 +172,7 @@ S 级：直接写代码 → 完成
 ├── .preset                # 已安装的预设标记（update 时使用）
 ├── agents/                # 6 个 Agent 角色定义
 ├── skills/                # 公共技能
-├── commands/              # 8 个斜杠命令
+├── commands/              # 9 个斜杠命令
 ├── rules/                 # 公共规则（git、design）+ 预设规则
 ├── specs/                 # 详细技术参考（预设专用，AI 按需读取）
 ├── workspace/             # 会话记忆
@@ -178,6 +194,9 @@ AGENTS.md                  # Codex 入口指令（由 CLAUDE.md 同步）
 ├── agents/                # Codex custom agents
 ├── hooks.json             # Codex hooks 配置
 └── hooks/                 # 安全 hooks 镜像
+
+project-profile/           # /project-preset 生成：项目画像（产品、技术栈、架构、质量、验收）
+project-preset/            # /project-preset 生成：项目专属规则、specs、技能规划
 ```
 
 每个 `presets/<name>/` 都有 `preset.json`，用于声明 preset 名称、技能数量、规则清单、语言变体、测试入口和初始化提示。CLI help、validate、smoke test 都从 manifest 读取，减少手写计数漂移。
