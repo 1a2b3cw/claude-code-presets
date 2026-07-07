@@ -31,6 +31,14 @@ In Codex, invoke this as `$team-command-project-preset`. Do not rely on `/projec
 
 > 原则：基础配置提供团队操作系统，技术栈 preset 提供默认知识，project preset 记录“这个项目真正怎么做”。
 
+## 和 skill-curator 的关系
+
+`/project-preset` 是生成器，负责产出项目画像和项目 preset 草稿。
+
+`skill-curator` 是审查器，负责审查草稿是否值得保留、是否该拆成 rules、specs、skills，项目专属 skill 是否达标。
+
+因此本命令只保留生成流程和交付契约；具体分类、准入评分和审查标准以 `skill-curator` 为准。生成 `project-preset/` 后，必须使用 `skill-curator` 做一次 Project Preset Audit，并把审查结果写入 `project-preset/curation.md`。
+
 ## 流程
 
 ### Phase 0: 识别输入来源
@@ -151,6 +159,7 @@ project-profile/
 project-preset/
 ├── PRESET.md
 ├── manifest.json
+├── curation.md
 ├── .agents/rules/
 │   ├── project.md
 │   ├── tech-stack.md
@@ -185,6 +194,7 @@ project-preset/
   "updatedAt": "YYYY-MM-DD",
   "priority": "project-over-technical-preset",
   "profileDir": "project-profile",
+  "curation": "curation.md",
   "rules": ["project.md", "tech-stack.md", "testing.md"],
   "specs": ["architecture.md", "domain.md"]
 }
@@ -227,22 +237,44 @@ project-preset/
 
 #### `skills/README.md`
 
-第一版默认只写 README，说明是否需要项目专属 skill。只有满足以下条件才创建真正的 `skills/<name>/SKILL.md`：
+第一版默认只写 README，说明是否需要项目专属 skill。只有 `skill-curator` 审查认为候选项通过 Project Skill Adoption Score 时，才创建真正的 `skills/<name>/SKILL.md`。
 
-- 这是项目里会重复执行的稳定工作流
-- 有明确触发条件
-- 有确定输入/输出
-- 规则不会和通用 skill 重复
+未通过的候选项保留在 `skills/README.md` 的 Future Candidates 或 `project-preset/curation.md` 的 Rejected Candidates，不要硬生成低价值 skill。
 
-### Phase 4: 校验与交付
+#### `curation.md`
+
+由 `skill-curator` 生成或修订，记录 Project Preset Audit 结果，必须包含：
+
+- 审查结论：通过 / 需修订 / 暂停等待用户确认
+- rules、specs、skills 分类问题
+- 项目专属 skill 候选评分
+- 被拒绝或降级的候选项
+- 与代码事实或通用 preset 的冲突
+- 必须向用户确认的高风险问题
+
+### Phase 4: 使用 skill-curator 审查
+
+生成草稿后，必须使用 `skill-curator` 执行 Project Preset Audit：
+
+1. 把 `project-profile/` 和 `project-preset/` 当作被审查对象。
+2. 按 `skill-curator` 的 Project Preset Audit 检查 rules、specs、skills、commands、hooks 分类。
+3. 对项目专属 skill 候选执行 Project Skill Adoption Score。
+4. 根据审查结果修订草稿。
+5. 将最终审查结果写入 `project-preset/curation.md`。
+
+如果 `skill-curator` 判定“需修订”，必须先修订再交付；如果判定“暂停等待用户确认”，不要继续生成硬规则。
+
+### Phase 5: 校验与交付
 
 生成后检查：
 
 - [ ] `project-profile/` 文件齐全
 - [ ] `project-preset/PRESET.md` 存在
 - [ ] `project-preset/manifest.json` 是合法 JSON
+- [ ] `project-preset/curation.md` 存在并记录 skill-curator 审查结论
 - [ ] `.agents/rules/` 都是短硬规则，不是长篇教程
 - [ ] `.agents/specs/` 承载深入说明
+- [ ] 任何 `skills/<name>/SKILL.md` 都通过 skill-curator 审查
 - [ ] 推断和未决问题没有被写成确定规则
 - [ ] 没有写入真实密钥、token 或个人隐私
 - [ ] 没有覆盖 `.claude/`、`.agents/`、`.codex/`
@@ -253,6 +285,7 @@ project-preset/
 项目 preset 已生成：
 - 项目画像：project-profile/
 - 项目预设：project-preset/
+- Curator 审查：project-preset/curation.md
 - 后续开发优先读取：project-preset/PRESET.md
 - 未决问题：N 个
 - 建议下一步：用 /plan 输出 roadmap，或用 /dev 开始模块 1

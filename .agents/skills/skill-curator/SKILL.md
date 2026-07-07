@@ -40,6 +40,71 @@ Do not copy community skills blindly. Extract the pattern, verify the license an
    - Run `npm test` from `create-claude-team/`.
    - Check Codex sync output when public skills, commands, rules, specs, hooks, or agents change.
 
+## Project Preset Audit
+
+Use this mode when `/project-preset` has generated or updated `project-profile/` and `project-preset/`.
+
+Treat `/project-preset` as the generator and this skill as the reviewer. Do not generate the whole project preset from scratch unless explicitly asked; audit the draft, classify issues, and propose or apply focused fixes.
+
+### Inputs
+
+- `project-profile/` facts, decisions, inferences, and unresolved questions.
+- `project-preset/PRESET.md`.
+- `project-preset/manifest.json`.
+- `project-preset/rules/`.
+- `project-preset/specs/`.
+- `project-preset/skills/`.
+- Existing source files or repo metadata when needed to verify claims.
+
+### Audit Checks
+
+1. Evidence
+   - Facts and confirmed decisions may become rules.
+   - Inferences must stay in profile or unresolved questions until confirmed.
+   - Any rule without evidence should be downgraded or flagged.
+
+2. Classification
+   - Short mandatory behavior belongs in `.agents/rules/`.
+   - Long explanation, architecture, domain context, and examples belong in `.agents/specs/`.
+   - Repeatable user-triggered workflows may become commands.
+   - Stable reusable project workflows may become skills.
+   - Project history and observations belong in profile or curation notes, not rules.
+
+3. Rule Quality
+   - Rules must be concrete, enforceable, and short.
+   - Reject vague rules like "write clean code" unless rewritten into an observable constraint.
+   - Prefer rules that mention real project paths, commands, interfaces, data invariants, or review checks.
+
+4. Project Skill Quality
+   - A project skill must pass Project Skill Adoption Score below.
+   - `SKILL.md` must have valid frontmatter with `name` and `description`.
+   - The description must say when to use the skill.
+   - The body must be procedural and concise; long details should move to `project-preset/specs/`.
+   - Unsafe automation, secret handling, remote scripts, or destructive commands fail the audit.
+
+5. Output
+   - Write or update `project-preset/curation.md`.
+   - Mark the audit result as `Pass`, `Revise`, or `Blocked`.
+   - List rejected candidates and downgraded items with reasons.
+   - List questions that must go back to the user before becoming rules.
+
+## Project Skill Adoption Score
+
+Use this score before creating or keeping a project-specific `skills/<name>/SKILL.md`:
+
+| Dimension | Pass Signal |
+|-----------|-------------|
+| Fit | Solves a recurring workflow in this exact project |
+| Specificity | Uses project terminology, paths, commands, data, or domain rules |
+| Safety | No unsafe automation, hidden credential flow, remote code execution, or destructive shell behavior |
+| Maintainability | Small enough for future maintainers to keep current |
+| Testability | Can be validated by a script, checklist, example input/output, or focused review |
+
+Keep or create the project skill only if at least four dimensions pass. Otherwise:
+
+- 3 passes: keep as a Future Candidate in `project-preset/skills/README.md`.
+- 0-2 passes: reject and record in `project-preset/curation.md`.
+
 ## Adoption Score
 
 Use this lightweight score before adding a third-party idea:

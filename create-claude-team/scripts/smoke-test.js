@@ -170,6 +170,12 @@ async function runScenario(manifest, {
     assert(!codexBuilder.includes('.claude/rules'), 'init: Codex agent 文档不再指向 .claude/rules');
     const projectPresetSkill = readFileSync(join(agentsDir, 'skills', 'team-command-project-preset', 'SKILL.md'), 'utf8');
     assert(!projectPresetSkill.includes('project-preset/.agents/'), 'init: project-preset 子目录不被 Codex 路径重写误伤');
+    assert(projectPresetSkill.includes('`/project-preset` 是生成器'), 'init: project-preset skill 明确生成器职责');
+    const skillCurator = readFileSync(join(agentsDir, 'skills', 'skill-curator', 'SKILL.md'), 'utf8');
+    assert(
+      skillCurator.includes('Project Preset Audit') && skillCurator.includes('Project Skill Adoption Score'),
+      'init: skill-curator 包含 project-preset 审查能力'
+    );
 
     const commands = fileNames(join(claudeDir, 'commands'));
     assert(

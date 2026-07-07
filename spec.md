@@ -8,7 +8,7 @@
 
 你要做的是：新增 `/project-preset` 工作流入口，并同步为 Codex 的 `$team-command-project-preset` skill。它不写业务代码，而是把项目想法、技术栈、架构、测试、UI、发布约束沉淀成项目自己的 AI 开发约定。
 
-验收标准是：`init --preset base --dry-run` 能正常预览；`init`/`update` 后 Claude 侧有 9 个命令，Codex 侧生成 `team-command-project-preset`；文档能说明“base 底座 → 项目画像 → 项目 preset → 后续开发”的主线；`npm test` 与 `npm run validate` 通过。
+验收标准是：`init --preset base --dry-run` 能正常预览；`init`/`update` 后 Claude 侧有 9 个命令，Codex 侧生成 `team-command-project-preset`；`/project-preset` 生成草稿后必须交由 `skill-curator` 执行 Project Preset Audit；文档能说明“base 底座 → 项目画像 → 项目 preset → 后续开发”的主线；`npm test` 与 `npm run validate` 通过。
 
 技术约束是：不引入新的 CLI 子命令；不改现有 preset 叠加算法；不把项目专属内容写进会被 `update` 覆盖的 `.claude/` 源目录；第一版只定义生成工作流和产物契约。
 
@@ -26,6 +26,7 @@
 - 新增 `/project-preset` 命令文档。
 - 通过现有 Codex 同步机制自动生成 `$team-command-project-preset`。
 - 定义 `project-profile/` 与 `project-preset/` 的目录结构、生成流程、更新策略和验收清单。
+- 增强 `skill-curator`，让它审查 `project-preset/` 并维护 `curation.md`。
 - 更新 smoke test 的命令数量和 Codex command skill 数量。
 - 更新 README、USAGE、BEST-PRACTICES、CHANGELOG。
 
@@ -52,6 +53,7 @@ project-profile/
 project-preset/
 ├── PRESET.md           # 项目专属预设总览
 ├── manifest.json       # 名称、版本、来源、生成时间、更新策略
+├── curation.md         # skill-curator 风格的分类、评分、拒绝项和风险审查
 ├── rules/
 │   ├── project.md      # 必须遵守的项目硬规则
 │   ├── tech-stack.md   # 栈相关约束
@@ -95,7 +97,7 @@ npx create-claude-team init --preset base
 
 生成 `project-profile/`，先描述事实和用户确认过的决策，不把猜测写成规则。所有推断必须标为“推断”或放入未决问题。
 
-### Phase 2: 项目预设
+### Phase 2: 项目预设草稿
 
 从画像中提炼 `project-preset/`：
 
@@ -104,7 +106,19 @@ npx create-claude-team init --preset base
 - `skills/` 只在项目有稳定重复流程时新增，例如“账单对账”“报告生成”“模型评估”。
 - `manifest.json` 记录来源、版本和更新时间，便于后续迭代。
 
-### Phase 3: 激活说明
+### Phase 3: skill-curator 审查
+
+生成草稿后，使用 `skill-curator` 的 Project Preset Audit 审查：
+
+- 事实和推断是否分清。
+- rules/specs/skills 分类是否正确。
+- rules 是否具体、短、可审查。
+- 项目专属 skill 是否通过 Project Skill Adoption Score。
+- 是否需要把候选项降级为 Future Candidate 或 Rejected Candidate。
+
+审查结果写入 `project-preset/curation.md`。若审查结果是 `Revise`，先修订再交付；若是 `Blocked`，暂停等用户确认。
+
+### Phase 4: 激活说明
 
 第一版不自动覆盖 `.claude/` 或 `.agents/`。生成后输出下一步：
 
@@ -138,3 +152,8 @@ npm test
   - 背景：`init` 长期表示 Web 默认入口，直接切换默认值会影响旧用户。
   - 决策：新增显式 `--preset base`，文档推荐非内置技术栈优先使用。
   - 后果：新用户需要多写一个参数来获得无技术栈底座，但兼容性更稳。
+
+- ADR-004: `project-preset` 生成，`skill-curator` 审查。
+  - 背景：项目 preset 很容易膨胀成一堆空泛 rules 和低价值 skills。
+  - 决策：`/project-preset` 只负责生成草稿，`skill-curator` 负责 Project Preset Audit、Project Skill Adoption Score 和 `curation.md`。
+  - 后果：职责边界更清楚，审查标准集中维护在一个 skill 中。

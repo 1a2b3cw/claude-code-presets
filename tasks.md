@@ -75,6 +75,25 @@
   - `BEST-PRACTICES.md`
 - **状态**：已完成
 
+### T7: 用 skill-curator 审查 project-preset
+- **描述**：明确 `/project-preset` 负责生成草稿，`skill-curator` 负责 Project Preset Audit、Project Skill Adoption Score 和 `curation.md`。
+- **验收标准**：
+  - [x] `/project-preset` 明确自己是生成器，`skill-curator` 是审查器。
+  - [x] `skill-curator` 包含 Project Preset Audit。
+  - [x] `skill-curator` 包含 Project Skill Adoption Score。
+  - [x] `/project-preset` 要求生成 `project-preset/curation.md`。
+  - [x] Codex 同步后的 `$team-command-project-preset` 和 `skill-curator` 包含同样职责分工。
+  - [x] smoke test 守护职责分工关键文本。
+- **涉及文件**：
+  - `.claude/commands/project-preset.md`
+  - `.claude/skills/skill-curator/SKILL.md`
+  - `.agents/commands/project-preset.md`
+  - `.agents/skills/team-command-project-preset/SKILL.md`
+  - `.agents/skills/skill-curator/SKILL.md`
+  - `create-claude-team/scripts/smoke-test.js`
+  - `spec.md`
+- **状态**：已完成
+
 ## 后续迭代
 
 - [ ] 增加 `create-claude-team project-preset --check`，只校验 `project-preset/manifest.json` 与目录完整性。

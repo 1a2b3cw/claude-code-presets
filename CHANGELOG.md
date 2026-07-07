@@ -8,6 +8,7 @@
 
 - 新增 `base` preset：只安装公共团队底座，不叠加任何技术栈 rules/specs/skills，适合非内置技术栈或已有项目先生成项目专属 preset。
 - 新增 `/project-preset` 命令：把新项目讨论、已有项目扫描或已有方案导入，沉淀为 `project-profile/` 与 `project-preset/`。
+- `skill-curator` 新增 Project Preset Audit：审查 `/project-preset` 生成的项目预设草稿、项目专属 skill 候选和 `project-preset/curation.md`。
 - Codex 同步生成 `$team-command-project-preset`，用于在 Codex 中执行同一套项目预设生成流程。
 - 新增 Project Preset 产物契约：`project-profile/` 记录项目画像，`project-preset/` 记录项目级规则、specs 和技能规划。
 - README/USAGE/BEST-PRACTICES 增加“基础配置 → 项目预设 → roadmap/dev”的新主线。
