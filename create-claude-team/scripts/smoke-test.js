@@ -31,6 +31,7 @@ const ROADMAP_REQUIRED_TEXT = ['模块 ID', '状态', '依赖', '验收标准', 
 const TASKS_REQUIRED_TEXT = ['tasks.md', 'ready', 'needs_clarification', 'planned', 'in_progress', 'local_gate', 'review_gate', 'release_gate', 'blocked', 'shipped', 'done', '阻塞原因', 'Gate 结果', '验收命令'];
 const M_TASKS_REQUIRED_TEXT = ['M 级', '轻量 `tasks.md` checklist', '1-3 个任务'];
 const SHIP_ROADMAP_REQUIRED_TEXT = ['roadmap.md 状态更新', '产品模块状态源', 'done` 更新为 `shipped'];
+const INTENT_ROUTING_REQUIRED_TEXT = ['自然语言路由契约', '推荐命令', '路由依据', '最轻流程', '`/plan`', '`/dev`', '`/fix`', '`/check`', '`/review-all`', '`/ship`', '`/standup`'];
 const METRICS_EVENTS_REQUIRED_TEXT = ['taskId', 'level', 'specRejectCount', 'checkIssueCount', 'checkFixRounds', 'reviewRejectCount', 'testFailureCount', 'estimateHours', 'actualHours'];
 const STANDUP_METRICS_REQUIRED_TEXT = ['Metrics 聚合规则', '最近 5/10 次任务', '`events.jsonl` 是 metrics 的机器事实来源', '`metrics.md` 是人类可读摘要'];
 const STANDUP_IMPROVEMENT_REQUIRED_TEXT = ['流程改进建议规则', '`specRejectCount >= 3`', '平均 `checkIssueCount >= 5`', '`reviewRejectCount >= 1`', '`testFailureCount >= 1`', '估算偏差绝对值 `>= 50%`', '数据必须可追溯到 `events.jsonl`'];
@@ -103,6 +104,10 @@ function hasShipRoadmapContract(text) {
   return SHIP_ROADMAP_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
+function hasIntentRoutingContract(text) {
+  return INTENT_ROUTING_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
 function hasMetricsEventsContract(text) {
   return METRICS_EVENTS_REQUIRED_TEXT.every((part) => text.includes(part));
 }
@@ -169,6 +174,11 @@ async function runScenario(manifest, {
 
     assert(existsSync(join(claudeDir, 'CLAUDE.md')), 'init: CLAUDE.md 存在');
     assert(existsSync(join(tmp, 'AGENTS.md')), 'init: Codex AGENTS.md 存在');
+    assert(
+      hasIntentRoutingContract(readFileSync(join(claudeDir, 'CLAUDE.md'), 'utf8')) &&
+        hasIntentRoutingContract(readFileSync(join(tmp, 'AGENTS.md'), 'utf8')),
+      'init: Claude/Codex 入口包含自然语言路由契约'
+    );
     assert(existsSync(join(claudeDir, '.preset')), 'init: .preset 标记存在');
     const marker = readFileSync(join(claudeDir, '.preset'), 'utf8').split('\n').map((l) => l.trim());
     assert(marker[0] === preset, `init: .preset 预设为 ${preset}`);
@@ -461,6 +471,11 @@ async function runScenario(manifest, {
     assert(settingsAfter === settingsBefore, 'update: settings.json 保持不变');
     assert(workspaceExists && existsSync(join(claudeDir, 'workspace')), 'update: workspace/ 保持不变');
     assert(existsSync(join(tmp, 'AGENTS.md')) && existsSync(join(codexDir, 'hooks.json')) && existsSync(join(codexDir, 'config.toml')), 'update: Codex 入口保持同步');
+    assert(
+      hasIntentRoutingContract(readFileSync(join(claudeDir, 'CLAUDE.md'), 'utf8')) &&
+        hasIntentRoutingContract(readFileSync(join(tmp, 'AGENTS.md'), 'utf8')),
+      'update: Claude/Codex 入口保留自然语言路由契约'
+    );
   } finally {
     process.chdir(prevCwd);
     rmSync(tmp, { recursive: true, force: true });
