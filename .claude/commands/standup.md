@@ -60,6 +60,25 @@
 
 聚合结果可以写入或更新 `.claude/workspace/metrics.md` 的摘要区，但不得回写旧 `events.jsonl` 事件。
 
+### 流程改进建议规则
+
+`/standup` 必须基于 metrics 聚合结果输出“重复问题/流程改进建议”，每条建议都要追溯到具体数据来源。建议格式为：
+
+```text
+[触发条件] → [数据来源：events.jsonl 最近 N 条 / metrics.md 摘要 / journal.md 决策] → [下次流程调整]
+```
+
+触发规则：
+
+- spec 否决轮数 `>= 3`：下次 `/dev` Phase 0 必须先输出更短的需求摘要、明确未决问题，并等待用户确认后再规划。数据可来自 `metrics.md` 摘要或事件中的 spec 否决记录。
+- 平均 `checkIssueCount >= 5`：同类任务下次强制先写测试或最小复现，再进入实现。
+- 平均 `checkFixRounds >= 2`：下次把 `/check` 前移到每个子任务完成后执行，避免最后集中修复。
+- `reviewRejectCount >= 1`：同模块后续每个子任务后强制执行 `/check`，并在 `/review-all` 前列出自检结果。
+- `testFailureCount >= 1`：要求补回归测试；如果不补，必须在 `tasks.md` 或 review/release report 中记录原因。
+- 估算偏差绝对值 `>= 50%`：下次同级别任务需要拆小或更新 `estimateHours`，并说明偏差来自最近 5/10 次任务。
+
+没有触发阈值时，输出“暂无明显重复问题”，但仍可给出一个低优先级观察项，例如最近样本量不足或数据缺失。
+
 ### events.jsonl 契约
 
 每行是一个独立 JSON 对象，不允许跨行，不回写旧事件。
@@ -132,7 +151,7 @@
 - 总任务：X | 完成：X（X%）| 进行中：X | 阻塞：X
 
 ## 重复问题/流程改进建议
-- [重复问题] → [数据来源：events/metrics/journal/git] → [流程改进建议]
+- [触发条件] → [数据来源：events.jsonl 最近 N 条 / metrics.md 摘要 / journal.md 决策] → [流程改进建议]
 - 无明显重复问题时输出：暂无明显重复问题。
 
 ---

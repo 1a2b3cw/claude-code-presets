@@ -33,6 +33,7 @@ const M_TASKS_REQUIRED_TEXT = ['M 级', '轻量 `tasks.md` checklist', '1-3 个�
 const SHIP_ROADMAP_REQUIRED_TEXT = ['roadmap.md 状态更新', '产品模块状态源', 'done` 更新为 `shipped'];
 const METRICS_EVENTS_REQUIRED_TEXT = ['taskId', 'level', 'checkIssueCount', 'checkFixRounds', 'reviewRejectCount', 'testFailureCount', 'estimateHours', 'actualHours'];
 const STANDUP_METRICS_REQUIRED_TEXT = ['Metrics 聚合规则', '最近 5/10 次任务', '`events.jsonl` 是 metrics 的机器事实来源', '`metrics.md` 是人类可读摘要'];
+const STANDUP_IMPROVEMENT_REQUIRED_TEXT = ['流程改进建议规则', 'spec 否决轮数 `>= 3`', '平均 `checkIssueCount >= 5`', '`reviewRejectCount >= 1`', '`testFailureCount >= 1`', '估算偏差绝对值 `>= 50%`', '数据来源：events.jsonl 最近 N 条'];
 const REVIEW_REPORT_REQUIRED_TEXT = ['workspace/reviews/YYYY-MM-DD-<scope>.md', '结论', '关联任务', '变更范围', '问题列表', '严重度', '自动修复项', '剩余风险', 'events.jsonl.artifacts'];
 const RELEASE_REPORT_REQUIRED_TEXT = ['workspace/releases/YYYY-MM-DD-<version-or-scope>.md', '发布结论', '检查结果', '风险', '回滚步骤', '发布后验证', 'Gate 结果', 'events.jsonl.artifacts'];
 
@@ -106,6 +107,10 @@ function hasMetricsEventsContract(text) {
 
 function hasStandupMetricsContract(text) {
   return hasMetricsEventsContract(text) && STANDUP_METRICS_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasStandupImprovementContract(text) {
+  return hasStandupMetricsContract(text) && STANDUP_IMPROVEMENT_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 function hasReviewReportContract(text) {
@@ -240,6 +245,11 @@ async function runScenario(manifest, {
       hasStandupMetricsContract(codexCommandSkillText(agentsDir, 'standup')) &&
         hasStandupMetricsContract(codexCommandText(agentsDir, 'standup')),
       'init: standup command 与 skill 包含 metrics 聚合契约'
+    );
+    assert(
+      hasStandupImprovementContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupImprovementContract(codexCommandText(agentsDir, 'standup')),
+      'init: standup command 与 skill 包含流程改进建议契约'
     );
     assert(
       hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
@@ -381,6 +391,11 @@ async function runScenario(manifest, {
       hasStandupMetricsContract(codexCommandSkillText(agentsDir, 'standup')) &&
         hasStandupMetricsContract(codexCommandText(agentsDir, 'standup')),
       'update: standup command 与 skill 保留 metrics 聚合契约'
+    );
+    assert(
+      hasStandupImprovementContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupImprovementContract(codexCommandText(agentsDir, 'standup')),
+      'update: standup command 与 skill 保留流程改进建议契约'
     );
     assert(
       hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
