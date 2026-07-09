@@ -28,6 +28,7 @@ const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
 const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journal.md', 'git log', '下一步建议', '重复问题/流程改进建议'];
 const PRODUCT_BRIEF_REQUIRED_TEXT = ['product-brief.md', 'prd.md', '目标用户', '核心价值', '本期范围', '明确不做', '验收标准'];
 const ROADMAP_REQUIRED_TEXT = ['模块 ID', '状态', '依赖', '验收标准', '风险', '最近更新', 'planned', 'in_progress', 'blocked', 'done', 'shipped'];
+const TASKS_REQUIRED_TEXT = ['tasks.md', 'ready', 'needs_clarification', 'planned', 'in_progress', 'local_gate', 'review_gate', 'release_gate', 'blocked', 'shipped', 'done', '阻塞原因', 'Gate 结果', '验收命令'];
 
 let passed = 0;
 let failed = 0;
@@ -79,6 +80,10 @@ function hasProductBriefContract(text) {
 
 function hasRoadmapContract(text) {
   return ROADMAP_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasTasksContract(text) {
+  return TASKS_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 // 静默 init/update 的日志，保持测试输出干净
@@ -176,6 +181,13 @@ async function runScenario(manifest, {
         hasRoadmapContract(codexCommandSkillText(agentsDir, 'dev')) &&
         hasRoadmapContract(codexCommandText(agentsDir, 'dev')),
       'init: plan/dev command 与 skill 包含 roadmap 状态源契约'
+    );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => {
+        return hasTasksContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasTasksContract(codexCommandText(agentsDir, commandName));
+      }),
+      'init: dev/check/review-all/ship command 与 skill 包含 tasks.md 状态机契约'
     );
 
     const initSkillNames = dirNames(skillsDir);
@@ -278,6 +290,13 @@ async function runScenario(manifest, {
         hasRoadmapContract(codexCommandSkillText(agentsDir, 'dev')) &&
         hasRoadmapContract(codexCommandText(agentsDir, 'dev')),
       'update: plan/dev command 与 skill 保留 roadmap 状态源契约'
+    );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => {
+        return hasTasksContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasTasksContract(codexCommandText(agentsDir, commandName));
+      }),
+      'update: dev/check/review-all/ship command 与 skill 保留 tasks.md 状态机契约'
     );
 
     const updSkillNames = dirNames(skillsDir);

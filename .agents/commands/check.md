@@ -55,6 +55,19 @@
    - 2 轮后仍有问题 → 列出剩余问题等你决定
 ```
 
+## tasks.md 状态更新
+
+如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/check` 必须把它作为执行状态源同步更新：
+
+- 开始快检时，将对应任务状态更新为 `local_gate`，并刷新最近更新日期。
+- 快检通过时，记录 `Gate 结果.local = pass`，写入实际验收命令和涉及文件。
+- 更新时不要删除任务条目的验收标准、验收命令、阻塞原因、Gate 结果和产物字段。
+- 快检通过且该任务需要跨文件审查时，将状态推进到 `review_gate`；无需审查的轻量任务可推进到 `done`。
+- 快检失败但已自动修复通过时，仍记录 local gate 为 `pass`，并在 Gate 结果中写修复轮次。
+- 2 轮后仍失败或需要用户判断时，将状态更新为 `blocked`，写明阻塞原因和下一步确认人。
+
+`tasks.md` 状态必须使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
+
 ## 标准结果摘要
 
 `/check` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。

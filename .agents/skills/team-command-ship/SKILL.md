@@ -61,6 +61,19 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
    └── 记录发布日志
 ```
 
+## tasks.md 状态更新
+
+如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/ship` 必须把它作为执行状态源同步更新：
+
+- 开始发布检查时，将对应任务状态更新为 `release_gate`，并刷新最近更新日期。
+- 发布检查通过但等待人工确认部署时，记录 `Gate 结果.release = pass`，状态保持 `release_gate`，并在阻塞原因或 next action 中说明等待谁确认。
+- 更新时不要删除任务条目的验收标准、验收命令、阻塞原因、Gate 结果和产物字段。
+- 发布或上线验证完成后，将状态更新为 `shipped`；无需真实发布的文档/配置任务可在发布检查通过后更新为 `done`。
+- 发布检查失败且可自动修复时，记录失败项和修复轮次，修复后重新检查。
+- 2 轮后仍失败、存在严重风险或等待用户接受风险时，将状态更新为 `blocked`，写明阻塞原因、风险和下一步确认人。
+
+`tasks.md` 状态必须使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
+
 ## 标准结果摘要
 
 `/ship` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。

@@ -56,6 +56,19 @@
    - 2 轮后仍有问题 → 列出剩余问题等用户决定
 ```
 
+## tasks.md 状态更新
+
+如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/review-all` 必须把它作为执行状态源同步更新：
+
+- 开始审查时，将对应任务状态更新为 `review_gate`，并刷新最近更新日期。
+- 审查通过时，记录 `Gate 结果.review = pass`，写入审查范围、问题数、修复轮次和报告路径（如有）。
+- 更新时不要删除任务条目的验收标准、验收命令、阻塞原因、Gate 结果和产物字段。
+- 审查通过且任务需要发布时，将状态推进到 `release_gate`；无需发布的任务可推进到 `done`。
+- 审查发现问题但已自动修复通过时，记录 review gate 为 `pass`，并写明自动修复项。
+- 2 轮后仍有阻塞问题或需要用户决策时，将状态更新为 `blocked`，写明阻塞原因和下一步确认人。
+
+`tasks.md` 状态必须使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
+
 ## 标准结果摘要
 
 `/review-all` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。

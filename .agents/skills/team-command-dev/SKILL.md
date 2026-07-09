@@ -31,6 +31,53 @@ In Codex, invoke this as `$team-command-dev`. Do not rely on `/dev` unless Codex
 
 `roadmap.md` 的模块状态使用：`planned` / `in_progress` / `blocked` / `done` / `shipped`。
 
+## tasks.md 执行状态源
+
+M/L/XL 级任务必须维护 `tasks.md`，它是执行计划和 gate 状态源。每个任务条目至少包含：
+
+- **任务 ID**：如 `T1.3`、`M3.2`。
+- **状态**：见下方状态机。
+- **描述**：该任务要完成什么。
+- **验收标准**：用户可判断完成的结果。
+- **验收命令**：如 `npm run validate`、`npm test`、`/check`、`/review-all`、`/ship --dry-run`。
+- **阻塞原因**：无阻塞时写 `无`；阻塞时写清谁需要确认什么。
+- **Gate 结果**：记录 local/review/release gate 的最新结果。
+- **产物**：关键文件、报告或模块路径。
+- **最近更新**：YYYY-MM-DD。
+
+### tasks.md 状态机
+
+状态只能使用：
+
+- `ready`：信息足够，可以进入计划。
+- `needs_clarification`：需求或约束不足，等待用户补充。
+- `planned`：已拆解并排期，尚未开工。
+- `in_progress`：正在实现。
+- `local_gate`：实现完成，等待或正在执行本地验证与 `/check`。
+- `review_gate`：本地验证通过，等待或正在执行 `/review-all`。
+- `release_gate`：审查通过，等待或正在执行 `/ship`。
+- `blocked`：被需求、依赖、测试、审查或发布问题阻塞。
+- `shipped`：已发布或发布检查确认上线。
+- `done`：无需发布的任务已完成并提交。
+
+推荐流转：
+
+```text
+ready → planned → in_progress → local_gate → review_gate → release_gate → shipped
+                         ↘ done（无需发布）
+任意状态 → needs_clarification / blocked
+blocked → planned / in_progress（阻塞解除后）
+```
+
+### /dev 对 tasks.md 的更新责任
+
+- 创建或更新任务计划时，将可执行任务标为 `planned`；信息不足标为 `needs_clarification`。
+- 开始实现任务时，将状态改为 `in_progress`。
+- 实现完成并准备本地验证时，将状态改为 `local_gate`，写入验收命令。
+- 本地验证和 `/check` 通过后，将 local gate 结果记为 `pass`；需要审查的任务进入 `review_gate`，无需审查/发布的 S/M 小任务可进入 `done`。
+- 任一检查失败且 2 轮自动修复仍失败时，将状态改为 `blocked`，写清阻塞原因和下一步确认人。
+- 每次状态变化都刷新最近更新日期。
+
 ## 流程
 
 ### Phase 0: 需求确认（所有级别）
@@ -103,10 +150,12 @@ In Codex, invoke this as `$team-command-dev`. Do not rely on `/dev` unless Codex
 ```
 for 每个任务 in tasks.md:
   1. Builder 实现（TDD：先写测试 → 写代码 → 重构）
+     → 开始时把任务状态更新为 in_progress
   2. /check 快检（每个任务完成后立即执行）
+     → 开始本地验证时把任务状态更新为 local_gate
      → 有问题：自动修 → 重新检查（最多 2 轮）
-     → 2 轮不过：标记任务阻塞，等你决定
-     → 没问题：继续
+     → 2 轮不过：标记 blocked，记录阻塞原因，等你决定
+     → 没问题：记录 local gate pass，进入 review_gate 或继续
   3. git commit（每个逻辑单元一次提交）
 
 所有任务完成后:
