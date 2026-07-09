@@ -116,6 +116,21 @@ In Codex, invoke this as `$team-command-check`. Do not rely on `/check` unless C
 | `artifacts` | 否 | 本次自动修复或检查涉及的关键文件路径数组 |
 | `next` | 否 | 下一步建议，或 `null` |
 
+#### Metrics 扩展字段
+
+`events.jsonl` 同时是结构化 metrics 的机器事实来源。`/check` 收尾事件应尽量写入这些可选字段；未知时用 `null`，计数无发生时用 `0`：
+
+| 字段 | 说明 |
+|------|------|
+| `taskId` | 标准任务或模块 ID；优先等于 `task` |
+| `level` | 任务级别：`S` / `M` / `L` / `XL`；未知为 `null` |
+| `checkIssueCount` | 首次快检发现的问题数 |
+| `checkFixRounds` | 自动修复并重新检查的轮数 |
+| `reviewRejectCount` | 本命令不产生 review 打回，默认 `0` |
+| `testFailureCount` | 若快检包含测试，记录测试失败次数；否则 `0` |
+| `estimateHours` | 继承任务估算；没有则为 `null` |
+| `actualHours` | 本次快检实际耗时；没有记录则为 `null` |
+
 写入规则：
 - 只在快检收尾时追加 1 条最终事件，不记录中间步骤。
 - 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
@@ -125,7 +140,7 @@ In Codex, invoke this as `$team-command-check`. Do not rely on `/check` unless C
 示例：
 
 ```json
-{"time":"2026-07-09T10:05:00Z","command":"/check","task":"T0.2","status":"completed","summary":"completed: 快检通过，无剩余问题","checks":{"logic":"pass","types":"pass","boundary":"pass","issues":0},"artifacts":["src/auth/login.ts"],"next":"继续 /review-all"}
+{"time":"2026-07-09T10:05:00Z","command":"/check","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 快检通过，无剩余问题","checks":{"logic":"pass","types":"pass","boundary":"pass","issues":0},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["src/auth/login.ts"],"next":"继续 /review-all"}
 ```
 
 ## 输出格式

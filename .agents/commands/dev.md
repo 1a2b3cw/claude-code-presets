@@ -240,6 +240,21 @@ for 每个任务 in tasks.md:
 | `artifacts` | 否 | 本次创建或更新的关键文件路径数组 |
 | `next` | 否 | 下一步建议、下一个任务 ID，或 `null` |
 
+#### Metrics 扩展字段
+
+`events.jsonl` 同时是结构化 metrics 的机器事实来源。`/dev` 收尾事件应尽量写入这些可选字段；未知时用 `null`，计数无发生时用 `0`：
+
+| 字段 | 说明 |
+|------|------|
+| `taskId` | 标准任务或模块 ID；优先等于 `task`，如 `T2.1`、`M3` |
+| `level` | 任务级别：`S` / `M` / `L` / `XL` |
+| `checkIssueCount` | 首次 `/check` 或本地快检发现的问题数 |
+| `checkFixRounds` | `/check` 或本地快检自动修复轮数 |
+| `reviewRejectCount` | `/review-all` 打回次数 |
+| `testFailureCount` | 测试失败次数 |
+| `estimateHours` | 预估工时；没有估算则为 `null` |
+| `actualHours` | 实际耗时；没有记录则为 `null` |
+
 写入规则：
 - 只在命令收尾时追加 1 条最终事件，不记录中间步骤。
 - 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
@@ -249,7 +264,7 @@ for 每个任务 in tasks.md:
 示例：
 
 ```json
-{"time":"2026-07-09T10:00:00Z","command":"/dev","task":"T0.2","status":"completed","summary":"completed: 完成标准结果摘要契约","checks":{"validate":"pass","test":"pass","review":"pass"},"artifacts":[".agents/commands/dev.md",".agents/commands/check.md"],"next":"T0.3"}
+{"time":"2026-07-09T10:00:00Z","command":"/dev","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 完成标准结果摘要契约","checks":{"validate":"pass","test":"pass","review":"pass"},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":[".agents/commands/dev.md",".agents/commands/check.md"],"next":"T0.3"}
 ```
 
 ---

@@ -220,7 +220,7 @@
 
 ### T2.1 扩展 events.jsonl 为结构化 metrics 来源
 
-- **状态**：todo
+- **状态**：done
 - **目标**：把 `events.jsonl` 设计为 metrics 的机器事实来源。
 - **字段建议**：
   - taskId

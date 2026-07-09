@@ -27,12 +27,13 @@
 3. **读取 events.jsonl**
    - 只读取最近 20 条有效 JSONL；坏行跳过并在数据源状态中标记 warning。
    - 使用 `command`、`task`、`status`、`summary`、`checks`、`artifacts`、`next` 推断最近完成、失败、阻塞和下一步。
+   - 使用 metrics 扩展字段 `taskId`、`level`、`checkIssueCount`、`checkFixRounds`、`reviewRejectCount`、`testFailureCount`、`estimateHours`、`actualHours` 聚合最近 5/10 次任务趋势。
    - 重复问题检测只统计非 `/standup` 事件，且优先统计 `failed` / `blocked` 状态；连续出现相同失败 `checks`、相同 `blocked` 状态或相同 `next` 卡住时，输出到“重复问题/流程改进建议”。
    - `/standup` 自己追加的事件只用于证明状态汇报发生过，不参与重复问题判断。
 
 4. **读取 journal / metrics / git**
    - journal 用于补充历史决策、用户偏好和长期上下文。
-   - metrics 用于补充 check 问题数、review 打回、测试失败和估算偏差趋势。
+   - metrics 用于补充 check 问题数、review 打回、测试失败和估算偏差趋势；如果 metrics.md 与 events.jsonl 冲突，以 events.jsonl 为机器事实，并在数据源状态中提示不一致。
    - git log 用于校验最近实际提交，避免只根据聊天状态汇报。
 
 5. **合成规则**
@@ -45,6 +46,19 @@
 `/standup` 必须读取 `.claude/workspace/events.jsonl`，用最近事件补充当前状态、阻塞项、下一步建议和重复问题。读取失败或文件不存在时，继续使用 TaskList、Git log、metrics、journal 生成汇报，并在输出中说明事件流缺失。
 
 汇报生成后，`/standup` 也必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件，记录本次状态汇报已经生成。
+
+### Metrics 聚合规则
+
+`events.jsonl` 是 metrics 的机器事实来源，`metrics.md` 是人类可读摘要。`/standup` 必须优先从非 `/standup` 事件中聚合：
+
+- 最近 5/10 次任务的平均 `checkIssueCount`。
+- 最近 5/10 次任务的平均 `checkFixRounds`。
+- 最近 5/10 次任务的 `reviewRejectCount` 总数。
+- 最近 5/10 次任务的 `testFailureCount` 总数。
+- 最近 5/10 次任务的估算偏差：`(actualHours - estimateHours) / estimateHours`，只统计两个字段都有值且 `estimateHours > 0` 的事件。
+- 按 `level` 分组展示 S/M/L/XL 的趋势；缺失 `level` 时归入 `unknown`。
+
+聚合结果可以写入或更新 `.claude/workspace/metrics.md` 的摘要区，但不得回写旧 `events.jsonl` 事件。
 
 ### events.jsonl 契约
 
@@ -61,6 +75,19 @@
 | `artifacts` | 否 | 本次汇报引用或生成的关键文件路径数组 |
 | `next` | 否 | 推荐下一步，或 `null` |
 
+#### Metrics 扩展字段
+
+`/standup` 自己的事件也可以写入 metrics 字段；通常 `checkIssueCount`、`checkFixRounds`、`reviewRejectCount`、`testFailureCount` 为 `0`，`estimateHours` / `actualHours` 为 `null`。读取其他命令事件时必须识别：
+
+- `taskId`
+- `level`
+- `checkIssueCount`
+- `checkFixRounds`
+- `reviewRejectCount`
+- `testFailureCount`
+- `estimateHours`
+- `actualHours`
+
 写入规则：
 - 只在汇报收尾时追加 1 条最终事件，不记录中间步骤。
 - 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
@@ -70,7 +97,7 @@
 示例：
 
 ```json
-{"time":"2026-07-09T10:30:00Z","command":"/standup","task":null,"status":"completed","summary":"已生成项目状态汇报，下一步建议执行 T0.2","checks":{"events":"pass","git":"pass","metrics":"pass","journal":"pass"},"artifacts":[".claude/workspace/events.jsonl"],"next":"T0.2"}
+{"time":"2026-07-09T10:30:00Z","command":"/standup","task":null,"taskId":null,"level":null,"status":"completed","summary":"已生成项目状态汇报，下一步建议执行 T0.2","checks":{"events":"pass","git":"pass","metrics":"pass","journal":"pass"},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":[".claude/workspace/events.jsonl",".claude/workspace/metrics.md"],"next":"T0.2"}
 ```
 
 ## 输出格式

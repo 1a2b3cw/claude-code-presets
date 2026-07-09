@@ -146,6 +146,21 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 | `artifacts` | 否 | 发布报告、tag、关键配置或变更文件路径数组 |
 | `next` | 否 | 发布后验证或下一步建议，或 `null` |
 
+#### Metrics 扩展字段
+
+`events.jsonl` 同时是结构化 metrics 的机器事实来源。`/ship` 收尾事件应尽量写入这些可选字段；未知时用 `null`，计数无发生时用 `0`：
+
+| 字段 | 说明 |
+|------|------|
+| `taskId` | 标准任务、模块、版本或发布范围 ID；优先等于 `task` |
+| `level` | 任务级别：`S` / `M` / `L` / `XL`；未知为 `null` |
+| `checkIssueCount` | 发布检查发现的问题数；没有则 `0` |
+| `checkFixRounds` | 发布检查自动修复轮数 |
+| `reviewRejectCount` | 发布前 `/review-all` 打回次数 |
+| `testFailureCount` | 发布门禁测试失败次数 |
+| `estimateHours` | 继承任务或发布估算；没有则为 `null` |
+| `actualHours` | 发布检查或部署实际耗时；没有记录则为 `null` |
+
 写入规则：
 - 只在发布流程收尾时追加 1 条最终事件，不记录中间步骤。
 - 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
@@ -155,7 +170,7 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 示例：
 
 ```json
-{"time":"2026-07-09T10:20:00Z","command":"/ship","task":"T0.2","status":"completed","summary":"completed: 发布检查通过，等待用户确认发布","checks":{"review":"pass","test":"pass","security":"pass","rollback":"pass"},"artifacts":["workspace/releases/2026-07-09-t0.2.md"],"next":"用户确认后执行部署"}
+{"time":"2026-07-09T10:20:00Z","command":"/ship","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 发布检查通过，等待用户确认发布","checks":{"review":"pass","test":"pass","security":"pass","rollback":"pass"},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["workspace/releases/2026-07-09-t0.2.md"],"next":"用户确认后执行部署"}
 ```
 
 ## 自动修复机制

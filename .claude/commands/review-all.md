@@ -132,6 +132,21 @@ workspace/reviews/YYYY-MM-DD-<scope>.md
 | `artifacts` | 否 | 审查报告、自动修复文件或关键变更路径数组 |
 | `next` | 否 | 下一步建议，或 `null` |
 
+#### Metrics 扩展字段
+
+`events.jsonl` 同时是结构化 metrics 的机器事实来源。`/review-all` 收尾事件应尽量写入这些可选字段；未知时用 `null`，计数无发生时用 `0`：
+
+| 字段 | 说明 |
+|------|------|
+| `taskId` | 标准任务、模块或审查范围 ID；优先等于 `task` |
+| `level` | 任务级别：`S` / `M` / `L` / `XL`；未知为 `null` |
+| `checkIssueCount` | Phase 1 `/check` 发现的问题总数 |
+| `checkFixRounds` | 快检或自动修复轮数 |
+| `reviewRejectCount` | 审查打回次数；首次不通过计 `1` |
+| `testFailureCount` | 审查期间触发测试失败次数；没有则 `0` |
+| `estimateHours` | 继承任务估算；没有则为 `null` |
+| `actualHours` | 本次审查实际耗时；没有记录则为 `null` |
+
 写入规则：
 - 只在审查收尾时追加 1 条最终事件，不记录中间步骤。
 - 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
@@ -141,7 +156,7 @@ workspace/reviews/YYYY-MM-DD-<scope>.md
 示例：
 
 ```json
-{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.2","status":"completed","summary":"completed: 跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0,"fixRounds":0},"artifacts":["workspace/reviews/2026-07-09-t0.2.md"],"next":"/ship"}
+{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0,"fixRounds":0},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["workspace/reviews/2026-07-09-t0.2.md"],"next":"/ship"}
 ```
 
 ## 跨文件分析维度
