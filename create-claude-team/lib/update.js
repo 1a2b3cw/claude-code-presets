@@ -1,5 +1,5 @@
 import { join, resolve } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { rm, copyFile, readFile } from 'node:fs/promises';
 import { copyDir, countFiles, findSourceDir } from './copy.js';
 import { syncCodexConfig } from './codex.js';
@@ -87,6 +87,7 @@ export async function update({ dryRun = false }) {
     }
     console.log(`\n  [dry-run] Codex 入口:`);
     await syncCodexConfig({ cwd, dryRun: true });
+    reportMcpDrift(targetDir, presetSourceDir, preset);
     console.log(`\n  完成（预览）。去掉 --dry-run 执行实际操作。`);
     return;
   }
@@ -168,6 +169,8 @@ export async function update({ dryRun = false }) {
     }
   }
 
+  reportMcpDrift(targetDir, presetSourceDir, preset);
+
   console.log(`\n  同步 Codex 入口...`);
   await syncCodexConfig({ cwd });
 
@@ -175,4 +178,35 @@ export async function update({ dryRun = false }) {
   console.log(`  保留不变: ${PRESERVED.join(', ')}`);
   console.log(`  Codex 已同步: AGENTS.md, .agents/, .codex/`);
   console.log(`  如有自定义修改被覆盖，可从 .bak 文件恢复\n`);
+}
+
+function reportMcpDrift(targetDir, presetSourceDir, preset) {
+  const missing = missingPresetMcpServers(
+    join(targetDir, '.mcp.json'),
+    presetSourceDir ? join(presetSourceDir, 'preset.mcp.json') : null
+  );
+  if (missing.length === 0) return;
+
+  console.log(`\n  MCP 提示: 当前 .mcp.json 保持不变，但预设包含未安装的 server: ${missing.join(', ')}`);
+  console.log(`  如需启用，请参考 ${preset ?? '当前'} 预设的 preset.mcp.json 手动合并，然后再运行 update 同步 Codex。`);
+}
+
+export function missingPresetMcpServers(targetMcpPath, presetMcpPath) {
+  if (!presetMcpPath || !existsSync(presetMcpPath)) return [];
+
+  const target = readJson(targetMcpPath);
+  const preset = readJson(presetMcpPath);
+  const targetServers = target?.mcpServers ?? {};
+  const presetServers = preset?.mcpServers ?? {};
+
+  return Object.keys(presetServers).filter((name) => !targetServers[name]);
+}
+
+function readJson(path) {
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return null;
+  }
 }

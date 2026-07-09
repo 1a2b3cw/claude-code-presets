@@ -7,15 +7,17 @@
  * 不依赖任何测试框架，纯 node 断言 + 退出码。
  */
 
-import { mkdtempSync, rmSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { init } from '../lib/init.js';
-import { update } from '../lib/update.js';
+import { missingPresetMcpServers, update } from '../lib/update.js';
 import { readPresetCatalog } from '../lib/presets.js';
 import { validateProject } from '../lib/validate.js';
+import { validateSkills } from '../lib/skill-contracts.js';
+import { toCodexText } from '../lib/codex/text.js';
 
 const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'skill-curator', 'testing', 'ui-prototype'];
 const PUBLIC_RULES = ['git.md', 'design.md'];
@@ -48,36 +50,6 @@ function dirNames(p) {
 function fileNames(p) {
   if (!existsSync(p)) return [];
   return readdirSync(p, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name);
-}
-
-function skillDirs(p) {
-  if (!existsSync(p)) return [];
-  return readdirSync(p, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && existsSync(join(p, e.name, 'SKILL.md')))
-    .map((e) => join(p, e.name));
-}
-
-function validateSkillDir(skillDir) {
-  const skillName = skillDir.split(/[\\/]/).at(-1);
-  const skillPath = join(skillDir, 'SKILL.md');
-  const content = readFileSync(skillPath, 'utf8');
-  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
-  if (!match) return `${skillName}: 缺少 YAML frontmatter`;
-
-  const name = match[1].match(/^name:\s*(.+)$/m)?.[1]?.trim();
-  const description = match[1].match(/^description:\s*(.+)$/m)?.[1]?.trim();
-  if (!name) return `${skillName}: 缺少 name`;
-  if (!description) return `${skillName}: 缺少 description`;
-  if (name !== skillName) return `${skillName}: name 应为 ${skillName}，实际为 ${name}`;
-  if (description.length < 20) return `${skillName}: description 过短`;
-  return null;
-}
-
-function validateSkills(root) {
-  return skillDirs(root).flatMap((skillDir) => {
-    const issue = validateSkillDir(skillDir);
-    return issue ? [issue] : [];
-  });
 }
 
 // 静默 init/update 的日志，保持测试输出干净
@@ -227,6 +199,38 @@ console.log('create-claude-team 冒烟测试');
 console.log('\n[配置校验]');
 await silent(() => validateProject());
 assert(true, 'validate: manifest / skill 结构通过');
+
+console.log('\n[Codex 文本重写]');
+{
+  const rewritten = toCodexText([
+    '见 `rules/design.md` 和 `commands/taste.md`。',
+    '保留 `project-preset/rules/project.md`。',
+    '保留 `lang/python/rules/python.md`。',
+    '显式 `.claude/specs/node.md` 应改写。',
+  ].join('\n'));
+  assert(rewritten.includes('`.agents/rules/design.md`'), 'toCodexText: 相对 rules/ 路径改写');
+  assert(rewritten.includes('`.agents/commands/taste.md`'), 'toCodexText: 相对 commands/ 路径改写');
+  assert(rewritten.includes('`project-preset/rules/project.md`'), 'toCodexText: 不误伤 project-preset/rules/');
+  assert(rewritten.includes('`lang/python/rules/python.md`'), 'toCodexText: 不误伤 lang/*/rules/');
+  assert(rewritten.includes('`.agents/specs/node.md`'), 'toCodexText: 显式 .claude/specs/ 路径改写');
+}
+
+console.log('\n[MCP 漂移检测]');
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-mcp-'));
+  try {
+    const targetPath = join(tmp, '.mcp.json');
+    const presetPath = join(tmp, 'preset.mcp.json');
+    writeFileSync(targetPath, JSON.stringify({ mcpServers: { github: {} } }));
+    writeFileSync(presetPath, JSON.stringify({ mcpServers: { github: {}, postgres: {} } }));
+    assert(
+      missingPresetMcpServers(targetPath, presetPath).join(',') === 'postgres',
+      'update: 能检测预设 MCP server 漂移'
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
 
 for (const manifest of readPresetCatalog()) {
   const languages = Object.keys(manifest.languages ?? {});
