@@ -74,6 +74,32 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
 
 `tasks.md` 状态必须使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
 
+## Release Report 契约
+
+`/ship` 必须产出可沉淀的发布报告，路径为：
+
+```text
+workspace/releases/YYYY-MM-DD-<version-or-scope>.md
+```
+
+命名规则：
+
+- `<version-or-scope>` 优先使用版本号或 tag，如 `v1.2.3`；没有版本时使用任务 ID、模块 ID、目录名或分支名的短横线形式。
+- 如果 `workspace/releases/` 不存在，先创建目录。
+- 报告路径必须写入 Summary 的 `affected files/modules`，并写入 `events.jsonl.artifacts`。
+
+报告必须包含以下字段：
+
+- **发布结论**：`ready` / `needs_confirmation` / `blocked` / `shipped`，并给一句话原因。
+- **关联任务**：任务 ID、模块 ID、版本号或发布范围；没有则写 `无`。
+- **发布范围**：分支、tag、变更模块、关键配置和报告关联的 review report。
+- **检查结果**：review、test、typecheck、lint、security、performance、accessibility、config、git、rollback 的 pass/fail/warn。
+- **风险**：已知风险、影响范围、是否需要用户接受。
+- **回滚步骤**：具体命令、旧版本/tag、数据回滚方式、触发条件。
+- **发布后验证**：上线后要检查的页面、接口、日志、监控指标或人工验收项。
+- **Gate 结果**：release gate 的 pass/fail、警告数、阻塞项和确认人。
+- **下一步**：执行部署、等待确认、继续修复、回滚或进入 hotfix。
+
 ## 标准结果摘要
 
 `/ship` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。
@@ -88,7 +114,7 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
 
 映射规则：
 - `events.jsonl.summary` 使用 `status` + 一句话发布结论，例如 `completed: 发布检查通过，等待用户确认发布`。
-- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径、tag 或发布报告。
+- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径、tag 或发布报告，必须包含 `workspace/releases/YYYY-MM-DD-<version-or-scope>.md`。
 - `events.jsonl.checks` 使用 `checks` 的结构化结果。
 - `events.jsonl.next` 使用 `next action`。
 
@@ -143,7 +169,18 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
 ```markdown
 # 发布检查报告
 
+> 路径：workspace/releases/2026-07-09-v1.2.3.md
+
 ## 结论：✅ 可以发布 / ⚠️ 需要确认 / ❌ 需要修复
+
+## 关联任务
+- 任务：T1.5
+- 版本：v1.2.3
+
+## 发布范围
+- 分支：feature/user-auth
+- tag：v1.2.3
+- Review report：workspace/reviews/2026-07-09-auth.md
 
 | 检查维度 | 结果 | 详情 |
 |----------|------|------|
@@ -160,12 +197,25 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
 - 回滚步骤：[具体命令]
 - 回滚触发条件：[如错误率 > 1%]
 - 旧版本：[tag/commit]
+- 数据回滚：[迁移 down 命令或无需数据回滚的说明]
 
 ## 发布步骤
 1. 合并 PR 到 main
 2. 创建 tag: v1.2.3
 3. 执行部署脚本
 4. 验证部署
+
+## 发布后验证
+- 页面/接口：[需要验证的入口]
+- 日志：[需要观察的错误日志]
+- 监控：[错误率、延迟、关键业务指标]
+- 人工验收：[用户或负责人确认项]
+
+## Gate 结果
+- release: pass
+- warnings: 0
+- blockers: 0
+- approver: [用户/负责人]
 
 ## Summary
 - status: completed

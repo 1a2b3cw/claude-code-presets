@@ -195,7 +195,7 @@
 
 ### T1.5 标准化 release report
 
-- **状态**：todo
+- **状态**：done
 - **目标**：`/ship` 产出发布报告和回滚方案。
 - **路径建议**：`workspace/releases/<date-or-version>.md`
 - **字段**：

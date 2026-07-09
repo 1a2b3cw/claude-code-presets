@@ -30,6 +30,7 @@ const PRODUCT_BRIEF_REQUIRED_TEXT = ['product-brief.md', 'prd.md', '目标用户
 const ROADMAP_REQUIRED_TEXT = ['模块 ID', '状态', '依赖', '验收标准', '风险', '最近更新', 'planned', 'in_progress', 'blocked', 'done', 'shipped'];
 const TASKS_REQUIRED_TEXT = ['tasks.md', 'ready', 'needs_clarification', 'planned', 'in_progress', 'local_gate', 'review_gate', 'release_gate', 'blocked', 'shipped', 'done', '阻塞原因', 'Gate 结果', '验收命令'];
 const REVIEW_REPORT_REQUIRED_TEXT = ['workspace/reviews/YYYY-MM-DD-<scope>.md', '结论', '关联任务', '变更范围', '问题列表', '严重度', '自动修复项', '剩余风险', 'events.jsonl.artifacts'];
+const RELEASE_REPORT_REQUIRED_TEXT = ['workspace/releases/YYYY-MM-DD-<version-or-scope>.md', '发布结论', '检查结果', '风险', '回滚步骤', '发布后验证', 'Gate 结果', 'events.jsonl.artifacts'];
 
 let passed = 0;
 let failed = 0;
@@ -89,6 +90,10 @@ function hasTasksContract(text) {
 
 function hasReviewReportContract(text) {
   return REVIEW_REPORT_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasReleaseReportContract(text) {
+  return RELEASE_REPORT_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 // 静默 init/update 的日志，保持测试输出干净
@@ -198,6 +203,11 @@ async function runScenario(manifest, {
       hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
         hasReviewReportContract(codexCommandText(agentsDir, 'review-all')),
       'init: review-all command 与 skill 包含 review report 契约'
+    );
+    assert(
+      hasReleaseReportContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasReleaseReportContract(codexCommandText(agentsDir, 'ship')),
+      'init: ship command 与 skill 包含 release report 契约'
     );
 
     const initSkillNames = dirNames(skillsDir);
@@ -312,6 +322,11 @@ async function runScenario(manifest, {
       hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
         hasReviewReportContract(codexCommandText(agentsDir, 'review-all')),
       'update: review-all command 与 skill 保留 review report 契约'
+    );
+    assert(
+      hasReleaseReportContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasReleaseReportContract(codexCommandText(agentsDir, 'ship')),
+      'update: ship command 与 skill 保留 release report 契约'
     );
 
     const updSkillNames = dirNames(skillsDir);
