@@ -28,6 +28,7 @@
    - 只读取最近 20 条有效 JSONL；坏行跳过并在数据源状态中标记 warning。
    - 使用 `command`、`task`、`status`、`summary`、`checks`、`artifacts`、`next` 推断最近完成、失败、阻塞和下一步。
    - 使用 metrics 扩展字段 `taskId`、`level`、`checkIssueCount`、`checkFixRounds`、`reviewRejectCount`、`testFailureCount`、`estimateHours`、`actualHours` 聚合最近 5/10 次任务趋势。
+   - 使用 `failureRecovery` 识别测试失败、CI 失败、pack 失败、hook 误拦和发布失败，生成“最近失败 Top N”和“重复失败建议”。
    - 重复问题检测只统计非 `/standup` 事件，且优先统计 `failed` / `blocked` 状态；连续出现相同失败 `checks`、相同 `blocked` 状态或相同 `next` 卡住时，输出到“重复问题/流程改进建议”。
    - `/standup` 自己追加的事件只用于证明状态汇报发生过，不参与重复问题判断。
 
@@ -78,6 +79,26 @@
 - 估算偏差绝对值 `>= 50%`：下次同级别任务需要拆小或更新 `estimateHours`，并说明偏差来自最近 5/10 次任务。
 
 没有触发阈值时，输出“暂无明显重复问题”，但仍可给出一个低优先级观察项，例如最近样本量不足或数据缺失。
+
+### 失败恢复聚合规则
+
+`/standup` 必须从最近非 `/standup` 事件中读取可选对象 `failureRecovery`，并输出最近失败 Top N（默认 N=5）。每条失败记录至少展示：
+
+#### 失败恢复记录契约（读取字段）
+
+- `failureType`：`test_failure` / `ci_failure` / `pack_failure` / `hook_false_positive` / `release_failure`。
+- `taskId` 或 `task`。
+- `stage`、`symptom`、`rootCause`、`recoveryAction`、`attempts`、`finalStatus`。
+- `evidence` 中的报告、日志或命令路径。
+- `followUp` 中的后续动作。
+
+重复失败建议规则：
+
+- 同一 `failureType` 在最近 10 条非 `/standup` 事件中出现 `>= 2` 次：建议更新 project-preset 或对应流程规则。
+- 同一 `rootCause` 出现 `>= 2` 次：建议补回归测试、hook 行为测试或 CI 检查。
+- `finalStatus = blocked` 或 `needs_followup`：必须进入“阻塞项”和“下一步建议”。
+- `hook_false_positive` 出现：建议记录误拦输入、调整 hook 规则，并补一个不会误拦的行为测试。
+- `release_failure` 出现：建议关联 release report，确认回滚步骤和发布后验证是否需要更新。
 
 ### events.jsonl 契约
 
@@ -153,6 +174,15 @@
 ## 重复问题/流程改进建议
 - [触发条件] → [数据来源：events.jsonl 最近 N 条 / metrics.md 摘要 / journal.md 决策] → [流程改进建议]
 - 无明显重复问题时输出：暂无明显重复问题。
+
+## 最近失败 Top N
+| 时间 | 任务 | 类型 | 阶段 | 现象 | 恢复动作 | 最终状态 | 证据 |
+|------|------|------|------|------|----------|----------|------|
+| [time] | [taskId] | [failureType] | [stage] | [symptom] | [recoveryAction] | [finalStatus] | [evidence] |
+
+## 重复失败建议
+- [failureType/rootCause] → [数据来源：failureRecovery 最近 N 条] → [建议更新的测试、hook、CI、release 或 project-preset 规则]
+- 无重复失败时输出：暂无重复失败。
 
 ---
 

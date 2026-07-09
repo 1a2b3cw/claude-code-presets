@@ -255,6 +255,24 @@ for 每个任务 in tasks.md:
 | `estimateHours` | 预估工时；没有估算则为 `null` |
 | `actualHours` | 实际耗时；没有记录则为 `null` |
 
+#### 失败恢复记录契约
+
+当 `/dev` 遇到测试失败、CI 失败、pack 失败、hook 误拦或发布失败，并且本次流程进行了自动修复、重试、回滚或最终阻塞时，收尾事件必须写入可选对象 `failureRecovery`。无失败发生时省略该对象。
+
+`failureRecovery` 固定字段：
+
+| 字段 | 说明 |
+|------|------|
+| `failureType` | `test_failure` / `ci_failure` / `pack_failure` / `hook_false_positive` / `release_failure` |
+| `stage` | 发生阶段，如 `local_gate`、`review_gate`、`release_gate`、`hook`、`ci` |
+| `symptom` | 用户可读的失败现象，避免粘贴长日志 |
+| `rootCause` | 已确认根因；未知时为 `unknown` |
+| `recoveryAction` | 已执行的恢复动作，如 fix、retry、rollback、mark_flaky、accept_risk |
+| `attempts` | 修复或重试次数 |
+| `finalStatus` | `recovered` / `blocked` / `accepted_risk` / `needs_followup` |
+| `evidence` | 相关命令、报告或日志路径数组，必须使用仓库相对路径 |
+| `followUp` | 后续任务、补测试、修 CI 或人工确认事项；没有则为 `null` |
+
 写入规则：
 - 只在命令收尾时追加 1 条最终事件，不记录中间步骤。
 - 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。

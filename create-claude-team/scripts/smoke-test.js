@@ -34,6 +34,8 @@ const SHIP_ROADMAP_REQUIRED_TEXT = ['roadmap.md 状态更新', '产品模块状�
 const METRICS_EVENTS_REQUIRED_TEXT = ['taskId', 'level', 'checkIssueCount', 'checkFixRounds', 'reviewRejectCount', 'testFailureCount', 'estimateHours', 'actualHours'];
 const STANDUP_METRICS_REQUIRED_TEXT = ['Metrics 聚合规则', '最近 5/10 次任务', '`events.jsonl` 是 metrics 的机器事实来源', '`metrics.md` 是人类可读摘要'];
 const STANDUP_IMPROVEMENT_REQUIRED_TEXT = ['流程改进建议规则', 'spec 否决轮数 `>= 3`', '平均 `checkIssueCount >= 5`', '`reviewRejectCount >= 1`', '`testFailureCount >= 1`', '估算偏差绝对值 `>= 50%`', '数据来源：events.jsonl 最近 N 条'];
+const FAILURE_RECOVERY_REQUIRED_TEXT = ['失败恢复记录契约', '`failureRecovery`', '`failureType`', '`test_failure`', '`ci_failure`', '`pack_failure`', '`hook_false_positive`', '`release_failure`', '`recoveryAction`', '`finalStatus`'];
+const STANDUP_FAILURE_REQUIRED_TEXT = ['失败恢复聚合规则', '最近失败 Top N', '重复失败建议', '`failureRecovery`', '同一 `failureType`', '`hook_false_positive` 出现', '`release_failure` 出现'];
 const REVIEW_REPORT_REQUIRED_TEXT = ['workspace/reviews/YYYY-MM-DD-<scope>.md', '结论', '关联任务', '变更范围', '问题列表', '严重度', '自动修复项', '剩余风险', 'events.jsonl.artifacts'];
 const RELEASE_REPORT_REQUIRED_TEXT = ['workspace/releases/YYYY-MM-DD-<version-or-scope>.md', '发布结论', '检查结果', '风险', '回滚步骤', '发布后验证', 'Gate 结果', 'events.jsonl.artifacts'];
 
@@ -111,6 +113,14 @@ function hasStandupMetricsContract(text) {
 
 function hasStandupImprovementContract(text) {
   return hasStandupMetricsContract(text) && STANDUP_IMPROVEMENT_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasFailureRecoveryContract(text) {
+  return FAILURE_RECOVERY_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasStandupFailureContract(text) {
+  return hasFailureRecoveryContract(text) && STANDUP_FAILURE_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 function hasReviewReportContract(text) {
@@ -250,6 +260,18 @@ async function runScenario(manifest, {
       hasStandupImprovementContract(codexCommandSkillText(agentsDir, 'standup')) &&
         hasStandupImprovementContract(codexCommandText(agentsDir, 'standup')),
       'init: standup command 与 skill 包含流程改进建议契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasFailureRecoveryContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasFailureRecoveryContract(codexCommandText(agentsDir, commandName));
+      }),
+      'init: core command 与 skill 包含失败恢复记录契约'
+    );
+    assert(
+      hasStandupFailureContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupFailureContract(codexCommandText(agentsDir, 'standup')),
+      'init: standup command 与 skill 包含失败恢复聚合契约'
     );
     assert(
       hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
@@ -396,6 +418,18 @@ async function runScenario(manifest, {
       hasStandupImprovementContract(codexCommandSkillText(agentsDir, 'standup')) &&
         hasStandupImprovementContract(codexCommandText(agentsDir, 'standup')),
       'update: standup command 与 skill 保留流程改进建议契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasFailureRecoveryContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasFailureRecoveryContract(codexCommandText(agentsDir, commandName));
+      }),
+      'update: core command 与 skill 保留失败恢复记录契约'
+    );
+    assert(
+      hasStandupFailureContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupFailureContract(codexCommandText(agentsDir, 'standup')),
+      'update: standup command 与 skill 保留失败恢复聚合契约'
     );
     assert(
       hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
