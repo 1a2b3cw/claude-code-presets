@@ -27,7 +27,7 @@
 3. **读取 events.jsonl**
    - 只读取最近 20 条有效 JSONL；坏行跳过并在数据源状态中标记 warning。
    - 使用 `command`、`task`、`status`、`summary`、`checks`、`artifacts`、`next` 推断最近完成、失败、阻塞和下一步。
-   - 使用 metrics 扩展字段 `taskId`、`level`、`checkIssueCount`、`checkFixRounds`、`reviewRejectCount`、`testFailureCount`、`estimateHours`、`actualHours` 聚合最近 5/10 次任务趋势。
+   - 使用 metrics 扩展字段 `taskId`、`level`、`specRejectCount`、`checkIssueCount`、`checkFixRounds`、`reviewRejectCount`、`testFailureCount`、`estimateHours`、`actualHours` 聚合最近 5/10 次任务趋势。
    - 使用 `failureRecovery` 识别测试失败、CI 失败、pack 失败、hook 误拦和发布失败，生成“最近失败 Top N”和“重复失败建议”。
    - 重复问题检测只统计非 `/standup` 事件，且优先统计 `failed` / `blocked` 状态；连续出现相同失败 `checks`、相同 `blocked` 状态或相同 `next` 卡住时，输出到“重复问题/流程改进建议”。
    - `/standup` 自己追加的事件只用于证明状态汇报发生过，不参与重复问题判断。
@@ -54,6 +54,7 @@
 
 - 最近 5/10 次任务的平均 `checkIssueCount`。
 - 最近 5/10 次任务的平均 `checkFixRounds`。
+- 最近 5/10 次任务的 `specRejectCount` 总数。
 - 最近 5/10 次任务的 `reviewRejectCount` 总数。
 - 最近 5/10 次任务的 `testFailureCount` 总数。
 - 最近 5/10 次任务的估算偏差：`(actualHours - estimateHours) / estimateHours`，只统计两个字段都有值且 `estimateHours > 0` 的事件。
@@ -71,7 +72,7 @@
 
 触发规则：
 
-- spec 否决轮数 `>= 3`：下次 `/dev` Phase 0 必须先输出更短的需求摘要、明确未决问题，并等待用户确认后再规划。数据可来自 `metrics.md` 摘要或事件中的 spec 否决记录。
+- `specRejectCount >= 3`：下次 `/dev` Phase 0 必须先输出更短的需求摘要、明确未决问题，并等待用户确认后再规划。数据必须可追溯到 `events.jsonl` 中最近 5/10 条任务事件。
 - 平均 `checkIssueCount >= 5`：同类任务下次强制先写测试或最小复现，再进入实现。
 - 平均 `checkFixRounds >= 2`：下次把 `/check` 前移到每个子任务完成后执行，避免最后集中修复。
 - `reviewRejectCount >= 1`：同模块后续每个子任务后强制执行 `/check`，并在 `/review-all` 前列出自检结果。
@@ -117,10 +118,11 @@
 
 #### Metrics 扩展字段
 
-`/standup` 自己的事件也可以写入 metrics 字段；通常 `checkIssueCount`、`checkFixRounds`、`reviewRejectCount`、`testFailureCount` 为 `0`，`estimateHours` / `actualHours` 为 `null`。读取其他命令事件时必须识别：
+`/standup` 自己的事件也可以写入 metrics 字段；通常 `specRejectCount`、`checkIssueCount`、`checkFixRounds`、`reviewRejectCount`、`testFailureCount` 为 `0`，`estimateHours` / `actualHours` 为 `null`。读取其他命令事件时必须识别：
 
 - `taskId`
 - `level`
+- `specRejectCount`
 - `checkIssueCount`
 - `checkFixRounds`
 - `reviewRejectCount`
@@ -137,7 +139,7 @@
 示例：
 
 ```json
-{"time":"2026-07-09T10:30:00Z","command":"/standup","task":null,"taskId":null,"level":null,"status":"completed","summary":"已生成项目状态汇报，下一步建议执行 T0.2","checks":{"events":"pass","git":"pass","metrics":"pass","journal":"pass"},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":[".claude/workspace/events.jsonl",".claude/workspace/metrics.md"],"next":"T0.2"}
+{"time":"2026-07-09T10:30:00Z","command":"/standup","task":null,"taskId":null,"level":null,"status":"completed","summary":"已生成项目状态汇报，下一步建议执行 T0.2","checks":{"events":"pass","git":"pass","metrics":"pass","journal":"pass"},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":[".claude/workspace/events.jsonl",".claude/workspace/metrics.md"],"next":"T0.2"}
 ```
 
 ## 输出格式

@@ -259,6 +259,7 @@ for 每个任务 in tasks.md:
 |------|------|
 | `taskId` | 标准任务或模块 ID；优先等于 `task`，如 `T2.1`、`M3` |
 | `level` | 任务级别：`S` / `M` / `L` / `XL` |
+| `specRejectCount` | Phase 1 中用户否决方案或 spec 的次数 |
 | `checkIssueCount` | 首次 `/check` 或本地快检发现的问题数 |
 | `checkFixRounds` | `/check` 或本地快检自动修复轮数 |
 | `reviewRejectCount` | `/review-all` 打回次数 |
@@ -293,7 +294,7 @@ for 每个任务 in tasks.md:
 示例：
 
 ```json
-{"time":"2026-07-09T10:00:00Z","command":"/dev","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 完成标准结果摘要契约","checks":{"validate":"pass","test":"pass","review":"pass"},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":[".agents/commands/dev.md",".agents/commands/check.md"],"next":"T0.3"}
+{"time":"2026-07-09T10:00:00Z","command":"/dev","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 完成标准结果摘要契约","checks":{"validate":"pass","test":"pass","review":"pass"},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":[".agents/commands/dev.md",".agents/commands/check.md"],"next":"T0.3"}
 ```
 
 ---

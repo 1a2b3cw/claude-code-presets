@@ -154,6 +154,7 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 |------|------|
 | `taskId` | 标准任务、模块、版本或发布范围 ID；优先等于 `task` |
 | `level` | 任务级别：`S` / `M` / `L` / `XL`；未知为 `null` |
+| `specRejectCount` | 继承任务的 spec 否决次数；未知为 `null`，无发生为 `0` |
 | `checkIssueCount` | 发布检查发现的问题数；没有则 `0` |
 | `checkFixRounds` | 发布检查自动修复轮数 |
 | `reviewRejectCount` | 发布前 `/review-all` 打回次数 |
@@ -188,7 +189,7 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 示例：
 
 ```json
-{"time":"2026-07-09T10:20:00Z","command":"/ship","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 发布检查通过，等待用户确认发布","checks":{"review":"pass","test":"pass","security":"pass","rollback":"pass"},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["workspace/releases/2026-07-09-t0.2.md"],"next":"用户确认后执行部署"}
+{"time":"2026-07-09T10:20:00Z","command":"/ship","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 发布检查通过，等待用户确认发布","checks":{"review":"pass","test":"pass","security":"pass","rollback":"pass"},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["workspace/releases/2026-07-09-t0.2.md"],"next":"用户确认后执行部署"}
 ```
 
 ## 自动修复机制

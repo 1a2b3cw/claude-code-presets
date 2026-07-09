@@ -124,6 +124,7 @@ In Codex, invoke this as `$team-command-check`. Do not rely on `/check` unless C
 |------|------|
 | `taskId` | 标准任务或模块 ID；优先等于 `task` |
 | `level` | 任务级别：`S` / `M` / `L` / `XL`；未知为 `null` |
+| `specRejectCount` | 本命令不产生 spec 否决，默认 `0` |
 | `checkIssueCount` | 首次快检发现的问题数 |
 | `checkFixRounds` | 自动修复并重新检查的轮数 |
 | `reviewRejectCount` | 本命令不产生 review 打回，默认 `0` |
@@ -158,7 +159,7 @@ In Codex, invoke this as `$team-command-check`. Do not rely on `/check` unless C
 示例：
 
 ```json
-{"time":"2026-07-09T10:05:00Z","command":"/check","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 快检通过，无剩余问题","checks":{"logic":"pass","types":"pass","boundary":"pass","issues":0},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["src/auth/login.ts"],"next":"继续 /review-all"}
+{"time":"2026-07-09T10:05:00Z","command":"/check","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 快检通过，无剩余问题","checks":{"logic":"pass","types":"pass","boundary":"pass","issues":0},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["src/auth/login.ts"],"next":"继续 /review-all"}
 ```
 
 ## 输出格式

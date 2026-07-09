@@ -151,6 +151,7 @@ workspace/reviews/YYYY-MM-DD-<scope>.md
 |------|------|
 | `taskId` | 标准任务、模块或审查范围 ID；优先等于 `task` |
 | `level` | 任务级别：`S` / `M` / `L` / `XL`；未知为 `null` |
+| `specRejectCount` | 继承任务的 spec 否决次数；未知为 `null`，无发生为 `0` |
 | `checkIssueCount` | Phase 1 `/check` 发现的问题总数 |
 | `checkFixRounds` | 快检或自动修复轮数 |
 | `reviewRejectCount` | 审查打回次数；首次不通过计 `1` |
@@ -185,7 +186,7 @@ workspace/reviews/YYYY-MM-DD-<scope>.md
 示例：
 
 ```json
-{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0,"fixRounds":0},"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["workspace/reviews/2026-07-09-t0.2.md"],"next":"/ship"}
+{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0,"fixRounds":0},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["workspace/reviews/2026-07-09-t0.2.md"],"next":"/ship"}
 ```
 
 ## 跨文件分析维度
