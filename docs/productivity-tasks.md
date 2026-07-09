@@ -111,7 +111,7 @@
 
 ### T1.1 定义 product brief / PRD 契约
 
-- **状态**：todo
+- **状态**：done
 - **目标**：把产品想法沉淀为轻量 `product-brief.md` 或 `prd.md`。
 - **范围**：
   - `/plan`

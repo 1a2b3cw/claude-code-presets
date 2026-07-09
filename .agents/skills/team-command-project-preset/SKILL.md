@@ -15,7 +15,7 @@ In Codex, invoke this as `$team-command-project-preset`. Do not rely on `/projec
 
 适用场景：
 
-- 新项目：用户只有想法，需要先把产品、技术栈、架构和验收标准沉淀下来。
+- 新项目：用户只有想法，需要先把 Product Brief / PRD、技术栈、架构和验收标准沉淀下来。
 - 已有项目：仓库里已经有代码，需要扫描后反推出真实技术栈、脚本、测试方式和模块边界。
 - 已有方案：用户已有 PRD、spec、架构图或技术方案，需要转成 AI 后续开发能长期遵守的规则。
 
@@ -50,6 +50,13 @@ In Codex, invoke this as `$team-command-project-preset`. Do not rely on `/projec
 | 新项目讨论 | 代码很少或用户描述产品想法 | 追问产品、技术、验收、UI、部署 |
 | 已有项目扫描 | 仓库有源码、依赖、脚本、测试 | 读取 README、package/pyproject/go.mod 等依赖文件、目录结构、测试脚本、CI 配置 |
 | 已有方案导入 | 用户给了 spec/PRD/架构文档 | 提取已确认约束，列出未决问题 |
+
+无论哪种入口，都必须先形成或读取 Product Brief：
+
+- 优先读取 `product-brief.md`
+- 其次读取 `prd.md`
+- 新项目没有上述文件时，在生成 `project-profile/` 前先创建 `product-brief.md`
+- 已有项目若只有 README/代码事实，则从事实中推导 Product Brief，并把不确定内容标为“推断”或“未决”
 
 如果信息不足，只问最多 5 个高价值问题：
 
@@ -92,14 +99,28 @@ project-profile/
 
 #### `product.md`
 
-包含：
+必须和 `product-brief.md` / `prd.md` 对齐，包含：
 
 - 一句话产品定义
 - 目标用户
 - 核心价值
 - 本期范围
 - 明确不做
+- 验收标准
 - 核心用户流程
+- 未决问题
+
+#### Product Brief 契约
+
+`product-brief.md` 或 `prd.md` 至少提供这些字段：
+
+- **目标用户**
+- **核心价值**
+- **本期范围**
+- **明确不做**
+- **验收标准**
+
+`project-profile/product.md` 可以补充更详细的事实、推断和决策，但不得把未确认推断写成确定规则。后续 `/plan` 应能从这些字段生成 `roadmap.md`。
 
 #### `tech-stack.md`
 

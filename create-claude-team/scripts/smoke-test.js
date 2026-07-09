@@ -26,6 +26,7 @@ const AGENT_COUNT = 6;
 const EVENT_COMMANDS = ['dev', 'check', 'review-all', 'ship', 'standup'];
 const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
 const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journal.md', 'git log', '下一步建议', '重复问题/流程改进建议'];
+const PRODUCT_BRIEF_REQUIRED_TEXT = ['product-brief.md', 'prd.md', '目标用户', '核心价值', '本期范围', '明确不做', '验收标准'];
 
 let passed = 0;
 let failed = 0;
@@ -69,6 +70,10 @@ function hasSummaryContract(text) {
     text.includes('checks') &&
     text.includes('next action') &&
     text.includes('events.jsonl.summary');
+}
+
+function hasProductBriefContract(text) {
+  return PRODUCT_BRIEF_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 // 静默 init/update 的日志，保持测试输出干净
@@ -145,6 +150,19 @@ async function runScenario(manifest, {
           standupSkill.includes('非 `/standup` 事件') &&
           standupCommand.includes('非 `/standup` 事件'),
         'init: standup command 与 skill 包含真实状态读取契约'
+      );
+    }
+    {
+      const planSkill = codexCommandSkillText(agentsDir, 'plan');
+      const planCommand = codexCommandText(agentsDir, 'plan');
+      const projectPresetSkillText = codexCommandSkillText(agentsDir, 'project-preset');
+      const projectPresetCommand = codexCommandText(agentsDir, 'project-preset');
+      assert(
+        hasProductBriefContract(planSkill) &&
+          hasProductBriefContract(planCommand) &&
+          hasProductBriefContract(projectPresetSkillText) &&
+          hasProductBriefContract(projectPresetCommand),
+        'init: plan/project-preset command 与 skill 包含 Product Brief 契约'
       );
     }
 
@@ -235,6 +253,13 @@ async function runScenario(manifest, {
         'update: standup command 与 skill 保留真实状态读取契约'
       );
     }
+    assert(
+      hasProductBriefContract(codexCommandSkillText(agentsDir, 'plan')) &&
+        hasProductBriefContract(codexCommandText(agentsDir, 'plan')) &&
+        hasProductBriefContract(codexCommandSkillText(agentsDir, 'project-preset')) &&
+        hasProductBriefContract(codexCommandText(agentsDir, 'project-preset')),
+      'update: plan/project-preset command 与 skill 保留 Product Brief 契约'
+    );
 
     const updSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => updSkillNames.includes(s)), 'update: 公共技能未被预设叠加删除');
