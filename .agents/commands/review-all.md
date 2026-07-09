@@ -56,6 +56,24 @@
    - 2 轮后仍有问题 → 列出剩余问题等用户决定
 ```
 
+## 标准结果摘要
+
+`/review-all` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。
+
+```markdown
+## Summary
+- status: completed / failed / blocked / skipped
+- affected files/modules: [本次审查范围、报告路径和自动修复文件]
+- checks: [/check、跨文件审查、严重/中等/轻微问题数、修复轮次]
+- next action: [可以合并、进入 /ship、继续修复或等待用户决策]
+```
+
+映射规则：
+- `events.jsonl.summary` 使用 `status` + 一句话审查结论，例如 `completed: 跨文件审查通过，无阻塞问题`。
+- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径。
+- `events.jsonl.checks` 使用 `checks` 的结构化结果。
+- `events.jsonl.next` 使用 `next action`。
+
 ## 事件记录
 
 `/review-all` 收尾时必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件。该文件是 `/standup` 和后续 metrics 的机器可读事实来源。
@@ -84,7 +102,7 @@
 示例：
 
 ```json
-{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.1","status":"completed","summary":"跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0},"artifacts":["workspace/reviews/2026-07-09-t0.1.md"],"next":"/ship"}
+{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.2","status":"completed","summary":"completed: 跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0,"fixRounds":0},"artifacts":["workspace/reviews/2026-07-09-t0.2.md"],"next":"/ship"}
 ```
 
 ## 跨文件分析维度

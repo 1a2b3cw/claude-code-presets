@@ -24,6 +24,7 @@ const PUBLIC_RULES = ['git.md', 'design.md'];
 const COMMAND_SKILL_COUNT = 9;
 const AGENT_COUNT = 6;
 const EVENT_COMMANDS = ['dev', 'check', 'review-all', 'ship', 'standup'];
+const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
 
 let passed = 0;
 let failed = 0;
@@ -116,6 +117,17 @@ async function runScenario(manifest, {
       }),
       'init: events.jsonl 契约包含核心字段'
     );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => {
+        const text = codexCommandSkillText(agentsDir, commandName);
+        return text.includes('## Summary') &&
+          text.includes('affected files/modules') &&
+          text.includes('checks') &&
+          text.includes('next action') &&
+          text.includes('events.jsonl.summary');
+      }),
+      'init: dev/check/review-all/ship 包含标准结果摘要契约'
+    );
 
     const initSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), `init: ${PUBLIC_SKILLS.length} 个公共技能齐全`);
@@ -187,6 +199,10 @@ async function runScenario(manifest, {
     assert(
       EVENT_COMMANDS.every((commandName) => codexCommandSkillText(agentsDir, commandName).includes('.claude/workspace/events.jsonl')),
       'update: Codex command skills 保留 events.jsonl 契约'
+    );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => codexCommandSkillText(agentsDir, commandName).includes('affected files/modules')),
+      'update: Codex command skills 保留标准结果摘要契约'
     );
 
     const updSkillNames = dirNames(skillsDir);

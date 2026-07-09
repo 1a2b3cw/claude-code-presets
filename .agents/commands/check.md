@@ -55,6 +55,24 @@
    - 2 轮后仍有问题 → 列出剩余问题等你决定
 ```
 
+## 标准结果摘要
+
+`/check` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。
+
+```markdown
+## Summary
+- status: completed / failed / blocked / skipped
+- affected files/modules: [本次检查或自动修复的文件/模块]
+- checks: [logic、types、boundary 的最终结果和问题数]
+- next action: [继续开发、进入 /review-all、等待用户确认或阻塞原因]
+```
+
+映射规则：
+- `events.jsonl.summary` 使用 `status` + 一句话快检结论，例如 `completed: 快检通过，无剩余问题`。
+- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径。
+- `events.jsonl.checks` 使用 `checks` 的结构化结果。
+- `events.jsonl.next` 使用 `next action`。
+
 ## 事件记录
 
 `/check` 收尾时必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件。该文件是 `/standup` 和后续 metrics 的机器可读事实来源。
@@ -83,7 +101,7 @@
 示例：
 
 ```json
-{"time":"2026-07-09T10:05:00Z","command":"/check","task":"T0.1","status":"completed","summary":"快检通过，未发现逻辑、类型、边界问题","checks":{"logic":"pass","types":"pass","boundary":"pass"},"artifacts":["src/auth/login.ts"],"next":"继续 /review-all"}
+{"time":"2026-07-09T10:05:00Z","command":"/check","task":"T0.2","status":"completed","summary":"completed: 快检通过，无剩余问题","checks":{"logic":"pass","types":"pass","boundary":"pass","issues":0},"artifacts":["src/auth/login.ts"],"next":"继续 /review-all"}
 ```
 
 ## 输出格式

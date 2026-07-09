@@ -61,6 +61,24 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
    └── 记录发布日志
 ```
 
+## 标准结果摘要
+
+`/ship` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。
+
+```markdown
+## Summary
+- status: completed / shipped / failed / blocked / skipped
+- affected files/modules: [发布范围、报告路径、tag、关键配置或模块]
+- checks: [review、test、typecheck、lint、security、performance、rollback 的最终结果]
+- next action: [执行部署、发布后验证、继续修复或等待用户确认]
+```
+
+映射规则：
+- `events.jsonl.summary` 使用 `status` + 一句话发布结论，例如 `completed: 发布检查通过，等待用户确认发布`。
+- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径、tag 或发布报告。
+- `events.jsonl.checks` 使用 `checks` 的结构化结果。
+- `events.jsonl.next` 使用 `next action`。
+
 ## 事件记录
 
 `/ship` 收尾时必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件。该文件是 `/standup` 和后续 metrics 的机器可读事实来源。
@@ -89,7 +107,7 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
 示例：
 
 ```json
-{"time":"2026-07-09T10:20:00Z","command":"/ship","task":"T0.1","status":"completed","summary":"发布检查通过，等待用户确认发布","checks":{"review":"pass","test":"pass","security":"pass","rollback":"pass"},"artifacts":["workspace/releases/2026-07-09-t0.1.md"],"next":"用户确认后执行部署"}
+{"time":"2026-07-09T10:20:00Z","command":"/ship","task":"T0.2","status":"completed","summary":"completed: 发布检查通过，等待用户确认发布","checks":{"review":"pass","test":"pass","security":"pass","rollback":"pass"},"artifacts":["workspace/releases/2026-07-09-t0.2.md"],"next":"用户确认后执行部署"}
 ```
 
 ## 自动修复机制

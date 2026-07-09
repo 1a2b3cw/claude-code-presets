@@ -130,6 +130,24 @@ for 每个任务 in tasks.md:
    ⏱️ 耗时：预估 4h / 实际 3.5h（-12%）
 ```
 
+### Phase 4.5: 输出标准结果摘要（自动）
+
+`/dev` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。
+
+```markdown
+## Summary
+- status: completed / failed / blocked / skipped
+- affected files/modules: [本次新增、修改或重点影响的文件/模块]
+- checks: [测试、类型检查、lint、/check、/review-all 的最终结果]
+- next action: [下一步任务、阻塞决策或发布建议]
+```
+
+映射规则：
+- `events.jsonl.summary` 使用 `status` + 一句话结果，例如 `completed: 完成 T0.2 标准结果摘要契约`。
+- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径；模块名只保留在 `summary`。
+- `events.jsonl.checks` 使用 `checks` 的结构化结果。
+- `events.jsonl.next` 使用 `next action`。
+
 ### Phase 5: 追加事件（自动）
 
 开发流程结束时，必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件，作为 `/standup` 和后续 metrics 的机器可读事实来源。
@@ -158,7 +176,7 @@ for 每个任务 in tasks.md:
 示例：
 
 ```json
-{"time":"2026-07-09T10:00:00Z","command":"/dev","task":"T0.1","status":"completed","summary":"定义 events.jsonl 契约并同步 Codex command skills","checks":{"validate":"pass","test":"pass","review":"pass"},"artifacts":[".agents/commands/dev.md",".agents/commands/check.md"],"next":"T0.2"}
+{"time":"2026-07-09T10:00:00Z","command":"/dev","task":"T0.2","status":"completed","summary":"completed: 完成标准结果摘要契约","checks":{"validate":"pass","test":"pass","review":"pass"},"artifacts":[".agents/commands/dev.md",".agents/commands/check.md"],"next":"T0.3"}
 ```
 
 ---
