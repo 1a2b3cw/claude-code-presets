@@ -229,6 +229,12 @@ git log --oneline → 相关提交历史
 ## 修复记录
 - [x] src/auth.controller.ts:23 — 更新 create() 调用参数
 - [ ] src/user/register.ts:15 — 统一使用 AppError（建议）
+
+## Summary
+- status: completed
+- affected files/modules: src/features/auth/, workspace/reviews/2026-07-09-auth.md
+- checks: review pass / critical 0 / major 0 / fix rounds 1
+- next action: 进入 /ship
 ```
 
 ## 后续动作

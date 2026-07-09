@@ -59,6 +59,18 @@ function codexCommandSkillText(agentsDir, commandName) {
   return readFileSync(join(agentsDir, 'skills', `team-command-${commandName}`, 'SKILL.md'), 'utf8');
 }
 
+function codexCommandText(agentsDir, commandName) {
+  return readFileSync(join(agentsDir, 'commands', `${commandName}.md`), 'utf8');
+}
+
+function hasSummaryContract(text) {
+  return text.includes('## Summary') &&
+    text.includes('affected files/modules') &&
+    text.includes('checks') &&
+    text.includes('next action') &&
+    text.includes('events.jsonl.summary');
+}
+
 // 静默 init/update 的日志，保持测试输出干净
 async function silent(fn) {
   const orig = console.log;
@@ -120,20 +132,19 @@ async function runScenario(manifest, {
     );
     assert(
       SUMMARY_COMMANDS.every((commandName) => {
-        const text = codexCommandSkillText(agentsDir, commandName);
-        return text.includes('## Summary') &&
-          text.includes('affected files/modules') &&
-          text.includes('checks') &&
-          text.includes('next action') &&
-          text.includes('events.jsonl.summary');
+        return hasSummaryContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasSummaryContract(codexCommandText(agentsDir, commandName));
       }),
-      'init: dev/check/review-all/ship 包含标准结果摘要契约'
+      'init: dev/check/review-all/ship command 与 skill 包含标准结果摘要契约'
     );
     {
       const standupSkill = codexCommandSkillText(agentsDir, 'standup');
+      const standupCommand = codexCommandText(agentsDir, 'standup');
       assert(
-        STANDUP_REQUIRED_TEXT.every((text) => standupSkill.includes(text)),
-        'init: standup skill 包含真实状态读取与下一步建议契约'
+        STANDUP_REQUIRED_TEXT.every((text) => standupSkill.includes(text) && standupCommand.includes(text)) &&
+          standupSkill.includes('非 `/standup` 事件') &&
+          standupCommand.includes('非 `/standup` 事件'),
+        'init: standup command 与 skill 包含真实状态读取契约'
       );
     }
 
@@ -212,11 +223,16 @@ async function runScenario(manifest, {
       SUMMARY_COMMANDS.every((commandName) => codexCommandSkillText(agentsDir, commandName).includes('affected files/modules')),
       'update: Codex command skills 保留标准结果摘要契约'
     );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => codexCommandText(agentsDir, commandName).includes('affected files/modules')),
+      'update: Codex command docs 保留标准结果摘要契约'
+    );
     {
       const standupSkill = codexCommandSkillText(agentsDir, 'standup');
+      const standupCommand = codexCommandText(agentsDir, 'standup');
       assert(
-        STANDUP_REQUIRED_TEXT.every((text) => standupSkill.includes(text)),
-        'update: standup skill 保留真实状态读取契约'
+        STANDUP_REQUIRED_TEXT.every((text) => standupSkill.includes(text) && standupCommand.includes(text)),
+        'update: standup command 与 skill 保留真实状态读取契约'
       );
     }
 

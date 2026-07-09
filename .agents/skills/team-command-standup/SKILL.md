@@ -38,7 +38,8 @@ In Codex, invoke this as `$team-command-standup`. Do not rely on `/standup` unle
 3. **读取 events.jsonl**
    - 只读取最近 20 条有效 JSONL；坏行跳过并在数据源状态中标记 warning。
    - 使用 `command`、`task`、`status`、`summary`、`checks`、`artifacts`、`next` 推断最近完成、失败、阻塞和下一步。
-   - 连续出现相同 `summary`、相同失败 `checks`、相同 `blocked` 状态或相同 `next` 卡住时，输出到“重复问题/流程改进建议”。
+   - 重复问题检测只统计非 `/standup` 事件，且优先统计 `failed` / `blocked` 状态；连续出现相同失败 `checks`、相同 `blocked` 状态或相同 `next` 卡住时，输出到“重复问题/流程改进建议”。
+   - `/standup` 自己追加的事件只用于证明状态汇报发生过，不参与重复问题判断。
 
 4. **读取 journal / metrics / git**
    - journal 用于补充历史决策、用户偏好和长期上下文。

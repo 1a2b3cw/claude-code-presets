@@ -142,6 +142,12 @@
 2. 创建 tag: v1.2.3
 3. 执行部署脚本
 4. 验证部署
+
+## Summary
+- status: completed
+- affected files/modules: workspace/releases/2026-07-09-release.md, v1.2.3
+- checks: review pass / test pass / typecheck pass / lint pass / security pass / rollback pass
+- next action: 用户确认后执行部署
 ```
 
 ## 使用方式

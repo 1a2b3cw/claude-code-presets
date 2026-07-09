@@ -137,6 +137,12 @@ In Codex, invoke this as `$team-command-check`. Do not rely on `/check` unless C
 
 ## 修复记录
 - [x] login.ts:45 - 添加空字符串检查
+
+## Summary
+- status: completed
+- affected files/modules: login.ts, auth-service.ts
+- checks: logic pass / types pass / boundary pass / issues 0
+- next action: 继续 /review-all
 ```
 
 ## 使用方式

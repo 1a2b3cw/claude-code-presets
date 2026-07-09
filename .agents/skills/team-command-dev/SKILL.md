@@ -139,6 +139,12 @@ for 每个任务 in tasks.md:
    ✅ 开发完成
    📊 指标：spec 0 轮 | check 2 个问题，1 轮修复 | 审查通过 | 测试通过
    ⏱️ 耗时：预估 4h / 实际 3.5h（-12%）
+
+## Summary
+- status: completed
+- affected files/modules: [本次新增、修改或重点影响的文件/模块]
+- checks: test pass / typecheck pass / lint pass / review pass
+- next action: [下一步任务、阻塞决策或发布建议]
 ```
 
 ### Phase 4.5: 输出标准结果摘要（自动）
