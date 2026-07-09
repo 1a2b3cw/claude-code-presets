@@ -69,6 +69,32 @@
 
 `tasks.md` 状态必须使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
 
+## Review Report 契约
+
+`/review-all` 必须产出可沉淀的审查报告，路径为：
+
+```text
+workspace/reviews/YYYY-MM-DD-<scope>.md
+```
+
+命名规则：
+
+- `<scope>` 使用任务 ID、模块 ID、目录名或分支名的短横线形式，如 `t1.4`、`auth`、`feature-user-auth`。
+- 如果 `workspace/reviews/` 不存在，先创建目录。
+- 报告路径必须写入 Summary 的 `affected files/modules`，并写入 `events.jsonl.artifacts`。
+
+报告必须包含以下字段：
+
+- **结论**：`pass` / `needs_fix` / `blocked`，并给一句话原因。
+- **关联任务**：任务 ID、模块 ID 或审查范围；没有则写 `无`。
+- **变更范围**：分支、对比基准、文件/目录范围、关键模块。
+- **问题列表**：每个问题包含文件、位置、说明、建议修复。
+- **严重度**：`critical` / `major` / `minor` / `suggestion`。
+- **自动修复项**：已自动修复的文件、原因和修复轮次。
+- **剩余风险**：尚未修复或需要人工接受的风险。
+- **Gate 结果**：review gate 的 pass/fail、问题计数、修复轮次。
+- **下一步**：进入 `/ship`、继续修复、等待用户确认或阻塞处理。
+
 ## 标准结果摘要
 
 `/review-all` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。
@@ -83,7 +109,7 @@
 
 映射规则：
 - `events.jsonl.summary` 使用 `status` + 一句话审查结论，例如 `completed: 跨文件审查通过，无阻塞问题`。
-- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径。
+- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径，必须包含 `workspace/reviews/YYYY-MM-DD-<scope>.md`。
 - `events.jsonl.checks` 使用 `checks` 的结构化结果。
 - `events.jsonl.next` 使用 `next action`。
 
@@ -189,7 +215,13 @@ git log --oneline → 相关提交历史
 ```markdown
 # 跨文件审查报告
 
+> 路径：workspace/reviews/2026-07-09-auth.md
+
 ## 结论：✅ 通过 / ❌ 需要修改 / 🔴 需要重大修改
+
+## 关联任务
+- 任务：T1.4
+- 模块：auth
 
 ## 变更概况
 - 分支：feature/user-auth → main
@@ -242,6 +274,16 @@ git log --oneline → 相关提交历史
 ## 修复记录
 - [x] src/auth.controller.ts:23 — 更新 create() 调用参数
 - [ ] src/user/register.ts:15 — 统一使用 AppError（建议）
+
+## 剩余风险
+- `src/user/register.ts` 的错误处理不一致为建议项，不阻塞发布。
+
+## Gate 结果
+- review: pass
+- critical: 0
+- major: 0
+- minor: 1
+- fix rounds: 1
 
 ## Summary
 - status: completed

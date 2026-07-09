@@ -174,7 +174,7 @@
 
 ### T1.4 标准化 review report
 
-- **状态**：todo
+- **状态**：done
 - **目标**：`/review-all` 产出可沉淀的审查报告。
 - **路径建议**：`workspace/reviews/<date>-<scope>.md`
 - **字段**：
