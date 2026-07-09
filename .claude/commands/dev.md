@@ -221,6 +221,23 @@ for 每个任务 in tasks.md:
 - `events.jsonl.checks` 使用 `checks` 的结构化结果。
 - `events.jsonl.next` 使用 `next action`。
 
+### Next Best Action 契约
+
+`/dev` 完成或阻塞时必须输出固定的 Next Best Action，告诉用户下一步应该做什么、为什么、是否需要人工确认。
+
+```markdown
+## Next Best Action
+- action: [建议执行的命令或人工动作，如 /check、/review-all、/ship、继续 T3.2、等待用户确认]
+- reason: [为什么现在应该做这一步，引用任务状态、gate 结果、风险或 metrics]
+- requires human confirmation: yes / no
+- source: [依据来源，如 tasks.md、roadmap.md、events.jsonl、review report、release report、git diff]
+```
+
+写入规则：
+- `Summary.next action` 必须与 `Next Best Action.action` 保持一致或可直接追溯。
+- 如果 `requires human confirmation: yes`，必须说明谁需要确认什么。
+- 如果任务 `blocked`，Next Best Action 必须指向解除阻塞所需的最小动作。
+
 ### Phase 5: 追加事件（自动）
 
 开发流程结束时，必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件，作为 `/standup` 和后续 metrics 的机器可读事实来源。

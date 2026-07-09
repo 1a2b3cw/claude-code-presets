@@ -127,6 +127,23 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 - `events.jsonl.checks` 使用 `checks` 的结构化结果。
 - `events.jsonl.next` 使用 `next action`。
 
+### Next Best Action 契约
+
+`/ship` 完成、阻塞或等待确认时必须输出固定的 Next Best Action，告诉用户下一步应该做什么、为什么、是否需要人工确认。
+
+```markdown
+## Next Best Action
+- action: [建议执行的命令或人工动作，如执行部署、等待用户确认、修复发布门禁、回滚]
+- reason: [为什么现在应该做这一步，引用 release gate、风险、回滚准备或 release report]
+- requires human confirmation: yes / no
+- source: [依据来源，如 release report、review report、checks、tasks.md、events.jsonl]
+```
+
+写入规则：
+- `Summary.next action` 必须与 `Next Best Action.action` 保持一致或可直接追溯。
+- 如果 `requires human confirmation: yes`，必须说明谁需要确认什么。
+- 如果发布门禁失败或回滚方案缺失，Next Best Action 不得建议继续部署。
+
 ## 事件记录
 
 `/ship` 收尾时必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件。该文件是 `/standup` 和后续 metrics 的机器可读事实来源。

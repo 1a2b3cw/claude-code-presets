@@ -112,6 +112,23 @@ In Codex, invoke this as `$team-command-standup`. Do not rely on `/standup` unle
 - `hook_false_positive` 出现：建议记录误拦输入、调整 hook 规则，并补一个不会误拦的行为测试。
 - `release_failure` 出现：建议关联 release report，确认回滚步骤和发布后验证是否需要更新。
 
+### Next Best Action 契约
+
+`/standup` 必须输出固定的 Next Best Action，告诉用户下一步应该做什么、为什么、是否需要人工确认。
+
+```markdown
+## Next Best Action
+- action: [建议执行的命令或人工动作，如 /dev T3.2、/check、/review-all、/ship、解除阻塞]
+- reason: [为什么现在应该做这一步，引用当前任务、阻塞项、最近事件、metrics 或 git 状态]
+- requires human confirmation: yes / no
+- source: [依据来源，如 tasks.md、roadmap.md、events.jsonl、metrics.md、git log]
+```
+
+写入规则：
+- `下一步建议` 区块必须与 `Next Best Action.action` 保持一致或可直接追溯。
+- 如果 `requires human confirmation: yes`，必须说明谁需要确认什么。
+- 如果存在阻塞项，Next Best Action 优先指向解除阻塞；没有阻塞时指向最靠前的 ready/planned 任务。
+
 ### events.jsonl 契约
 
 每行是一个独立 JSON 对象，不允许跨行，不回写旧事件。

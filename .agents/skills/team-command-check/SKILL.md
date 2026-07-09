@@ -97,6 +97,23 @@ In Codex, invoke this as `$team-command-check`. Do not rely on `/check` unless C
 - `events.jsonl.checks` 使用 `checks` 的结构化结果。
 - `events.jsonl.next` 使用 `next action`。
 
+### Next Best Action 契约
+
+`/check` 完成或阻塞时必须输出固定的 Next Best Action，告诉用户下一步应该做什么、为什么、是否需要人工确认。
+
+```markdown
+## Next Best Action
+- action: [建议执行的命令或人工动作，如继续开发、/review-all、/fix、等待用户确认]
+- reason: [为什么现在应该做这一步，引用快检结果、问题数、修复轮次或任务状态]
+- requires human confirmation: yes / no
+- source: [依据来源，如 checks、tasks.md、events.jsonl、git diff]
+```
+
+写入规则：
+- `Summary.next action` 必须与 `Next Best Action.action` 保持一致或可直接追溯。
+- 如果 `requires human confirmation: yes`，必须说明谁需要确认什么。
+- 如果快检失败且不能自动修复，Next Best Action 必须指向最小确认或修复动作。
+
 ## 事件记录
 
 `/check` 收尾时必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件。该文件是 `/standup` 和后续 metrics 的机器可读事实来源。

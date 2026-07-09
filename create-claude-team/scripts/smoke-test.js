@@ -32,6 +32,7 @@ const TASKS_REQUIRED_TEXT = ['tasks.md', 'ready', 'needs_clarification', 'planne
 const M_TASKS_REQUIRED_TEXT = ['M 级', '轻量 `tasks.md` checklist', '1-3 个任务'];
 const SHIP_ROADMAP_REQUIRED_TEXT = ['roadmap.md 状态更新', '产品模块状态源', 'done` 更新为 `shipped'];
 const INTENT_ROUTING_REQUIRED_TEXT = ['自然语言路由契约', '推荐命令', '路由依据', '最轻流程', '`/plan`', '`/dev`', '`/fix`', '`/check`', '`/review-all`', '`/ship`', '`/standup`'];
+const NEXT_BEST_ACTION_REQUIRED_TEXT = ['Next Best Action 契约', '## Next Best Action', 'action:', 'reason:', 'requires human confirmation: yes / no', 'source:'];
 const METRICS_EVENTS_REQUIRED_TEXT = ['taskId', 'level', 'specRejectCount', 'checkIssueCount', 'checkFixRounds', 'reviewRejectCount', 'testFailureCount', 'estimateHours', 'actualHours'];
 const STANDUP_METRICS_REQUIRED_TEXT = ['Metrics 聚合规则', '最近 5/10 次任务', '`events.jsonl` 是 metrics 的机器事实来源', '`metrics.md` 是人类可读摘要'];
 const STANDUP_IMPROVEMENT_REQUIRED_TEXT = ['流程改进建议规则', '`specRejectCount >= 3`', '平均 `checkIssueCount >= 5`', '`reviewRejectCount >= 1`', '`testFailureCount >= 1`', '估算偏差绝对值 `>= 50%`', '数据必须可追溯到 `events.jsonl`'];
@@ -106,6 +107,11 @@ function hasShipRoadmapContract(text) {
 
 function hasIntentRoutingContract(text) {
   return INTENT_ROUTING_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasNextBestActionContract(text) {
+  return NEXT_BEST_ACTION_REQUIRED_TEXT.every((part) => text.includes(part)) &&
+    (text.includes('Summary.next action') || text.includes('下一步建议'));
 }
 
 function hasMetricsEventsContract(text) {
@@ -206,6 +212,13 @@ async function runScenario(manifest, {
           hasSummaryContract(codexCommandText(agentsDir, commandName));
       }),
       'init: dev/check/review-all/ship command 与 skill 包含标准结果摘要契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasNextBestActionContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasNextBestActionContract(codexCommandText(agentsDir, commandName));
+      }),
+      'init: core command 与 skill 包含 Next Best Action 契约'
     );
     {
       const standupSkill = codexCommandSkillText(agentsDir, 'standup');
@@ -372,6 +385,13 @@ async function runScenario(manifest, {
     assert(
       SUMMARY_COMMANDS.every((commandName) => codexCommandText(agentsDir, commandName).includes('affected files/modules')),
       'update: Codex command docs 保留标准结果摘要契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasNextBestActionContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasNextBestActionContract(codexCommandText(agentsDir, commandName));
+      }),
+      'update: core command 与 skill 保留 Next Best Action 契约'
     );
     {
       const standupSkill = codexCommandSkillText(agentsDir, 'standup');

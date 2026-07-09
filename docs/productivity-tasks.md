@@ -298,7 +298,7 @@
 
 ### T3.2 定义 Next Best Action 输出格式
 
-- **状态**：todo
+- **状态**：done
 - **目标**：让 `/standup`、`/dev`、`/check`、`/review-all`、`/ship` 都能输出下一步建议。
 - **Prompt**：
 
