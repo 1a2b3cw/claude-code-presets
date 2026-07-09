@@ -25,6 +25,7 @@ const COMMAND_SKILL_COUNT = 9;
 const AGENT_COUNT = 6;
 const EVENT_COMMANDS = ['dev', 'check', 'review-all', 'ship', 'standup'];
 const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
+const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journal.md', 'git log', '下一步建议', '重复问题/流程改进建议'];
 
 let passed = 0;
 let failed = 0;
@@ -128,6 +129,13 @@ async function runScenario(manifest, {
       }),
       'init: dev/check/review-all/ship 包含标准结果摘要契约'
     );
+    {
+      const standupSkill = codexCommandSkillText(agentsDir, 'standup');
+      assert(
+        STANDUP_REQUIRED_TEXT.every((text) => standupSkill.includes(text)),
+        'init: standup skill 包含真实状态读取与下一步建议契约'
+      );
+    }
 
     const initSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), `init: ${PUBLIC_SKILLS.length} 个公共技能齐全`);
@@ -204,6 +212,13 @@ async function runScenario(manifest, {
       SUMMARY_COMMANDS.every((commandName) => codexCommandSkillText(agentsDir, commandName).includes('affected files/modules')),
       'update: Codex command skills 保留标准结果摘要契约'
     );
+    {
+      const standupSkill = codexCommandSkillText(agentsDir, 'standup');
+      assert(
+        STANDUP_REQUIRED_TEXT.every((text) => standupSkill.includes(text)),
+        'update: standup skill 保留真实状态读取契约'
+      );
+    }
 
     const updSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => updSkillNames.includes(s)), 'update: 公共技能未被预设叠加删除');

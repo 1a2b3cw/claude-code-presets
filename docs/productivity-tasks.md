@@ -84,7 +84,7 @@
 
 ### T0.3 强化 standup 的真实状态读取
 
-- **状态**：todo
+- **状态**：done
 - **目标**：`/standup` 从 roadmap、tasks、events、journal、git 中生成状态和下一步。
 - **范围**：
   - `.claude/commands/standup.md`

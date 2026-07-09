@@ -3,11 +3,41 @@
 生成项目当前状态的简要汇报 + 团队效能分析。
 
 ## 数据来源
-- TaskList（任务进度）
-- Git log（最近提交）
-- `.claude/workspace/events.jsonl`（命令事件流）
-- `.claude/workspace/metrics.md`（效能指标）
-- `.claude/workspace/journal.md`（会话日志）
+- `roadmap.md`（产品模块、优先级、依赖、进度；不存在时跳过）
+- `tasks.md`（当前迭代任务状态、阻塞、验收命令；不存在时跳过）
+- `.claude/workspace/events.jsonl`（命令事件流；优先读取最近 20 条）
+- `.claude/workspace/journal.md`（会话日志、历史决策和上下文）
+- `.claude/workspace/metrics.md`（效能指标和趋势）
+- Git log（最近提交，建议 `git log --oneline -10`）
+- TaskList（当前会话内任务进度，作为运行时补充）
+
+## 状态读取流程
+
+1. **读取 roadmap.md**
+   - 提取模块 ID、标题、状态、依赖、风险和建议顺序。
+   - `done` / 已勾选模块进入“已完成”。
+   - `active` / `in_progress` / 当前指定模块进入“进行中”。
+   - `blocked` 或依赖未完成的模块进入“阻塞项”。
+
+2. **读取 tasks.md**
+   - 提取任务 ID、状态、阻塞原因、验收命令和 gate 结果。
+   - `done` 进入“已完成”，`doing` / `in_progress` 进入“进行中”，`blocked` 进入“阻塞项”。
+   - `todo` 且依赖已满足的最靠前任务作为“下一步建议”的候选。
+
+3. **读取 events.jsonl**
+   - 只读取最近 20 条有效 JSONL；坏行跳过并在数据源状态中标记 warning。
+   - 使用 `command`、`task`、`status`、`summary`、`checks`、`artifacts`、`next` 推断最近完成、失败、阻塞和下一步。
+   - 连续出现相同 `summary`、相同失败 `checks`、相同 `blocked` 状态或相同 `next` 卡住时，输出到“重复问题/流程改进建议”。
+
+4. **读取 journal / metrics / git**
+   - journal 用于补充历史决策、用户偏好和长期上下文。
+   - metrics 用于补充 check 问题数、review 打回、测试失败和估算偏差趋势。
+   - git log 用于校验最近实际提交，避免只根据聊天状态汇报。
+
+5. **合成规则**
+   - 优先级：`tasks.md` 当前状态 > `roadmap.md` 模块状态 > `events.jsonl` 最近事件 > journal/metrics/git。
+   - 同一任务多处状态冲突时，输出“数据不一致”并说明来源，不强行猜测。
+   - 没有任何结构化文件时，也要基于 git log 和 journal 给出最小汇报。
 
 ## 事件读取与写入
 
@@ -48,6 +78,16 @@
 # 项目状态汇报
 日期：YYYY-MM-DD
 
+## 数据源状态
+| 数据源 | 状态 | 说明 |
+|--------|------|------|
+| roadmap.md | found/missing/warning | [摘要] |
+| tasks.md | found/missing/warning | [摘要] |
+| events.jsonl | found/missing/warning | [摘要] |
+| journal.md | found/missing/warning | [摘要] |
+| metrics.md | found/missing/warning | [摘要] |
+| git log | found/missing/warning | [摘要] |
+
 ## 已完成 ✅
 - [任务] - [简要描述]
 
@@ -57,11 +97,15 @@
 ## 阻塞项 🚫
 - [问题] - [需要什么来解决]
 
-## 下一步 📋
-- [计划]
+## 下一步建议 📋
+- [建议动作] - [为什么现在做它] - [需要人工确认？是/否]
 
 ## 整体进度
 - 总任务：X | 完成：X（X%）| 进行中：X | 阻塞：X
+
+## 重复问题/流程改进建议
+- [重复问题] → [数据来源：events/metrics/journal/git] → [流程改进建议]
+- 无明显重复问题时输出：暂无明显重复问题。
 
 ---
 
