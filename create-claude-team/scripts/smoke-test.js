@@ -27,6 +27,7 @@ const EVENT_COMMANDS = ['dev', 'check', 'review-all', 'ship', 'standup'];
 const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
 const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journal.md', 'git log', '下一步建议', '重复问题/流程改进建议'];
 const PRODUCT_BRIEF_REQUIRED_TEXT = ['product-brief.md', 'prd.md', '目标用户', '核心价值', '本期范围', '明确不做', '验收标准'];
+const ROADMAP_REQUIRED_TEXT = ['模块 ID', '状态', '依赖', '验收标准', '风险', '最近更新', 'planned', 'in_progress', 'blocked', 'done', 'shipped'];
 
 let passed = 0;
 let failed = 0;
@@ -74,6 +75,10 @@ function hasSummaryContract(text) {
 
 function hasProductBriefContract(text) {
   return PRODUCT_BRIEF_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasRoadmapContract(text) {
+  return ROADMAP_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 // 静默 init/update 的日志，保持测试输出干净
@@ -165,6 +170,13 @@ async function runScenario(manifest, {
         'init: plan/project-preset command 与 skill 包含 Product Brief 契约'
       );
     }
+    assert(
+      hasRoadmapContract(codexCommandSkillText(agentsDir, 'plan')) &&
+        hasRoadmapContract(codexCommandText(agentsDir, 'plan')) &&
+        hasRoadmapContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasRoadmapContract(codexCommandText(agentsDir, 'dev')),
+      'init: plan/dev command 与 skill 包含 roadmap 状态源契约'
+    );
 
     const initSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), `init: ${PUBLIC_SKILLS.length} 个公共技能齐全`);
@@ -259,6 +271,13 @@ async function runScenario(manifest, {
         hasProductBriefContract(codexCommandSkillText(agentsDir, 'project-preset')) &&
         hasProductBriefContract(codexCommandText(agentsDir, 'project-preset')),
       'update: plan/project-preset command 与 skill 保留 Product Brief 契约'
+    );
+    assert(
+      hasRoadmapContract(codexCommandSkillText(agentsDir, 'plan')) &&
+        hasRoadmapContract(codexCommandText(agentsDir, 'plan')) &&
+        hasRoadmapContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasRoadmapContract(codexCommandText(agentsDir, 'dev')),
+      'update: plan/dev command 与 skill 保留 roadmap 状态源契约'
     );
 
     const updSkillNames = dirNames(skillsDir);

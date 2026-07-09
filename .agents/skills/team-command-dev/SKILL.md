@@ -15,7 +15,21 @@ In Codex, invoke this as `$team-command-dev`. Do not rely on `/dev` unless Codex
 
 > **若项目根目录有 `roadmap.md`**（由 `/plan` 生成）且你指定了某模块（如"做模块 M3"或"做向量检索模块"）：
 > 先读 roadmap.md，复用该模块的描述、依赖、复杂度，跳过产品级提问（仍可问实现细节）。
-> 依赖模块未完成时先提醒；模块完成后在 roadmap.md 进度区打勾。
+> 依赖模块未完成时先提醒；模块开始时更新为 `in_progress`；模块完成后把 roadmap.md 中的模块状态更新为 `done`、刷新最近更新日期，并在进度区打勾。
+
+## roadmap.md 模块状态联动
+
+当用户说 `/dev 做模块 M3`、`/dev 做向量检索模块` 或类似表达时，AI 必须把 `roadmap.md` 作为产品模块状态源：
+
+1. 读取 `roadmap.md` 的功能模块表，定位模块 ID、状态、描述、复杂度、依赖、验收标准、风险、最近更新。
+2. 检查依赖模块是否为 `done` 或 `shipped`；依赖未满足时先提醒用户，不直接开工。
+3. 开工前把目标模块状态更新为 `in_progress`，刷新最近更新日期为当天。
+4. 开发中复用 roadmap 的模块描述、复杂度和验收标准，不重新询问产品级问题。
+5. 模块完成后把状态更新为 `done`，刷新最近更新日期，并在 `## 进度` 区把对应模块打勾。
+6. 如果模块被发布流程确认上线，可由 `/ship` 或后续维护把状态从 `done` 更新为 `shipped`。
+7. 如果遇到阻塞，把状态更新为 `blocked`，在风险或未决区记录阻塞原因，并在 Summary 的 `next action` 中说明需要谁确认什么。
+
+`roadmap.md` 的模块状态使用：`planned` / `in_progress` / `blocked` / `done` / `shipped`。
 
 ## 流程
 
