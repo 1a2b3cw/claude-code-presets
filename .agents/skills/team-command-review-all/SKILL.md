@@ -67,6 +67,37 @@ In Codex, invoke this as `$team-command-review-all`. Do not rely on `/review-all
    - 2 轮后仍有问题 → 列出剩余问题等用户决定
 ```
 
+## 事件记录
+
+`/review-all` 收尾时必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件。该文件是 `/standup` 和后续 metrics 的机器可读事实来源。
+
+### events.jsonl 契约
+
+每行是一个独立 JSON 对象，不允许跨行，不回写旧事件。
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `time` | 是 | UTC ISO 8601 时间，如 `2026-07-09T10:00:00Z` |
+| `command` | 是 | 固定为 `/review-all` |
+| `task` | 否 | 关联任务、模块或审查范围；没有则为 `null` |
+| `status` | 是 | `completed` / `failed` / `blocked` / `skipped` |
+| `summary` | 是 | 一句话审查结论摘要 |
+| `checks` | 否 | 审查结果对象，如 `{"review":"pass","critical":0,"major":0}` |
+| `artifacts` | 否 | 审查报告、自动修复文件或关键变更路径数组 |
+| `next` | 否 | 下一步建议，或 `null` |
+
+写入规则：
+- 只在审查收尾时追加 1 条最终事件，不记录中间步骤。
+- 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
+- 路径使用仓库相对路径，不记录绝对路径、密钥、token 或敏感数据。
+- 写入失败时在最终输出中说明，但不改变审查结论。
+
+示例：
+
+```json
+{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.1","status":"completed","summary":"跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0},"artifacts":["workspace/reviews/2026-07-09-t0.1.md"],"next":"/ship"}
+```
+
 ## 跨文件分析维度
 
 ### 1. 变更完整性

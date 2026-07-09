@@ -23,6 +23,7 @@ const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance'
 const PUBLIC_RULES = ['git.md', 'design.md'];
 const COMMAND_SKILL_COUNT = 9;
 const AGENT_COUNT = 6;
+const EVENT_COMMANDS = ['dev', 'check', 'review-all', 'ship', 'standup'];
 
 let passed = 0;
 let failed = 0;
@@ -50,6 +51,10 @@ function dirNames(p) {
 function fileNames(p) {
   if (!existsSync(p)) return [];
   return readdirSync(p, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name);
+}
+
+function codexCommandSkillText(agentsDir, commandName) {
+  return readFileSync(join(agentsDir, 'skills', `team-command-${commandName}`, 'SKILL.md'), 'utf8');
 }
 
 // 静默 init/update 的日志，保持测试输出干净
@@ -100,6 +105,17 @@ async function runScenario(manifest, {
     assert(initSkills === expectedSkills - COMMAND_SKILL_COUNT, `init: Claude 技能数 = ${initSkills}（期望 ${expectedSkills - COMMAND_SKILL_COUNT}）`);
     assert(countDirs(join(agentsDir, 'skills')) === expectedSkills, `init: Codex 技能数 = ${expectedSkills}`);
     assert(existsSync(join(agentsDir, 'skills', 'team-command-dev', 'SKILL.md')), 'init: Codex 命令 skill 已生成');
+    assert(
+      EVENT_COMMANDS.every((commandName) => codexCommandSkillText(agentsDir, commandName).includes('.claude/workspace/events.jsonl')),
+      'init: Codex command skills 包含 events.jsonl 契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        const text = codexCommandSkillText(agentsDir, commandName);
+        return text.includes('`time`') && text.includes('`command`') && text.includes('`status`') && text.includes('`summary`');
+      }),
+      'init: events.jsonl 契约包含核心字段'
+    );
 
     const initSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), `init: ${PUBLIC_SKILLS.length} 个公共技能齐全`);
@@ -168,6 +184,10 @@ async function runScenario(manifest, {
     const updSkills = countDirs(skillsDir);
     assert(updSkills === expectedSkills - COMMAND_SKILL_COUNT, `update: Claude 技能数仍 = ${updSkills}（P0.1 守护，期望 ${expectedSkills - COMMAND_SKILL_COUNT}）`);
     assert(countDirs(join(agentsDir, 'skills')) === expectedSkills, `update: Codex 技能数仍 = ${expectedSkills}`);
+    assert(
+      EVENT_COMMANDS.every((commandName) => codexCommandSkillText(agentsDir, commandName).includes('.claude/workspace/events.jsonl')),
+      'update: Codex command skills 保留 events.jsonl 契约'
+    );
 
     const updSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => updSkillNames.includes(s)), 'update: 公共技能未被预设叠加删除');

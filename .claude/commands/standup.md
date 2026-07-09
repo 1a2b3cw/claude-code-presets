@@ -5,8 +5,42 @@
 ## 数据来源
 - TaskList（任务进度）
 - Git log（最近提交）
+- `.claude/workspace/events.jsonl`（命令事件流）
 - `.claude/workspace/metrics.md`（效能指标）
 - `.claude/workspace/journal.md`（会话日志）
+
+## 事件读取与写入
+
+`/standup` 必须读取 `.claude/workspace/events.jsonl`，用最近事件补充当前状态、阻塞项、下一步建议和重复问题。读取失败或文件不存在时，继续使用 TaskList、Git log、metrics、journal 生成汇报，并在输出中说明事件流缺失。
+
+汇报生成后，`/standup` 也必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件，记录本次状态汇报已经生成。
+
+### events.jsonl 契约
+
+每行是一个独立 JSON 对象，不允许跨行，不回写旧事件。
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `time` | 是 | UTC ISO 8601 时间，如 `2026-07-09T10:00:00Z` |
+| `command` | 是 | 固定为 `/standup` |
+| `task` | 否 | 汇报聚焦的任务或模块；全局汇报为 `null` |
+| `status` | 是 | `completed` / `failed` / `blocked` / `skipped` |
+| `summary` | 是 | 一句话状态汇报摘要 |
+| `checks` | 否 | 汇报读取的数据源状态，如 `{"events":"pass","git":"pass"}` |
+| `artifacts` | 否 | 本次汇报引用或生成的关键文件路径数组 |
+| `next` | 否 | 推荐下一步，或 `null` |
+
+写入规则：
+- 只在汇报收尾时追加 1 条最终事件，不记录中间步骤。
+- 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
+- 路径使用仓库相对路径，不记录绝对路径、密钥、token 或敏感数据。
+- 写入失败时在最终输出中说明，但不阻止状态汇报输出。
+
+示例：
+
+```json
+{"time":"2026-07-09T10:30:00Z","command":"/standup","task":null,"status":"completed","summary":"已生成项目状态汇报，下一步建议执行 T0.2","checks":{"events":"pass","git":"pass","metrics":"pass","journal":"pass"},"artifacts":[".claude/workspace/events.jsonl"],"next":"T0.2"}
+```
 
 ## 输出格式
 

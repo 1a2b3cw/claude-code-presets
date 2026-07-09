@@ -130,6 +130,37 @@ for 每个任务 in tasks.md:
    ⏱️ 耗时：预估 4h / 实际 3.5h（-12%）
 ```
 
+### Phase 5: 追加事件（自动）
+
+开发流程结束时，必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件，作为 `/standup` 和后续 metrics 的机器可读事实来源。
+
+#### events.jsonl 契约
+
+每行是一个独立 JSON 对象，不允许跨行，不回写旧事件。
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `time` | 是 | UTC ISO 8601 时间，如 `2026-07-09T10:00:00Z` |
+| `command` | 是 | 固定为 `/dev` |
+| `task` | 否 | 任务或模块 ID，如 `T0.1`、`M1`；没有则为 `null` |
+| `status` | 是 | `completed` / `failed` / `blocked` / `skipped` |
+| `summary` | 是 | 一句话结果摘要，供人类和 `/standup` 直接引用 |
+| `checks` | 否 | 本次执行的检查结果对象，如 `{"test":"pass","review":"pass"}` |
+| `artifacts` | 否 | 本次创建或更新的关键文件路径数组 |
+| `next` | 否 | 下一步建议、下一个任务 ID，或 `null` |
+
+写入规则：
+- 只在命令收尾时追加 1 条最终事件，不记录中间步骤。
+- 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
+- 路径使用仓库相对路径，不记录绝对路径、密钥、token 或敏感数据。
+- 写入失败时在最终输出中说明，但不因为事件写入失败而改变代码任务结论。
+
+示例：
+
+```json
+{"time":"2026-07-09T10:00:00Z","command":"/dev","task":"T0.1","status":"completed","summary":"定义 events.jsonl 契约并同步 Codex command skills","checks":{"validate":"pass","test":"pass","review":"pass"},"artifacts":[".agents/commands/dev.md",".agents/commands/check.md"],"next":"T0.2"}
+```
+
 ---
 
 ## 异常路径速查

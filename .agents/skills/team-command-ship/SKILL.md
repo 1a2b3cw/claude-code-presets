@@ -61,6 +61,37 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
    └── 记录发布日志
 ```
 
+## 事件记录
+
+`/ship` 收尾时必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件。该文件是 `/standup` 和后续 metrics 的机器可读事实来源。
+
+### events.jsonl 契约
+
+每行是一个独立 JSON 对象，不允许跨行，不回写旧事件。
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `time` | 是 | UTC ISO 8601 时间，如 `2026-07-09T10:00:00Z` |
+| `command` | 是 | 固定为 `/ship` |
+| `task` | 否 | 发布关联任务、版本或模块；没有则为 `null` |
+| `status` | 是 | `completed` / `shipped` / `failed` / `blocked` / `skipped` |
+| `summary` | 是 | 一句话发布检查或发布结果摘要 |
+| `checks` | 否 | 发布门禁结果对象，如 `{"test":"pass","security":"pass","rollback":"pass"}` |
+| `artifacts` | 否 | 发布报告、tag、关键配置或变更文件路径数组 |
+| `next` | 否 | 发布后验证或下一步建议，或 `null` |
+
+写入规则：
+- 只在发布流程收尾时追加 1 条最终事件，不记录中间步骤。
+- 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
+- 路径使用仓库相对路径，不记录绝对路径、密钥、token 或敏感数据。
+- 写入失败时在最终输出中说明，但不改变发布检查结论。
+
+示例：
+
+```json
+{"time":"2026-07-09T10:20:00Z","command":"/ship","task":"T0.1","status":"completed","summary":"发布检查通过，等待用户确认发布","checks":{"review":"pass","test":"pass","security":"pass","rollback":"pass"},"artifacts":["workspace/releases/2026-07-09-t0.1.md"],"next":"用户确认后执行部署"}
+```
+
 ## 自动修复机制
 
 - 安全问题 → 自动修复 → 重新检查
