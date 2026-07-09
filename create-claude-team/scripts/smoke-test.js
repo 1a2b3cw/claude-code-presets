@@ -29,6 +29,8 @@ const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journa
 const PRODUCT_BRIEF_REQUIRED_TEXT = ['product-brief.md', 'prd.md', '目标用户', '核心价值', '本期范围', '明确不做', '验收标准'];
 const ROADMAP_REQUIRED_TEXT = ['模块 ID', '状态', '依赖', '验收标准', '风险', '最近更新', 'planned', 'in_progress', 'blocked', 'done', 'shipped'];
 const TASKS_REQUIRED_TEXT = ['tasks.md', 'ready', 'needs_clarification', 'planned', 'in_progress', 'local_gate', 'review_gate', 'release_gate', 'blocked', 'shipped', 'done', '阻塞原因', 'Gate 结果', '验收命令'];
+const M_TASKS_REQUIRED_TEXT = ['M 级', '轻量 `tasks.md` checklist', '1-3 个任务'];
+const SHIP_ROADMAP_REQUIRED_TEXT = ['roadmap.md 状态更新', '产品模块状态源', 'done` 更新为 `shipped'];
 const REVIEW_REPORT_REQUIRED_TEXT = ['workspace/reviews/YYYY-MM-DD-<scope>.md', '结论', '关联任务', '变更范围', '问题列表', '严重度', '自动修复项', '剩余风险', 'events.jsonl.artifacts'];
 const RELEASE_REPORT_REQUIRED_TEXT = ['workspace/releases/YYYY-MM-DD-<version-or-scope>.md', '发布结论', '检查结果', '风险', '回滚步骤', '发布后验证', 'Gate 结果', 'events.jsonl.artifacts'];
 
@@ -86,6 +88,14 @@ function hasRoadmapContract(text) {
 
 function hasTasksContract(text) {
   return TASKS_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasMTasksContract(text) {
+  return M_TASKS_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasShipRoadmapContract(text) {
+  return SHIP_ROADMAP_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 function hasReviewReportContract(text) {
@@ -198,6 +208,16 @@ async function runScenario(manifest, {
           hasTasksContract(codexCommandText(agentsDir, commandName));
       }),
       'init: dev/check/review-all/ship command 与 skill 包含 tasks.md 状态机契约'
+    );
+    assert(
+      hasMTasksContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasMTasksContract(codexCommandText(agentsDir, 'dev')),
+      'init: dev command 与 skill 要求 M 级使用轻量 tasks.md checklist'
+    );
+    assert(
+      hasShipRoadmapContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasShipRoadmapContract(codexCommandText(agentsDir, 'ship')),
+      'init: ship command 与 skill 包含 roadmap shipped 写回契约'
     );
     assert(
       hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
@@ -317,6 +337,16 @@ async function runScenario(manifest, {
           hasTasksContract(codexCommandText(agentsDir, commandName));
       }),
       'update: dev/check/review-all/ship command 与 skill 保留 tasks.md 状态机契约'
+    );
+    assert(
+      hasMTasksContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasMTasksContract(codexCommandText(agentsDir, 'dev')),
+      'update: dev command 与 skill 保留 M 级轻量 tasks.md checklist 契约'
+    );
+    assert(
+      hasShipRoadmapContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasShipRoadmapContract(codexCommandText(agentsDir, 'ship')),
+      'update: ship command 与 skill 保留 roadmap shipped 写回契约'
     );
     assert(
       hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&

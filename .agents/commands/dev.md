@@ -24,7 +24,7 @@
 
 M/L/XL 级任务必须维护 `tasks.md`，它是执行计划和 gate 状态源。每个任务条目至少包含：
 
-- **任务 ID**：如 `T1.3`、`M3.2`。
+- **任务 ID**：如 `T1.3`、`M3.2`；M 级可使用 `M-1`、`M-2` 这类轻量编号。
 - **状态**：见下方状态机。
 - **描述**：该任务要完成什么。
 - **验收标准**：用户可判断完成的结果。
@@ -96,7 +96,7 @@ blocked → planned / in_progress（阻塞解除后）
 | 级别 | 定义 | 规划动作 |
 |------|------|----------|
 | **S** | 1-10 行修复，单文件 | 不规划，直接跳 Phase 2 |
-| **M** | 单模块，1-2 文件 | 输出 3-5 行 checklist，你确认后开始 |
+| **M** | 单模块，1-2 文件 | 创建或更新轻量 `tasks.md` checklist（1-3 个任务），你确认后开始 |
 | **L** | 跨模块，3-10 文件 | 输出 spec.md + tasks.md，你确认后开始 |
 | **XL** | 新系统，10+ 文件 | 先 Spike 调研可行性 → 输出 spec.md + tasks.md + architecture.md，你确认后开始 |
 
@@ -126,12 +126,16 @@ blocked → planned / in_progress（阻塞解除后）
 #### M 级流程
 
 ```
-1. 你确认 checklist
-2. Builder 按 checklist 实现（TDD）
-3. /check 快检
-4. 有问题 → 自动修 → 重新检查（最多 2 轮）
-5. 2 轮后仍有问题 → 列出问题等你决定
-6. 全部通过 → git commit → 完成
+1. 生成或更新轻量 tasks.md checklist
+   → 每项包含任务 ID、状态、描述、验收标准、验收命令、Gate 结果、阻塞原因、最近更新
+2. 你确认 checklist
+3. Builder 按 tasks.md 实现（TDD）
+   → 开始时把任务状态更新为 in_progress
+4. /check 快检
+   → 开始本地验证时把任务状态更新为 local_gate
+5. 有问题 → 自动修 → 重新检查（最多 2 轮）
+6. 2 轮后仍有问题 → 标记 blocked，记录阻塞原因，等你决定
+7. 全部通过 → 记录 local gate pass，状态更新为 done，git commit → 完成
 ```
 
 #### L/XL 级流程（完整迭代）

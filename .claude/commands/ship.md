@@ -63,6 +63,15 @@
 
 `tasks.md` 状态必须使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
 
+## roadmap.md 状态更新
+
+如果发布范围关联 `roadmap.md` 中的模块，`/ship` 也必须把 roadmap 作为产品模块状态源同步更新：
+
+- 发布检查通过但等待人工确认部署时，保持模块状态为 `done`，刷新最近更新日期，并在风险或未决区记录等待确认。
+- 发布或上线验证完成后，将对应模块状态从 `done` 更新为 `shipped`，刷新最近更新日期，并保持进度区已打勾。
+- 发布检查失败、存在严重风险或等待用户接受风险时，将对应模块状态更新为 `blocked`，在风险或未决区记录阻塞原因。
+- 更新 roadmap 时不要删除模块 ID、依赖、验收标准、风险和最近更新字段。
+
 ## Release Report 契约
 
 `/ship` 必须产出可沉淀的发布报告，路径为：
