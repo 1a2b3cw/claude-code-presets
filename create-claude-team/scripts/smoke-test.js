@@ -22,7 +22,17 @@ import { toCodexText } from '../lib/codex/text.js';
 const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'skill-curator', 'testing', 'ui-prototype'];
 const PUBLIC_RULES = ['git.md', 'design.md'];
 const COMMAND_SKILL_COUNT = 9;
-const AGENT_COUNT = 6;
+const AGENT_COUNT = 8;
+const REQUIRED_CODEX_AGENTS = [
+  'architect-planner.toml',
+  'builder.toml',
+  'delivery-steward.toml',
+  'designer.toml',
+  'devops.toml',
+  'product-lead.toml',
+  'researcher.toml',
+  'reviewer.toml',
+];
 const EVENT_COMMANDS = ['dev', 'check', 'review-all', 'ship', 'standup'];
 const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
 const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journal.md', 'git log', '下一步建议', '重复问题/流程改进建议'];
@@ -33,15 +43,21 @@ const M_TASKS_REQUIRED_TEXT = ['M 级', '轻量 `tasks.md` checklist', '1-3 个�
 const SHIP_ROADMAP_REQUIRED_TEXT = ['roadmap.md 状态更新', '产品模块状态源', 'done` 更新为 `shipped'];
 const INTENT_ROUTING_REQUIRED_TEXT = ['自然语言路由契约', '推荐命令', '路由依据', '最轻流程', '`/plan`', '`/dev`', '`/fix`', '`/check`', '`/review-all`', '`/ship`', '`/standup`'];
 const NEXT_BEST_ACTION_REQUIRED_TEXT = ['Next Best Action 契约', '## Next Best Action', 'action:', 'reason:', 'requires human confirmation: yes / no', 'source:'];
+const OWNER_DECISION_BRIEF_REQUIRED_TEXT = ['Owner Decision Brief 契约', '## Owner Decision Brief', 'Decision:', 'Context:', 'Recommendation:', 'Options:', 'If no reply:', '产品方向', 'MVP', '成本', '隐私', '安全', '架构', '发布风险'];
+const SPEC_TASK_GATE_REQUIRED_TEXT = ['Spec/Task Quality Gate', '人话', 'Product Lead 判断 product value', 'Architect-Planner 判断技术方案', 'Delivery Steward 判断 spec/tasks', '`pass` / `needs_revision` / `blocked`', 'Builder 不得开工'];
+const ARTIFACT_STEWARDSHIP_REQUIRED_TEXT = ['Artifact Stewardship', 'active', 'reference', 'draft', 'superseded', 'archived', 'delete-candidate', 'Artifact Cleanup', '.claude/workspace/cleanup/YYYY-MM-DD-artifact-cleanup.md', 'Owner Decision Brief'];
+const WORKSPACE_ROOT_REQUIRED_TEXT = ['.claude/workspace/', 'team state/report 默认根目录', 'workspace/', 'legacy', '`tasks.md` 状态只能使用', '`roadmap.md` 模块表是唯一模块状态源'];
 const METRICS_EVENTS_REQUIRED_TEXT = ['taskId', 'level', 'specRejectCount', 'checkIssueCount', 'checkFixRounds', 'reviewRejectCount', 'testFailureCount', 'estimateHours', 'actualHours'];
 const STANDUP_METRICS_REQUIRED_TEXT = ['Metrics 聚合规则', '最近 5/10 次任务', '`events.jsonl` 是 metrics 的机器事实来源', '`metrics.md` 是人类可读摘要'];
 const STANDUP_IMPROVEMENT_REQUIRED_TEXT = ['流程改进建议规则', '`specRejectCount >= 3`', '平均 `checkIssueCount >= 5`', '`reviewRejectCount >= 1`', '`testFailureCount >= 1`', '估算偏差绝对值 `>= 50%`', '数据必须可追溯到 `events.jsonl`'];
 const FAILURE_RECOVERY_REQUIRED_TEXT = ['失败恢复记录契约', '`failureRecovery`', '`failureType`', '`test_failure`', '`ci_failure`', '`pack_failure`', '`hook_false_positive`', '`release_failure`', '`recoveryAction`', '`finalStatus`'];
 const STANDUP_FAILURE_REQUIRED_TEXT = ['失败恢复聚合规则', '最近失败 Top N', '重复失败建议', '`failureRecovery`', '同一 `failureType`', '`hook_false_positive` 出现', '`release_failure` 出现'];
 const STANDUP_TODAY_REQUIRED_TEXT = ['Today 轻量视图', '10 秒内知道', '## Today', '今日焦点', '当前阻塞', '最近 run', '下一步建议', '风险提示'];
+const STANDUP_ALL_DONE_REQUIRED_TEXT = ['all-done 状态规则', '`all-done` 状态', 'release confirmation', 'retro', 'dogfood', 'next roadmap', '不得继续推荐不存在的下一任务'];
 const STANDUP_VARIANTS_REQUIRED_TEXT = ['Standup 输出版本', '开发者版', '团队版', '产品版', '默认输出开发者版', '事实必须一致'];
-const REVIEW_REPORT_REQUIRED_TEXT = ['workspace/reviews/YYYY-MM-DD-<scope>.md', '结论', '关联任务', '变更范围', '问题列表', '严重度', '自动修复项', '剩余风险', 'events.jsonl.artifacts'];
-const RELEASE_REPORT_REQUIRED_TEXT = ['workspace/releases/YYYY-MM-DD-<version-or-scope>.md', '发布结论', '检查结果', '风险', '回滚步骤', '发布后验证', 'Gate 结果', 'events.jsonl.artifacts'];
+const REVIEW_REPORT_REQUIRED_TEXT = ['.claude/workspace/reviews/YYYY-MM-DD-<scope>.md', '结论', '关联任务', '变更范围', '问题列表', '严重度', '自动修复项', '剩余风险', 'events.jsonl.artifacts'];
+const REVIEW_SYSTEM_HEALTH_REQUIRED_TEXT = ['`/review-all --system`', 'System Health Review 流程', '架构形状检查', '产品与验收检查', '一致性和熵检查', '系统健康和长期演化', 'healthy / needs_refactor / blocked'];
+const RELEASE_REPORT_REQUIRED_TEXT = ['.claude/workspace/releases/YYYY-MM-DD-<version-or-scope>.md', '发布结论', '检查结果', '风险', '回滚步骤', '发布后验证', 'Gate 结果', 'events.jsonl.artifacts'];
 
 let passed = 0;
 let failed = 0;
@@ -116,6 +132,22 @@ function hasNextBestActionContract(text) {
     (text.includes('Summary.next action') || text.includes('下一步建议'));
 }
 
+function hasOwnerDecisionBriefContract(text) {
+  return OWNER_DECISION_BRIEF_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasSpecTaskGateContract(text) {
+  return SPEC_TASK_GATE_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasArtifactStewardshipContract(text) {
+  return ARTIFACT_STEWARDSHIP_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasWorkspaceRootContract(text) {
+  return WORKSPACE_ROOT_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
 function hasMetricsEventsContract(text) {
   return METRICS_EVENTS_REQUIRED_TEXT.every((part) => text.includes(part));
 }
@@ -140,12 +172,20 @@ function hasStandupTodayContract(text) {
   return STANDUP_TODAY_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
+function hasStandupAllDoneContract(text) {
+  return STANDUP_ALL_DONE_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
 function hasStandupVariantsContract(text) {
   return STANDUP_VARIANTS_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 function hasReviewReportContract(text) {
   return REVIEW_REPORT_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasReviewSystemHealthContract(text) {
+  return REVIEW_SYSTEM_HEALTH_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 function hasReleaseReportContract(text) {
@@ -237,6 +277,32 @@ async function runScenario(manifest, {
       }),
       'init: core command 与 skill 包含 Next Best Action 契约'
     );
+    assert(
+      ['plan', 'dev'].every((commandName) => {
+        return hasOwnerDecisionBriefContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasOwnerDecisionBriefContract(codexCommandText(agentsDir, commandName));
+      }),
+      'init: plan/dev command 与 skill 包含 Owner Decision Brief 契约'
+    );
+    assert(
+      hasSpecTaskGateContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasSpecTaskGateContract(codexCommandText(agentsDir, 'dev')),
+      'init: dev command 与 skill 包含 Spec/Task Quality Gate 契约'
+    );
+    assert(
+      hasArtifactStewardshipContract(readFileSync(join(claudeDir, 'CLAUDE.md'), 'utf8')) &&
+        hasArtifactStewardshipContract(readFileSync(join(tmp, 'AGENTS.md'), 'utf8')) &&
+        hasArtifactStewardshipContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasArtifactStewardshipContract(codexCommandText(agentsDir, 'standup')) &&
+        hasArtifactStewardshipContract(codexCommandSkillText(agentsDir, 'project-preset')) &&
+        hasArtifactStewardshipContract(codexCommandText(agentsDir, 'project-preset')),
+      'init: 入口/standup/project-preset 包含 Artifact Stewardship 契约'
+    );
+    assert(
+      hasWorkspaceRootContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasWorkspaceRootContract(codexCommandText(agentsDir, 'standup')),
+      'init: standup command 与 skill 包含 workspace 根目录和状态词契约'
+    );
     {
       const standupSkill = codexCommandSkillText(agentsDir, 'standup');
       const standupCommand = codexCommandText(agentsDir, 'standup');
@@ -319,6 +385,11 @@ async function runScenario(manifest, {
       'init: standup command 与 skill 包含 Today 轻量视图契约'
     );
     assert(
+      hasStandupAllDoneContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupAllDoneContract(codexCommandText(agentsDir, 'standup')),
+      'init: standup command 与 skill 包含 all-done 状态契约'
+    );
+    assert(
       hasStandupVariantsContract(codexCommandSkillText(agentsDir, 'standup')) &&
         hasStandupVariantsContract(codexCommandText(agentsDir, 'standup')),
       'init: standup command 与 skill 包含三种输出版本契约'
@@ -327,6 +398,11 @@ async function runScenario(manifest, {
       hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
         hasReviewReportContract(codexCommandText(agentsDir, 'review-all')),
       'init: review-all command 与 skill 包含 review report 契约'
+    );
+    assert(
+      hasReviewSystemHealthContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+        hasReviewSystemHealthContract(codexCommandText(agentsDir, 'review-all')),
+      'init: review-all command 与 skill 包含 system health review 契约'
     );
     assert(
       hasReleaseReportContract(codexCommandSkillText(agentsDir, 'ship')) &&
@@ -365,7 +441,9 @@ async function runScenario(manifest, {
     assert(existsSync(join(codexDir, 'hooks.json')), 'init: Codex hooks.json 存在');
     assert(fileNames(join(codexDir, 'hooks')).includes('security-check.mjs'), 'init: Codex hooks 已同步');
     assert(existsSync(join(codexDir, 'config.toml')), 'init: Codex config.toml 存在');
-    assert(fileNames(join(codexDir, 'agents')).filter((name) => name.endsWith('.toml')).length === AGENT_COUNT, `init: Codex custom agents = ${AGENT_COUNT}`);
+    const initCodexAgents = fileNames(join(codexDir, 'agents')).filter((name) => name.endsWith('.toml'));
+    assert(initCodexAgents.length === AGENT_COUNT, `init: Codex custom agents = ${AGENT_COUNT}`);
+    assert(REQUIRED_CODEX_AGENTS.every((name) => initCodexAgents.includes(name)), 'init: Codex custom agents 包含 Product Lead 和 Delivery Steward');
     const codexConfig = readFileSync(join(codexDir, 'config.toml'), 'utf8');
     assert(codexConfig.includes(`[mcp_servers.${manifest.mcpSmokeServer}]`), `init: Codex MCP 已生成 ${manifest.mcpSmokeServer}`);
     if (manifest.codexConfigIncludes) {
@@ -419,6 +497,32 @@ async function runScenario(manifest, {
           hasNextBestActionContract(codexCommandText(agentsDir, commandName));
       }),
       'update: core command 与 skill 保留 Next Best Action 契约'
+    );
+    assert(
+      ['plan', 'dev'].every((commandName) => {
+        return hasOwnerDecisionBriefContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasOwnerDecisionBriefContract(codexCommandText(agentsDir, commandName));
+      }),
+      'update: plan/dev command 与 skill 保留 Owner Decision Brief 契约'
+    );
+    assert(
+      hasSpecTaskGateContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasSpecTaskGateContract(codexCommandText(agentsDir, 'dev')),
+      'update: dev command 与 skill 保留 Spec/Task Quality Gate 契约'
+    );
+    assert(
+      hasArtifactStewardshipContract(readFileSync(join(claudeDir, 'CLAUDE.md'), 'utf8')) &&
+        hasArtifactStewardshipContract(readFileSync(join(tmp, 'AGENTS.md'), 'utf8')) &&
+        hasArtifactStewardshipContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasArtifactStewardshipContract(codexCommandText(agentsDir, 'standup')) &&
+        hasArtifactStewardshipContract(codexCommandSkillText(agentsDir, 'project-preset')) &&
+        hasArtifactStewardshipContract(codexCommandText(agentsDir, 'project-preset')),
+      'update: 入口/standup/project-preset 保留 Artifact Stewardship 契约'
+    );
+    assert(
+      hasWorkspaceRootContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasWorkspaceRootContract(codexCommandText(agentsDir, 'standup')),
+      'update: standup command 与 skill 保留 workspace 根目录和状态词契约'
     );
     {
       const standupSkill = codexCommandSkillText(agentsDir, 'standup');
@@ -494,6 +598,11 @@ async function runScenario(manifest, {
       'update: standup command 与 skill 保留 Today 轻量视图契约'
     );
     assert(
+      hasStandupAllDoneContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupAllDoneContract(codexCommandText(agentsDir, 'standup')),
+      'update: standup command 与 skill 保留 all-done 状态契约'
+    );
+    assert(
       hasStandupVariantsContract(codexCommandSkillText(agentsDir, 'standup')) &&
         hasStandupVariantsContract(codexCommandText(agentsDir, 'standup')),
       'update: standup command 与 skill 保留三种输出版本契约'
@@ -504,10 +613,18 @@ async function runScenario(manifest, {
       'update: review-all command 与 skill 保留 review report 契约'
     );
     assert(
+      hasReviewSystemHealthContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+        hasReviewSystemHealthContract(codexCommandText(agentsDir, 'review-all')),
+      'update: review-all command 与 skill 保留 system health review 契约'
+    );
+    assert(
       hasReleaseReportContract(codexCommandSkillText(agentsDir, 'ship')) &&
         hasReleaseReportContract(codexCommandText(agentsDir, 'ship')),
       'update: ship command 与 skill 保留 release report 契约'
     );
+    const updateCodexAgents = fileNames(join(codexDir, 'agents')).filter((name) => name.endsWith('.toml'));
+    assert(updateCodexAgents.length === AGENT_COUNT, `update: Codex custom agents 仍 = ${AGENT_COUNT}`);
+    assert(REQUIRED_CODEX_AGENTS.every((name) => updateCodexAgents.includes(name)), 'update: Codex custom agents 保留 Product Lead 和 Delivery Steward');
 
     const updSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => updSkillNames.includes(s)), 'update: 公共技能未被预设叠加删除');

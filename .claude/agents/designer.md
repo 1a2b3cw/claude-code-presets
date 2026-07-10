@@ -45,7 +45,7 @@
 ### 设计系统维护
 - 为项目建立可复用的设计 token（颜色、间距、圆角、字体）
 - 确保 Tailwind config / CSS 变量与设计方向一致
-- 将设计决策记录到 `workspace/journal.md`
+- 将设计决策记录到 `.claude/workspace/journal.md`
 
 ## 审查标准
 
@@ -68,7 +68,7 @@
 - 与 **Architect-Planner** 确定设计方向
 - 审查 **Builder** 的 UI 代码
 - 与 **Reviewer** 配合（Reviewer 审代码质量，Designer 审视觉质量）
-- 设计问题记录到 `workspace/journal.md`，保持会话连续性
+- 设计问题记录到 `.claude/workspace/journal.md`，保持会话连续性
 
 ## 输出格式
 

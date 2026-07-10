@@ -11,18 +11,27 @@
 - Git log（最近提交，建议 `git log --oneline -10`）
 - TaskList（当前会话内任务进度，作为运行时补充）
 
+## Workspace 和状态词
+
+`.claude/workspace/` 是 team state/report 默认根目录。`workspace/` 只作为 legacy/temporary 路径读取；如果两边都有同类报告，优先使用 `.claude/workspace/`，并在数据源状态中提示路径漂移。
+
+`tasks.md` 状态只能使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
+
+`roadmap.md` 模块表是唯一模块状态源；进度区只是派生展示。若模块表和进度区冲突，以模块表为准，并输出 warning，不制造新的派生状态文件。
+
 ## 状态读取流程
 
 1. **读取 roadmap.md**
    - 提取模块 ID、标题、状态、依赖、风险和建议顺序。
    - `done` / 已勾选模块进入“已完成”。
-   - `active` / `in_progress` / 当前指定模块进入“进行中”。
+   - `in_progress` / 当前指定模块进入“进行中”；旧状态词如 `active` 只作为 legacy warning 读取。
    - `blocked` 或依赖未完成的模块进入“阻塞项”。
 
 2. **读取 tasks.md**
    - 提取任务 ID、状态、阻塞原因、验收命令和 gate 结果。
-   - `done` 进入“已完成”，`doing` / `in_progress` 进入“进行中”，`blocked` 进入“阻塞项”。
-   - `todo` 且依赖已满足的最靠前任务作为“下一步建议”的候选。
+   - `done` / `shipped` 进入“已完成”，`in_progress` / `local_gate` / `review_gate` / `release_gate` 进入“进行中”，`blocked` 进入“阻塞项”。
+   - `ready` / `planned` 且依赖已满足的最靠前任务作为“下一步建议”的候选。
+   - 旧状态词如 `todo` / `doing` 只作为 legacy warning 读取，不写回。
 
 3. **读取 events.jsonl**
    - 只读取最近 20 条有效 JSONL；坏行跳过并在数据源状态中标记 warning。
@@ -41,6 +50,31 @@
    - 优先级：`tasks.md` 当前状态 > `roadmap.md` 模块状态 > `events.jsonl` 最近事件 > journal/metrics/git。
    - 同一任务多处状态冲突时，输出“数据不一致”并说明来源，不强行猜测。
    - 没有任何结构化文件时，也要基于 git log 和 journal 给出最小汇报。
+
+## Artifact Stewardship
+
+`/standup` 默认 read-first，不为了展示状态而制造新的派生文档。只有发现文档或状态漂移时，才由 Delivery Steward 给出 Artifact Cleanup 建议。
+
+触发 Artifact Cleanup 建议的情况：
+
+- 同一事实在多个文件中冲突，例如 roadmap/tasks/events/review report 状态不一致。
+- 路径混用 `.claude/workspace/` 和 `workspace/`。
+- 文档状态无法判断，或明显应标记为 `active` / `reference` / `draft` / `superseded` / `archived` / `delete-candidate`。
+- Workbench 或自动化文档被当成主流程事实源。
+
+如需要沉淀报告，路径为 `.claude/workspace/cleanup/YYYY-MM-DD-artifact-cleanup.md`。高影响删除必须使用 Owner Decision Brief；未确认时只建议合并或归档。
+
+Artifact Cleanup 报告格式：
+
+```markdown
+## Artifact Cleanup
+- Kept as source of truth: [files]
+- Merged into: [file]
+- Archived: [files]
+- Deleted: [files]
+- Decisions preserved: [bullets]
+- Follow-up: [if any]
+```
 
 ## 事件读取与写入
 
@@ -117,6 +151,24 @@
 - `下一步建议` 区块必须与 `Next Best Action.action` 保持一致或可直接追溯。
 - 如果 `requires human confirmation: yes`，必须说明谁需要确认什么。
 - 如果存在阻塞项，Next Best Action 优先指向解除阻塞；没有阻塞时指向最靠前的 ready/planned 任务。
+
+### all-done 状态规则
+
+当 `tasks.md` / `roadmap.md` 中可识别的当前任务或模块全部为 `done` / `completed` / `shipped`，且不存在 blocked 任务、failed/blocked 事件或未恢复的 `failureRecovery` 时，`/standup` 必须进入 `all-done` 状态。
+
+`all-done` 状态不得继续推荐不存在的下一任务。Next Best Action 按以下优先级生成：
+
+1. **release confirmation**：如果最新 release report 为 `needs_confirmation`、`dry-run pass` 或 `release gate pass` 但尚未确认发布动作，建议“用户确认是否合并、创建 tag 或发布 npm”。
+2. **retro**：如果已发布或本轮任务已闭环，建议做轻量复盘，记录哪些 artifact、gate 或流程需要改进。
+3. **dogfood**：如果当前处于成熟化或真实使用验证阶段，建议追加 `.claude/workspace/dogfood.md` 记录，说明 Workbench/standup 的建议是否可信。
+4. **next roadmap**：如果 release/retro/dogfood 都已完成，建议规划下一轮 roadmap 或从 backlog 选择新的 ready/planned 任务。
+
+Today 视图在 `all-done` 状态下：
+
+- **今日焦点**：写“all-done：当前任务集已完成”。
+- **当前阻塞**：无阻塞时写“无”；若 release confirmation 需要用户确认，不把它误判为技术阻塞。
+- **下一步建议**：必须与 all-done Next Best Action 保持一致。
+- **风险提示**：优先引用最新 release warnings、review 剩余风险或数据源 warning；没有则写“暂无明显风险”。
 
 ### Today 轻量视图
 

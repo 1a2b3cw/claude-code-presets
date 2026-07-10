@@ -88,13 +88,13 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
 `/ship` 必须产出可沉淀的发布报告，路径为：
 
 ```text
-workspace/releases/YYYY-MM-DD-<version-or-scope>.md
+.claude/workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 ```
 
 命名规则：
 
 - `<version-or-scope>` 优先使用版本号或 tag，如 `v1.2.3`；没有版本时使用任务 ID、模块 ID、目录名或分支名的短横线形式。
-- 如果 `workspace/releases/` 不存在，先创建目录。
+- 如果 `.claude/workspace/releases/` 不存在，先创建目录。
 - 报告路径必须写入 Summary 的 `affected files/modules`，并写入 `events.jsonl.artifacts`。
 
 报告必须包含以下字段：
@@ -123,7 +123,7 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 
 映射规则：
 - `events.jsonl.summary` 使用 `status` + 一句话发布结论，例如 `completed: 发布检查通过，等待用户确认发布`。
-- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径、tag 或发布报告，必须包含 `workspace/releases/YYYY-MM-DD-<version-or-scope>.md`。
+- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径、tag 或发布报告，必须包含 `.claude/workspace/releases/YYYY-MM-DD-<version-or-scope>.md`。
 - `events.jsonl.checks` 使用 `checks` 的结构化结果。
 - `events.jsonl.next` 使用 `next action`。
 
@@ -206,7 +206,7 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 示例：
 
 ```json
-{"time":"2026-07-09T10:20:00Z","command":"/ship","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 发布检查通过，等待用户确认发布","checks":{"review":"pass","test":"pass","security":"pass","rollback":"pass"},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["workspace/releases/2026-07-09-t0.2.md"],"next":"用户确认后执行部署"}
+{"time":"2026-07-09T10:20:00Z","command":"/ship","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 发布检查通过，等待用户确认发布","checks":{"review":"pass","test":"pass","security":"pass","rollback":"pass"},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":[".claude/workspace/releases/2026-07-09-t0.2.md"],"next":"用户确认后执行部署"}
 ```
 
 ## 自动修复机制
@@ -229,7 +229,7 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 ```markdown
 # 发布检查报告
 
-> 路径：workspace/releases/2026-07-09-v1.2.3.md
+> 路径：.claude/workspace/releases/2026-07-09-v1.2.3.md
 
 ## 结论：✅ 可以发布 / ⚠️ 需要确认 / ❌ 需要修复
 
@@ -240,7 +240,7 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 ## 发布范围
 - 分支：feature/user-auth
 - tag：v1.2.3
-- Review report：workspace/reviews/2026-07-09-auth.md
+- Review report：.claude/workspace/reviews/2026-07-09-auth.md
 
 | 检查维度 | 结果 | 详情 |
 |----------|------|------|
@@ -279,7 +279,7 @@ workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 
 ## Summary
 - status: completed
-- affected files/modules: workspace/releases/2026-07-09-release.md, v1.2.3
+- affected files/modules: .claude/workspace/releases/2026-07-09-release.md, v1.2.3
 - checks: review pass / test pass / typecheck pass / lint pass / security pass / rollback pass
 - next action: 用户确认后执行部署
 ```

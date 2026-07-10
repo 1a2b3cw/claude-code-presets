@@ -15,7 +15,7 @@
 - 阅读 spec.md 和 tasks.md（如有）
 - 理解任务上下文和依赖
 - 不明确的地方直接问，不猜
-- 读取 `workspace/journal.md` 了解之前的会话上下文（如果有的话）
+- 读取 `.claude/workspace/journal.md` 了解之前的会话上下文（如果有的话）
 
 ### 实现
 - **TDD 流程**：先写测试 → 写代码让测试通过 → 重构

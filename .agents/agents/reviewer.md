@@ -29,10 +29,10 @@
 - 小问题批量提，不逐行挑刺
 - 跨文件问题优先于单文件问题（影响范围更大）
 - 审查打回时记录原因（用于效能指标）
-- 开始前读取 `workspace/journal.md` 了解会话上下文
+- 开始前读取 `.claude/workspace/journal.md` 了解会话上下文
 
 ## 效能指标
-审查完成后记录到 `workspace/metrics.md`：
+审查完成后记录到 `.claude/workspace/metrics.md`：
 - /review-all 打回次数
 - 发现问题数量与严重程度分布
 - 自动修复的问题数量

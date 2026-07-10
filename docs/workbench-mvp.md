@@ -8,6 +8,14 @@ Workbench MVP 是 AI 开发交付系统的轻量工作台。它不替代命令�
 2. 哪里需要人工确认或处理。
 3. 下一步最应该做什么。
 
+## 当前定位
+
+Workbench 是 M6 之后的视图层，不是 M1-M3 的成熟化主线。当前优先级是先让 Product Lead、Architect-Planner、Delivery Steward、`/plan`、`/dev`、`/review-all`、`/standup` 这些核心流程产出可信 artifact；Workbench 只读这些 artifact，不负责决定产品方向、任务合理性或项目状态。
+
+在可信状态层完成前，不继续扩 Workbench UI，不把 Workbench 当作事实源，也不让它替代 Owner Decision Brief、Spec/Task Quality Gate 或 Artifact Cleanup。
+
+Alpha 版的执行契约见 `docs/workbench-alpha.md`。后续实现以 Alpha 契约为准，重点补齐 Today、Task Focus、Run Detail、all-done 状态和 review/release report 摘要。
+
 ## 设计方向
 
 - 风格：专业开发工具，接近 Linear、GitHub、Vercel Dashboard 的工作密度。
@@ -25,7 +33,7 @@ Workbench MVP 是 AI 开发交付系统的轻量工作台。它不替代命令�
 | Events | `.claude/workspace/events.jsonl` | 最近 run、checks、失败恢复、下一步建议 |
 | Metrics | `.claude/workspace/metrics.md` | 趋势摘要、流程改进信号 |
 | Journal | `.claude/workspace/journal.md` | 会话记忆、背景事实 |
-| Reports | `workspace/reviews/`、`workspace/releases/` | 审查结论、发布结论、剩余风险 |
+| Reports | `.claude/workspace/reviews/`、`.claude/workspace/releases/` | 审查结论、发布结论、剩余风险 |
 | Git | `git status`、`git log` | 未提交变更、最近提交、远端同步状态 |
 
 ## 页面总览
@@ -194,6 +202,7 @@ Workbench MVP 是 AI 开发交付系统的轻量工作台。它不替代命令�
 - 不替代现有 `/dev`、`/standup` 等命令。
 - 不直接修改 artifact，先只读展示。
 - 不展示完整命令日志。
+- 不作为 M1 成熟化主线，不决定状态源。
 
 ## 验收标准
 

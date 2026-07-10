@@ -36,6 +36,23 @@ In Codex, invoke this as `$team-command-review-all`. Do not rely on `/review-all
 /review-all src/features/auth/
 ```
 
+**系统健康审查**：不只看当前 diff，而是检查项目长期演化是否变形
+```
+/review-all --system
+/review-all --system src/features/auth/
+```
+
+`--system` 用于防止多轮小改之后项目变成“能跑但形状怪”的状态。它不替代默认 diff review，而是在里程碑、发布前或架构风险出现时触发。
+
+### 何时必须做 system health review
+
+- XL 任务完成后。
+- 一个 roadmap MVP 最小集完成后。
+- 发布前如果本轮改动跨 3 个以上模块。
+- 同一模块连续 3 次被改动但没有做过全局审查。
+- `/standup` 或 Delivery Steward 发现状态源、文档、模块边界或测试策略冲突。
+- 用户明确担心“项目变形”“架构怪”“越改越乱”。
+
 ## 审查流程
 
 ```
@@ -67,6 +84,43 @@ In Codex, invoke this as `$team-command-review-all`. Do not rely on `/review-all
    - 2 轮后仍有问题 → 列出剩余问题等用户决定
 ```
 
+## System Health Review 流程
+
+`/review-all --system` 由 Reviewer 主导，Architect-Planner 和 Delivery Steward 按需参与。它的目标不是找当前 diff 的小 bug，而是判断项目是否仍然像一个健康产品和健康代码库。
+
+```
+1. 确定审查范围
+   - 默认全仓库；指定路径时只审该模块及其边界
+   - 读取 project-preset、roadmap、spec/tasks、architecture/ADR、review/release reports
+
+2. 架构形状检查
+   - 模块边界是否清晰
+   - 依赖方向是否稳定
+   - 是否出现循环依赖、万能模块、重复抽象、临时兼容层堆积
+   - 代码是否仍符合 project-preset 和 architecture 决策
+
+3. 产品与验收检查
+   - 已实现功能是否仍服务 Product Brief 和 roadmap
+   - MVP 是否被无意识扩大
+   - 用户主流程是否完整、连贯、可验证
+   - 是否存在“代码完成但产品不可用”的缺口
+
+4. 一致性和熵检查
+   - 同类 API、错误处理、状态命名、UI 交互是否一致
+   - 测试策略是否随功能增长而同步
+   - 文档是否重复、过期或互相矛盾
+   - TODO、临时方案、dead code 是否开始积累
+
+5. 输出系统健康报告
+   - 结论：healthy / needs_refactor / blocked
+   - 必须修复的结构问题
+   - 可延后但要进入 tasks/roadmap 的债务
+   - 建议合并、归档、删除的文档
+   - 下一步：继续开发、先重构、补测试、清文档或请求 Owner 决策
+```
+
+system health review 默认不直接修改代码。它可以生成修复任务、清理建议或 Owner Decision Brief。只有 tiny obvious fixes 才允许当场修。
+
 ## tasks.md 状态更新
 
 如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/review-all` 必须把它作为执行状态源同步更新：
@@ -85,13 +139,13 @@ In Codex, invoke this as `$team-command-review-all`. Do not rely on `/review-all
 `/review-all` 必须产出可沉淀的审查报告，路径为：
 
 ```text
-workspace/reviews/YYYY-MM-DD-<scope>.md
+.claude/workspace/reviews/YYYY-MM-DD-<scope>.md
 ```
 
 命名规则：
 
 - `<scope>` 使用任务 ID、模块 ID、目录名或分支名的短横线形式，如 `t1.4`、`auth`、`feature-user-auth`。
-- 如果 `workspace/reviews/` 不存在，先创建目录。
+- 如果 `.claude/workspace/reviews/` 不存在，先创建目录。
 - 报告路径必须写入 Summary 的 `affected files/modules`，并写入 `events.jsonl.artifacts`。
 
 报告必须包含以下字段：
@@ -104,6 +158,8 @@ workspace/reviews/YYYY-MM-DD-<scope>.md
 - **自动修复项**：已自动修复的文件、原因和修复轮次。
 - **剩余风险**：尚未修复或需要人工接受的风险。
 - **Gate 结果**：review gate 的 pass/fail、问题计数、修复轮次。
+- **系统健康**：当使用 `--system` 时，记录架构形状、产品验收、一致性、文档熵和建议清理项。
+- **Artifact Cleanup**：当发现文档重复、过期、路径漂移或 source-of-truth 冲突时，记录建议合并、归档、删除的文件；高影响删除必须请求 Owner Decision Brief。
 - **下一步**：进入 `/ship`、继续修复、等待用户确认或阻塞处理。
 
 ## 标准结果摘要
@@ -120,7 +176,7 @@ workspace/reviews/YYYY-MM-DD-<scope>.md
 
 映射规则：
 - `events.jsonl.summary` 使用 `status` + 一句话审查结论，例如 `completed: 跨文件审查通过，无阻塞问题`。
-- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径，必须包含 `workspace/reviews/YYYY-MM-DD-<scope>.md`。
+- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径，必须包含 `.claude/workspace/reviews/YYYY-MM-DD-<scope>.md`。
 - `events.jsonl.checks` 使用 `checks` 的结构化结果。
 - `events.jsonl.next` 使用 `next action`。
 
@@ -203,7 +259,7 @@ workspace/reviews/YYYY-MM-DD-<scope>.md
 示例：
 
 ```json
-{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0,"fixRounds":0},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["workspace/reviews/2026-07-09-t0.2.md"],"next":"/ship"}
+{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0,"fixRounds":0},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":[".claude/workspace/reviews/2026-07-09-t0.2.md"],"next":"/ship"}
 ```
 
 ## 跨文件分析维度
@@ -251,14 +307,14 @@ workspace/reviews/YYYY-MM-DD-<scope>.md
 这个模块之前被打回过？上次的问题这次修了吗？
 
 **检查方法**：
-- 读取 `workspace/journal.md`，找到该模块的历史审查记录
+- 读取 `.claude/workspace/journal.md`，找到该模块的历史审查记录
 - 检查之前标记的问题是否已修复
 - 检查之前标记的"建议项"是否有改善
 
 **数据来源**：
 ```
-workspace/journal.md → 历史会话记录
-workspace/metrics.md → 审查打回记录
+.claude/workspace/journal.md → 历史会话记录
+.claude/workspace/metrics.md → 审查打回记录
 git log --oneline → 相关提交历史
 ```
 
@@ -272,12 +328,32 @@ git log --oneline → 相关提交历史
 - 升级依赖 → 检查是否有 breaking change 需要适配
 - 新增 MCP 工具 → 检查相关 agent 是否引用
 
+### 5. 系统健康和长期演化
+
+多轮变更后，项目整体形状是否仍然健康？
+
+**检查方法**：
+- 对照 Product Brief、roadmap、project-preset、architecture/ADR，检查实现是否偏离产品主线。
+- 扫描模块边界：是否出现跨层调用、循环依赖、重复 service、万能 helper、散落配置。
+- 扫描一致性：同类 API、错误处理、状态命名、UI 模式、测试策略是否分裂。
+- 扫描文档熵：roadmap/spec/tasks/review/release/journal 是否互相冲突，旧文档是否应该合并、归档或删除。
+- 扫描债务积累：TODO、临时兼容、dead code、跳过测试是否变成常态。
+
+**常见问题**：
+```
+❌ 每次 diff 都合理，但最终出现 3 套错误处理模式
+❌ roadmap 说聚焦 MVP，但多个 P2 功能已混进核心流程
+❌ spec/tasks/review report 都在写状态，且彼此不一致
+❌ 业务逻辑从 feature 层泄漏到 UI 或 CLI 层
+❌ Workbench/自动化文档反过来盖过产品开发主线
+```
+
 ## 输出格式
 
 ```markdown
 # 跨文件审查报告
 
-> 路径：workspace/reviews/2026-07-09-auth.md
+> 路径：.claude/workspace/reviews/2026-07-09-auth.md
 
 ## 结论：✅ 通过 / ❌ 需要修改 / 🔴 需要重大修改
 
@@ -349,7 +425,7 @@ git log --oneline → 相关提交历史
 
 ## Summary
 - status: completed
-- affected files/modules: src/features/auth/, workspace/reviews/2026-07-09-auth.md
+- affected files/modules: src/features/auth/, .claude/workspace/reviews/2026-07-09-auth.md
 - checks: review pass / critical 0 / major 0 / fix rounds 1
 - next action: 进入 /ship
 ```
@@ -379,4 +455,6 @@ git log --oneline → 相关提交历史
 ```
 /review-all                        # 审查当前分支所有变更
 /review-all src/features/auth/     # 审查指定目录
+/review-all --system               # 审查项目整体健康，防止长期变形
+/review-all --system src/features/auth/  # 审查指定模块的长期形状和边界
 ```

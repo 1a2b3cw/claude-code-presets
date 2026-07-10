@@ -83,6 +83,16 @@ In Codex, invoke this as `$team-command-project-preset`. Do not rely on `/projec
 - **推断**：从代码结构推出来但还没确认的内容
 - **未决**：必须后续确认的问题
 
+### Artifact Stewardship 检查
+
+扫描项目文档时，Delivery Steward 必须同步判断文档生命周期和清理建议，但不要在本命令中实际删除旧文档。
+
+文档状态只能使用：`active` / `reference` / `draft` / `superseded` / `archived` / `delete-candidate`。
+
+如果发现旧 PRD、旧 roadmap、重复 project-profile、过期 preset 草稿或混用 `.claude/workspace/` 与 `workspace/`，必须在 `project-preset/curation.md` 或 `.claude/workspace/cleanup/YYYY-MM-DD-artifact-cleanup.md` 中记录 Artifact Cleanup 建议。
+
+高影响删除、source-of-truth 删除或可能丢失决策的删除，必须走 Owner Decision Brief；未确认前只建议合并或归档。
+
 ### Phase 2: 生成 project-profile/
 
 创建或更新：
@@ -272,6 +282,7 @@ project-preset/
 - 被拒绝或降级的候选项
 - 与代码事实或通用 preset 的冲突
 - 必须向用户确认的高风险问题
+- Artifact Cleanup 建议：哪些旧文档应保持 active/reference，哪些应标为 superseded/archived/delete-candidate
 
 ### Phase 4: 使用 skill-curator 审查
 

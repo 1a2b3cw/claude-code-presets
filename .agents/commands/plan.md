@@ -13,6 +13,33 @@
 
 典型流程：`/plan 我想做个 X` → 生成/读取 Product Brief → 看 roadmap → `/dev 做模块 3`。
 
+## Owner Decision Brief 契约
+
+`/plan` 由 Product Lead 负责判断产品方向，不把所有细节丢给 Owner。只有遇到会明显影响产品成败、投入或风险的选择时，才输出 Owner Decision Brief，让 Owner 做该做的决定。
+
+必须触发 Owner Decision Brief 的情况：
+
+- 产品方向不清或存在两条明显不同路线。
+- MVP 最小集需要取舍，或 P0/P1/P2 优先级会改变交付节奏。
+- 成本、隐私、安全、合规、发布风险会影响能不能做、怎么做或何时做。
+- 架构选择会限制后续产品能力，且无法由团队按现有约束自行安全决定。
+
+不要为日常模块命名、普通排序、低风险实现细节打断 Owner。团队应先给默认建议，只把真正需要 Owner 拍板的点拿出来。
+
+固定输出格式：
+
+```markdown
+## Owner Decision Brief
+- Decision: [what needs a choice]
+- Context: [why this matters now]
+- Recommendation: [default option and reason]
+- Options:
+  - A: [option] - [trade-off]
+  - B: [option] - [trade-off]
+  - C: [optional] - [trade-off]
+- If no reply: [safe default or pause]
+```
+
 ## 流程
 
 ### Phase 0: Product Brief / PRD（产品契约）

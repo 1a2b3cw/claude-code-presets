@@ -20,6 +20,57 @@
 
 `roadmap.md` 的模块状态使用：`planned` / `in_progress` / `blocked` / `done` / `shipped`。
 
+## Owner Decision Brief 契约
+
+`/dev` 默认由团队推进实现，不把每个技术细节都交给 Owner。L/XL 级任务必须检查是否需要 Owner Decision Brief；S/M 级只有命中高影响触发条件时才使用。
+
+必须触发 Owner Decision Brief 的情况：
+
+- 产品方向、MVP 范围或验收标准会被当前实现改变。
+- 成本、隐私、安全、合规、发布风险会影响方案选择或上线判断。
+- 架构选择会造成长期约束、迁移成本或明显锁定。
+- 任务计划看起来能做完，但做完后可能不是 Owner 想要的结果。
+
+不要为普通实现细节、局部代码风格、低风险库内重构打断 Owner。Product Lead 和 Architect-Planner 应先给推荐方案，再让 Owner 决策。
+
+固定输出格式：
+
+```markdown
+## Owner Decision Brief
+- Decision: [what needs a choice]
+- Context: [why this matters now]
+- Recommendation: [default option and reason]
+- Options:
+  - A: [option] - [trade-off]
+  - B: [option] - [trade-off]
+  - C: [optional] - [trade-off]
+- If no reply: [safe default or pause]
+```
+
+## Spec/Task Quality Gate
+
+M/L/XL 开工前必须先过 Spec/Task Quality Gate。这个 gate 不是让 Owner 审技术细节，而是防止 Builder 认真执行一份没价值、看不懂或已经偏离 Owner 意图的 tasks。
+
+开工前必须先用人话说明：
+
+```text
+这轮我建议先做 [功能/模块]。它有用是因为 [产品价值/风险/roadmap 原因]。本轮只做到 [范围]，暂时不碰 [明确不做]。做完后，你应该能看到 [可感知结果]；我会用 [验收方式] 验证。当前不需要你拍板 / 需要你在 [决策点] 上拍板。
+```
+
+Gate 分工：
+
+- Product Lead 判断 product value、Owner fit、MVP/roadmap 对齐。
+- Architect-Planner 判断技术方案、依赖顺序、任务粒度和验收命令。
+- Delivery Steward 判断 spec/tasks 是否可读、状态化、无重复、不制造文档漂移。
+
+Gate 结果只能是：`pass` / `needs_revision` / `blocked`。
+
+- `pass`：Builder 可以开工。
+- `needs_revision`：回到 Product Lead + Architect-Planner 修订，Builder 不得开工。
+- `blocked`：说明阻塞原因和下一步确认人，Builder 不得开工。
+
+S 级热修跳过该 gate；M 级使用轻量版本，但仍要让 Owner 能看懂做什么、为什么、怎么验收。
+
 ## tasks.md 执行状态源
 
 M/L/XL 级任务必须维护 `tasks.md`，它是执行计划和 gate 状态源。每个任务条目至少包含：

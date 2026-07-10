@@ -219,6 +219,20 @@ L/XL 级：
 | L | spec.md + tasks.md |
 | XL | spec.md + architecture.md + ADR |
 
+### Artifact Stewardship
+
+`.claude/workspace/` 是 team state/report 默认根目录；根目录 `workspace/` 只作为 legacy/temporary 路径，除非项目明确选择继续使用。
+
+非平凡文档必须能归入一个生命周期状态：`active` / `reference` / `draft` / `superseded` / `archived` / `delete-candidate`。
+
+Delivery Steward 负责在以下情况输出 Artifact Cleanup 报告：
+- 文档重复、过期或互相矛盾；
+- `roadmap.md`、`tasks.md`、review/release report、events 之间状态不一致；
+- Workbench、自动化或旧计划文档反过来压过当前产品开发主线；
+- 多个文件在写同一个事实源。
+
+Cleanup 默认先合并或归档，不直接删除。高影响删除、source-of-truth 删除或可能丢失决策的删除，必须走 Owner Decision Brief。报告路径使用 `.claude/workspace/cleanup/YYYY-MM-DD-artifact-cleanup.md`。
+
 ## 规范注入机制
 
 - **.agents/rules/**：始终加载的必须遵守规则
@@ -226,8 +240,8 @@ L/XL 级：
 - **presets/**：可插拔技术栈配置，安装时叠加到 `.agents/` 与 `.claude/`
 - **project-profile/**：项目画像，由 `/project-preset` 生成，记录产品、技术栈、架构、质量与验收
 - **project-preset/**：项目专属预设，由 `/project-preset` 生成，优先于通用技术栈 preset
-- **workspace/journal.md**：会话记忆，新会话开始时读取
-- **workspace/metrics.md**：效能指标，/dev 完成后追加
+- **.claude/workspace/journal.md**：会话记忆，新会话开始时读取
+- **.claude/workspace/metrics.md**：效能指标，/dev 完成后追加
 
 ## Codex 兼容说明
 
