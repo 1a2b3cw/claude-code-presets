@@ -33,6 +33,7 @@
     "gate": "node scripts/local-gate.js",
     "prepack": "node scripts/sync-config.js",
     "postpack": "node scripts/clean-vendored.js",
+    "test:tarball": "node scripts/tarball-smoke.js",
     "test": "node scripts/smoke-test.js",
     "validate": "node scripts/validate.js"
   },

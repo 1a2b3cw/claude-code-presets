@@ -29,7 +29,7 @@ function validatePreset(sourceDir, manifest) {
     }
   }
 
-  if (manifest.expectSpecs && !existsSync(join(presetDir, 'specs'))) {
+  if (manifest.expectSpecs && !presetHasSpecs(presetDir, manifest)) {
     issues.push(`${manifest.name}: expectSpecs=true 但 specs/ 不存在`);
   }
 
@@ -48,6 +48,14 @@ function validatePreset(sourceDir, manifest) {
   }
 
   return issues;
+}
+
+function presetHasSpecs(presetDir, manifest) {
+  if (existsSync(join(presetDir, 'specs'))) return true;
+
+  return Object.keys(manifest.languages ?? {}).some((lang) => (
+    existsSync(join(presetDir, 'lang', lang, 'specs'))
+  ));
 }
 
 export async function validateProject({ sourceDir = findSourceDir() } = {}) {
