@@ -471,7 +471,7 @@
 
 ### T7.1 外部 skill/agent 采纳 registry
 
-- **状态**：todo
+- **状态**：done
 - **Prompt**：
 
 ```text
