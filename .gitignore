@@ -51,3 +51,4 @@ coverage/
 # single source of truth.
 create-claude-team/.claude/
 create-claude-team/presets/
+create-claude-team/pack-dry-run.json

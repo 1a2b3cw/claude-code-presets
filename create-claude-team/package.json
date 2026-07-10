@@ -31,6 +31,7 @@
   ],
   "scripts": {
     "gate": "node scripts/local-gate.js",
+    "pack:dry-run-json": "node scripts/pack-dry-run-json.js",
     "prepack": "node scripts/sync-config.js",
     "postpack": "node scripts/clean-vendored.js",
     "test:tarball": "node scripts/tarball-smoke.js",

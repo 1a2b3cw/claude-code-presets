@@ -364,7 +364,7 @@
 
 ### T4.4 增加 GitHub Actions CI
 
-- **状态**：todo
+- **状态**：done
 - **目标**：PR 自动跑 validate/test/pack dry-run。
 - **Prompt**：
 

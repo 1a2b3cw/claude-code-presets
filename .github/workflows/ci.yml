@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    defaults:
+      run:
+        working-directory: create-claude-team
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate configuration
+        run: npm run validate
+
+      - name: Run smoke tests
+        run: npm test
+
+      - name: Pack dry-run
+        run: npm run pack:dry-run-json
+
+      - name: Upload pack dry-run report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pack-dry-run-${{ matrix.os }}
+          path: create-claude-team/pack-dry-run.json
+          if-no-files-found: error
