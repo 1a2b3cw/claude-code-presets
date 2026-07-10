@@ -456,6 +456,8 @@ async function runScenario(manifest, {
     assert(hooks.includes('security-check.mjs') && hooks.includes('bash-check.mjs'), 'init: Node hooks (.mjs) 存在');
     assert(!hooks.some((h) => h.endsWith('.sh')), 'init: 无遗留 .sh hooks');
     assert(existsSync(join(codexDir, 'hooks.json')), 'init: Codex hooks.json 存在');
+    const codexHooks = JSON.parse(readFileSync(join(codexDir, 'hooks.json'), 'utf8'));
+    assert(!codexHooks.hooks.Stop, 'init: Codex 不配置会输出纯文本的 Stop hook');
     assert(fileNames(join(codexDir, 'hooks')).includes('security-check.mjs'), 'init: Codex hooks 已同步');
     assert(existsSync(join(codexDir, 'config.toml')), 'init: Codex config.toml 存在');
     const initCodexAgents = fileNames(join(codexDir, 'agents')).filter((name) => name.endsWith('.toml'));

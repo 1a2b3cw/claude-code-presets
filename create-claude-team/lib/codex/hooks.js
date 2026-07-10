@@ -23,16 +23,6 @@ export function buildCodexHooks() {
           ],
         },
       ],
-      Stop: [
-        {
-          hooks: [
-            {
-              type: 'command',
-              command: "echo '请确认所有任务已完成，使用任务列表检查进度'",
-            },
-          ],
-        },
-      ],
     },
   };
 }
