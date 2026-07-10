@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workbench MVP Prototype</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --surface: #ffffff;
+      --surface-soft: #f1f4f8;
+      --border: #d9dee7;
+      --border-strong: #aeb8c8;
+      --text: #172033;
+      --muted: #5f6f86;
+      --quiet: #8793a6;
+      --blue: #2764b8;
+      --blue-soft: #e8f1ff;
+      --green: #207a4c;
+      --green-soft: #e6f4ed;
+      --amber: #8b5c10;
+      --amber-soft: #fff4d6;
+      --red: #a43c3c;
+      --red-soft: #faeaea;
+      --radius-card: 8px;
+      --radius-button: 6px;
+      --radius-pill: 999px;
+      --sidebar-width: 248px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: #ffffff;
+      border-right: 1px solid var(--border);
+      padding: 18px 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 4px;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #172033;
+      color: #ffffff;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .brand-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 4px;
+    }
+
+    .nav button {
+      width: 100%;
+      min-height: 38px;
+      border: 0;
+      border-radius: var(--radius-button);
+      background: transparent;
+      color: var(--muted);
+      text-align: left;
+      padding: 8px 10px;
+      transition: background 0.18s ease, color 0.18s ease;
+    }
+
+    .nav button:hover {
+      background: var(--surface-soft);
+      color: var(--text);
+    }
+
+    .nav button.active {
+      background: #172033;
+      color: #ffffff;
+    }
+
+    .sidebar-note {
+      margin-top: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      background: var(--surface);
+    }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 64px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.94);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .topbar p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .search {
+      width: 280px;
+      max-width: 100%;
+      height: 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-button);
+      padding: 0 10px;
+      background: #ffffff;
+      color: var(--text);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .search:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(39, 100, 184, 0.12);
+    }
+
+    .content {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+      padding: 24px 28px 36px;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .section {
+      margin-bottom: 22px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .section-header p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid.two {
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid.four {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .panel,
+    .metric,
+    .run-item,
+    .task-row,
+    .risk-row,
+    .insight-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+
+    .panel {
+      padding: 16px;
+    }
+
+    .panel h3,
+    .metric h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .panel p,
+    .metric p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .hero-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.25;
+    }
+
+    .hero-copy {
+      margin: 8px 0 0;
+      max-width: 680px;
+      color: var(--muted);
+    }
+
+    .metric {
+      padding: 14px;
+      min-height: 118px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .metric-caption {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: var(--radius-pill);
+      padding: 3px 9px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge.pass {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .badge.watch {
+      color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .badge.blocked {
+      color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .badge.info {
+      color: var(--blue);
+      background: var(--blue-soft);
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .run-item,
+    .task-row,
+    .risk-row,
+    .insight-row {
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .row-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .row-title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .row-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .next-action {
+      border-left: 3px solid var(--blue);
+      background: #ffffff;
+      padding: 12px 14px;
+      border-radius: 0 var(--radius-card) var(--radius-card) 0;
+    }
+
+    .command-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .command {
+      min-height: 34px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-button);
+      background: var(--surface);
+      color: var(--text);
+      padding: 6px 10px;
+      font-size: 12px;
+      transition: border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .command:hover {
+      border-color: var(--blue);
+      background: var(--blue-soft);
+    }
+
+    .progress-track {
+      height: 10px;
+      background: var(--surface-soft);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--blue);
+    }
+
+    .stage-map {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stage {
+      min-height: 74px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      background: var(--surface);
+      padding: 10px;
+    }
+
+    .stage strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .stage span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stage.current {
+      border-color: var(--blue);
+      background: var(--blue-soft);
+    }
+
+    .artifact-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .artifact {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-button);
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .chart {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 108px minmax(0, 1fr) 44px;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .bar-track {
+      height: 8px;
+      background: var(--surface-soft);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--blue);
+    }
+
+    .split-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .empty-state {
+      min-height: 160px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-card);
+      color: var(--muted);
+      background: #ffffff;
+      text-align: center;
+      padding: 18px;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .nav {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .nav button {
+        text-align: center;
+      }
+
+      .sidebar-note {
+        display: none;
+      }
+
+      .grid.two,
+      .grid.three,
+      .grid.four,
+      .split-list,
+      .stage-map {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        height: auto;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 16px;
+      }
+
+      .content {
+        padding: 18px 16px 28px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero-line,
+      .section-header,
+      .row-top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .hero-title {
+        font-size: 21px;
+      }
+
+      .bar-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">WB</div>
+        <div>
+          <p class="brand-title">Workbench</p>
+          <p class="brand-subtitle">AI delivery cockpit</p>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Workbench views">
+        <button class="active" data-view="today">Today</button>
+        <button data-view="project">Project</button>
+        <button data-view="task">Task Focus</button>
+        <button data-view="run">Run Detail</button>
+        <button data-view="insights">Insights</button>
+      </nav>
+      <div class="sidebar-note">
+        静态原型使用示例数据，真实 PoC 会读取 roadmap、tasks 和 events。
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="view-title">Today</h1>
+          <p id="view-subtitle">当前焦点、阻塞、最近 run 和下一步建议。</p>
+        </div>
+        <input class="search" type="search" placeholder="Filter tasks, runs, artifacts" aria-label="Filter">
+      </header>
+
+      <div class="content">
+        <section id="today" class="view active">
+          <div class="section">
+            <div class="panel">
+              <div class="hero-line">
+                <div>
+                  <h2 class="hero-title">T5 Workbench MVP 正在推进</h2>
+                  <p class="hero-copy">当前阶段从可执行门禁进入可视化工作台，目标是让状态、任务、run 和 metrics 可以被快速浏览。</p>
+                </div>
+                <div class="badge-row">
+                  <span class="badge info">Phase 5</span>
+                  <span class="badge pass">Gate ready</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section grid four">
+            <div class="metric">
+              <h3>Current focus</h3>
+              <div class="metric-value">T5.2</div>
+              <p class="metric-caption">Static HTML prototype</p>
+            </div>
+            <div class="metric">
+              <h3>Blocked</h3>
+              <div class="metric-value">0</div>
+              <p class="metric-caption">No human decision pending</p>
+            </div>
+            <div class="metric">
+              <h3>Latest run</h3>
+              <div class="metric-value">pass</div>
+              <p class="metric-caption">T4 push recovered</p>
+            </div>
+            <div class="metric">
+              <h3>Automation</h3>
+              <div class="metric-value">4/4</div>
+              <p class="metric-caption">validate, test, gate, push</p>
+            </div>
+          </div>
+
+          <div class="section grid two">
+            <div class="panel">
+              <div class="section-header">
+                <div>
+                  <h2>Recent runs</h2>
+                  <p>命令结果只显示结论，详细证据进入 Run Detail。</p>
+                </div>
+              </div>
+              <div class="timeline">
+                <article class="run-item">
+                  <div class="row-top">
+                    <p class="row-title">/dev T4</p>
+                    <span class="badge pass">completed</span>
+                  </div>
+                  <p class="row-meta">CI workflow、local gate、tarball smoke、push recovered</p>
+                </article>
+                <article class="run-item">
+                  <div class="row-top">
+                    <p class="row-title">/dev T3.3</p>
+                    <span class="badge pass">completed</span>
+                  </div>
+                  <p class="row-meta">Today view contract landed in standup command</p>
+                </article>
+                <article class="run-item">
+                  <div class="row-top">
+                    <p class="row-title">/review-all T3</p>
+                    <span class="badge pass">clean</span>
+                  </div>
+                  <p class="row-meta">No blocking review findings</p>
+                </article>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="section-header">
+                <div>
+                  <h2>Next Best Action</h2>
+                  <p>来自 tasks 状态和最近事件。</p>
+                </div>
+              </div>
+              <div class="next-action">
+                <p class="row-title">完成 T5.2，然后进入 T5.3 本地 artifact PoC</p>
+                <p class="row-meta">原因：T5.1 信息架构已完成，静态原型是 PoC 的视觉契约。</p>
+              </div>
+              <div class="command-row">
+                <button class="command">$team-command-dev T5.2</button>
+                <button class="command">$team-command-review-all workbench</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="project" class="view">
+          <div class="section grid three">
+            <div class="metric">
+              <h3>Project phase</h3>
+              <div class="metric-value">5</div>
+              <p class="metric-caption">Workbench MVP</p>
+            </div>
+            <div class="metric">
+              <h3>Health</h3>
+              <div class="metric-value">watch</div>
+              <p class="metric-caption">Prototype not connected yet</p>
+            </div>
+            <div class="metric">
+              <h3>Roadmap</h3>
+              <div class="metric-value">5/8</div>
+              <p class="metric-caption">Major phases started</p>
+            </div>
+          </div>
+          <div class="section panel">
+            <div class="section-header">
+              <div>
+                <h2>Roadmap progress</h2>
+                <p>阶段视图展示 done、active、planned 和 blocked。</p>
+              </div>
+              <span class="badge info">Artifact layer</span>
+            </div>
+            <div class="stage-map">
+              <div class="stage"><strong>Memory</strong><span>done</span></div>
+              <div class="stage"><strong>Artifacts</strong><span>done</span></div>
+              <div class="stage"><strong>Metrics</strong><span>done</span></div>
+              <div class="stage"><strong>CI Gates</strong><span>done</span></div>
+              <div class="stage current"><strong>Workbench</strong><span>current</span></div>
+            </div>
+          </div>
+          <div class="section split-list">
+            <article class="risk-row">
+              <div class="row-top">
+                <p class="row-title">真实数据读取范围</p>
+                <span class="badge watch">risk</span>
+              </div>
+              <p class="row-meta">第一版只读 roadmap、tasks、events，避免过早引入数据库。</p>
+            </article>
+            <article class="risk-row">
+              <div class="row-top">
+                <p class="row-title">日志噪音</p>
+                <span class="badge info">mitigated</span>
+              </div>
+              <p class="row-meta">默认展示 summary 和 evidence，不内嵌完整日志。</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="task" class="view">
+          <div class="section grid two">
+            <div class="panel">
+              <div class="section-header">
+                <div>
+                  <h2>T5.2 Static HTML prototype</h2>
+                  <p>当前任务目标和验收条件。</p>
+                </div>
+                <span class="badge info">in_progress</span>
+              </div>
+              <p>生成 Workbench 静态原型，包含 Today、Project、Task Focus、Run Detail、Insights 五个视图。只做静态原型，不接真实数据，不改 CLI。</p>
+              <div class="artifact-list">
+                <div class="artifact"><span>Acceptance</span><strong>Five views visible</strong></div>
+                <div class="artifact"><span>Command</span><strong>open index.html</strong></div>
+                <div class="artifact"><span>Scope</span><strong>No live data</strong></div>
+              </div>
+              <div class="command-row">
+                <button class="command">Continue</button>
+                <button class="command">Review</button>
+                <button class="command">Run gate</button>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="section-header">
+                <div>
+                  <h2>Gate state</h2>
+                  <p>用固定阶段解释 AI 当前推进状态。</p>
+                </div>
+              </div>
+              <div class="stage-map">
+                <div class="stage"><strong>Plan</strong><span>done</span></div>
+                <div class="stage current"><strong>Build</strong><span>now</span></div>
+                <div class="stage"><strong>Local</strong><span>next</span></div>
+                <div class="stage"><strong>Review</strong><span>pending</span></div>
+                <div class="stage"><strong>Ship</strong><span>later</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="section panel">
+            <div class="section-header">
+              <div>
+                <h2>Task queue</h2>
+                <p>当前任务和后续建议任务。</p>
+              </div>
+            </div>
+            <div class="timeline">
+              <article class="task-row">
+                <div class="row-top">
+                  <p class="row-title">T5.1 Workbench information architecture</p>
+                  <span class="badge pass">done</span>
+                </div>
+                <p class="row-meta">docs/workbench-mvp.md</p>
+              </article>
+              <article class="task-row">
+                <div class="row-top">
+                  <p class="row-title">T5.2 Static HTML prototype</p>
+                  <span class="badge info">active</span>
+                </div>
+                <p class="row-meta">workbench/prototype/index.html</p>
+              </article>
+              <article class="task-row">
+                <div class="row-top">
+                  <p class="row-title">T5.3 Local artifact PoC</p>
+                  <span class="badge watch">next</span>
+                </div>
+                <p class="row-meta">Read roadmap, tasks, events and render Today + Task Focus</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="run" class="view">
+          <div class="section grid two">
+            <div class="panel">
+              <div class="section-header">
+                <div>
+                  <h2>Run summary</h2>
+                  <p>一次命令执行的可追溯摘要。</p>
+                </div>
+                <span class="badge pass">completed</span>
+              </div>
+              <div class="artifact-list">
+                <div class="artifact"><span>Status</span><strong>completed</strong></div>
+                <div class="artifact"><span>Task</span><strong>T4</strong></div>
+                <div class="artifact"><span>Checks</span><strong>gate pass</strong></div>
+                <div class="artifact"><span>Next</span><strong>T5.1</strong></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="section-header">
+                <div>
+                  <h2>Changes</h2>
+                  <p>只列关键产物和提交，不铺日志。</p>
+                </div>
+              </div>
+              <div class="artifact-list">
+                <div class="artifact"><span>.github/workflows/ci.yml</span><strong>added</strong></div>
+                <div class="artifact"><span>scripts/local-gate.js</span><strong>added</strong></div>
+                <div class="artifact"><span>scripts/tarball-smoke.js</span><strong>added</strong></div>
+              </div>
+            </div>
+          </div>
+          <div class="section grid three">
+            <article class="metric">
+              <h3>validate</h3>
+              <div class="metric-value">pass</div>
+              <p class="metric-caption">configuration valid</p>
+            </article>
+            <article class="metric">
+              <h3>test</h3>
+              <div class="metric-value">428</div>
+              <p class="metric-caption">smoke tests passed</p>
+            </article>
+            <article class="metric">
+              <h3>push</h3>
+              <div class="metric-value">pass</div>
+              <p class="metric-caption">workflow scope recovered</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="insights" class="view">
+          <div class="section grid two">
+            <div class="panel">
+              <div class="section-header">
+                <div>
+                  <h2>Delivery trends</h2>
+                  <p>只显示会影响下一步的趋势。</p>
+                </div>
+              </div>
+              <div class="chart">
+                <div class="bar-row"><span>Automation success</span><div class="bar-track"><div class="bar-fill" style="width: 92%"></div></div><strong>92%</strong></div>
+                <div class="bar-row"><span>Review reject</span><div class="bar-track"><div class="bar-fill" style="width: 10%"></div></div><strong>10%</strong></div>
+                <div class="bar-row"><span>Test failure</span><div class="bar-track"><div class="bar-fill" style="width: 6%"></div></div><strong>6%</strong></div>
+                <div class="bar-row"><span>Blocked time</span><div class="bar-track"><div class="bar-fill" style="width: 18%"></div></div><strong>18%</strong></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="section-header">
+                <div>
+                  <h2>Process suggestions</h2>
+                  <p>建议必须能追溯到 events 或 reports。</p>
+                </div>
+              </div>
+              <div class="timeline">
+                <article class="insight-row">
+                  <div class="row-top">
+                    <p class="row-title">Keep local gate before push</p>
+                    <span class="badge pass">stable</span>
+                  </div>
+                  <p class="row-meta">T4 gate caught pack and validate assumptions before CI.</p>
+                </article>
+                <article class="insight-row">
+                  <div class="row-top">
+                    <p class="row-title">Track GitHub auth failures as release recovery</p>
+                    <span class="badge watch">follow</span>
+                  </div>
+                  <p class="row-meta">Workflow updates require token scope evidence.</p>
+                </article>
+              </div>
+            </div>
+          </div>
+          <div class="section empty-state">
+            <div>
+              <strong>未来版本连接真实 metrics</strong>
+              <p>第一版只展示趋势形态，T5.3 会先接入 Today 和 Task Focus 的真实数据。</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const titles = {
+      today: ['Today', '当前焦点、阻塞、最近 run 和下一步建议。'],
+      project: ['Project', '项目目标、阶段、健康度、roadmap 进度和风险。'],
+      task: ['Task Focus', '当前任务目标、验收标准、gate 状态和继续动作。'],
+      run: ['Run Detail', '追溯一次命令执行的 summary、changes、checks 和 decisions。'],
+      insights: ['Insights', '展示 review、test、automation、blocked 和 estimate 趋势。'],
+    };
+
+    const buttons = document.querySelectorAll('.nav button');
+    const views = document.querySelectorAll('.view');
+    const title = document.getElementById('view-title');
+    const subtitle = document.getElementById('view-subtitle');
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const nextView = button.dataset.view;
+        buttons.forEach((item) => item.classList.toggle('active', item === button));
+        views.forEach((view) => view.classList.toggle('active', view.id === nextView));
+        title.textContent = titles[nextView][0];
+        subtitle.textContent = titles[nextView][1];
+      });
+    });
+  </script>
+</body>
+</html>

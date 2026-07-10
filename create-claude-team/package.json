@@ -30,9 +30,13 @@
     "presets/"
   ],
   "scripts": {
+    "gate": "node scripts/local-gate.js",
+    "pack:dry-run-json": "node scripts/pack-dry-run-json.js",
     "prepack": "node scripts/sync-config.js",
     "postpack": "node scripts/clean-vendored.js",
-    "test": "node scripts/smoke-test.js"
+    "test:tarball": "node scripts/tarball-smoke.js",
+    "test": "node scripts/smoke-test.js",
+    "validate": "node scripts/validate.js"
   },
   "engines": {
     "node": ">=18.0.0"

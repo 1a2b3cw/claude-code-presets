@@ -56,6 +56,145 @@
    - 2 轮后仍有问题 → 列出剩余问题等用户决定
 ```
 
+## tasks.md 状态更新
+
+如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/review-all` 必须把它作为执行状态源同步更新：
+
+- 开始审查时，将对应任务状态更新为 `review_gate`，并刷新最近更新日期。
+- 审查通过时，记录 `Gate 结果.review = pass`，写入审查范围、问题数、修复轮次和报告路径（如有）。
+- 更新时不要删除任务条目的验收标准、验收命令、阻塞原因、Gate 结果和产物字段。
+- 审查通过且任务需要发布时，将状态推进到 `release_gate`；无需发布的任务可推进到 `done`。
+- 审查发现问题但已自动修复通过时，记录 review gate 为 `pass`，并写明自动修复项。
+- 2 轮后仍有阻塞问题或需要用户决策时，将状态更新为 `blocked`，写明阻塞原因和下一步确认人。
+
+`tasks.md` 状态必须使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
+
+## Review Report 契约
+
+`/review-all` 必须产出可沉淀的审查报告，路径为：
+
+```text
+workspace/reviews/YYYY-MM-DD-<scope>.md
+```
+
+命名规则：
+
+- `<scope>` 使用任务 ID、模块 ID、目录名或分支名的短横线形式，如 `t1.4`、`auth`、`feature-user-auth`。
+- 如果 `workspace/reviews/` 不存在，先创建目录。
+- 报告路径必须写入 Summary 的 `affected files/modules`，并写入 `events.jsonl.artifacts`。
+
+报告必须包含以下字段：
+
+- **结论**：`pass` / `needs_fix` / `blocked`，并给一句话原因。
+- **关联任务**：任务 ID、模块 ID 或审查范围；没有则写 `无`。
+- **变更范围**：分支、对比基准、文件/目录范围、关键模块。
+- **问题列表**：每个问题包含文件、位置、说明、建议修复。
+- **严重度**：`critical` / `major` / `minor` / `suggestion`。
+- **自动修复项**：已自动修复的文件、原因和修复轮次。
+- **剩余风险**：尚未修复或需要人工接受的风险。
+- **Gate 结果**：review gate 的 pass/fail、问题计数、修复轮次。
+- **下一步**：进入 `/ship`、继续修复、等待用户确认或阻塞处理。
+
+## 标准结果摘要
+
+`/review-all` 完成后必须输出固定的 `Summary` 块，供用户阅读，并作为 `events.jsonl` 的字段来源。
+
+```markdown
+## Summary
+- status: completed / failed / blocked / skipped
+- affected files/modules: [本次审查范围、报告路径和自动修复文件]
+- checks: [/check、跨文件审查、严重/中等/轻微问题数、修复轮次]
+- next action: [可以合并、进入 /ship、继续修复或等待用户决策]
+```
+
+映射规则：
+- `events.jsonl.summary` 使用 `status` + 一句话审查结论，例如 `completed: 跨文件审查通过，无阻塞问题`。
+- `events.jsonl.artifacts` 使用 `affected files/modules` 中的文件路径，必须包含 `workspace/reviews/YYYY-MM-DD-<scope>.md`。
+- `events.jsonl.checks` 使用 `checks` 的结构化结果。
+- `events.jsonl.next` 使用 `next action`。
+
+### Next Best Action 契约
+
+`/review-all` 完成或打回时必须输出固定的 Next Best Action，告诉用户下一步应该做什么、为什么、是否需要人工确认。
+
+```markdown
+## Next Best Action
+- action: [建议执行的命令或人工动作，如修复 P0/P1、/ship、等待风险确认]
+- reason: [为什么现在应该做这一步，引用审查结论、严重度、剩余风险或报告路径]
+- requires human confirmation: yes / no
+- source: [依据来源，如 review report、issues、tasks.md、events.jsonl]
+```
+
+写入规则：
+- `Summary.next action` 必须与 `Next Best Action.action` 保持一致或可直接追溯。
+- 如果 `requires human confirmation: yes`，必须说明谁需要确认什么。
+- 如果存在 P0/P1 或安全问题，Next Best Action 不得建议进入 `/ship`。
+
+## 事件记录
+
+`/review-all` 收尾时必须向 `.claude/workspace/events.jsonl` 追加 1 行 JSONL 事件。该文件是 `/standup` 和后续 metrics 的机器可读事实来源。
+
+### events.jsonl 契约
+
+每行是一个独立 JSON 对象，不允许跨行，不回写旧事件。
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `time` | 是 | UTC ISO 8601 时间，如 `2026-07-09T10:00:00Z` |
+| `command` | 是 | 固定为 `/review-all` |
+| `task` | 否 | 关联任务、模块或审查范围；没有则为 `null` |
+| `status` | 是 | `completed` / `failed` / `blocked` / `skipped` |
+| `summary` | 是 | 一句话审查结论摘要 |
+| `checks` | 否 | 审查结果对象，如 `{"review":"pass","critical":0,"major":0}` |
+| `artifacts` | 否 | 审查报告、自动修复文件或关键变更路径数组 |
+| `next` | 否 | 下一步建议，或 `null` |
+
+#### Metrics 扩展字段
+
+`events.jsonl` 同时是结构化 metrics 的机器事实来源。`/review-all` 收尾事件应尽量写入这些可选字段；未知时用 `null`，计数无发生时用 `0`：
+
+| 字段 | 说明 |
+|------|------|
+| `taskId` | 标准任务、模块或审查范围 ID；优先等于 `task` |
+| `level` | 任务级别：`S` / `M` / `L` / `XL`；未知为 `null` |
+| `specRejectCount` | 继承任务的 spec 否决次数；未知为 `null`，无发生为 `0` |
+| `checkIssueCount` | Phase 1 `/check` 发现的问题总数 |
+| `checkFixRounds` | 快检或自动修复轮数 |
+| `reviewRejectCount` | 审查打回次数；首次不通过计 `1` |
+| `testFailureCount` | 审查期间触发测试失败次数；没有则 `0` |
+| `estimateHours` | 继承任务估算；没有则为 `null` |
+| `actualHours` | 本次审查实际耗时；没有记录则为 `null` |
+
+#### 失败恢复记录契约
+
+当 `/review-all` 遇到测试失败、CI 失败、pack 失败、hook 误拦或发布失败，并且本次流程进行了自动修复、重试、回滚或最终阻塞时，收尾事件必须写入可选对象 `failureRecovery`。无失败发生时省略该对象。
+
+`failureRecovery` 固定字段：
+
+| 字段 | 说明 |
+|------|------|
+| `failureType` | `test_failure` / `ci_failure` / `pack_failure` / `hook_false_positive` / `release_failure` |
+| `stage` | 发生阶段，如 `local_gate`、`review_gate`、`release_gate`、`hook`、`ci` |
+| `symptom` | 用户可读的失败现象，避免粘贴长日志 |
+| `rootCause` | 已确认根因；未知时为 `unknown` |
+| `recoveryAction` | 已执行的恢复动作，如 fix、retry、rollback、mark_flaky、accept_risk |
+| `attempts` | 修复或重试次数 |
+| `finalStatus` | `recovered` / `blocked` / `accepted_risk` / `needs_followup` |
+| `evidence` | 相关命令、报告或日志路径数组，必须使用仓库相对路径 |
+| `followUp` | 后续任务、补测试、修 CI 或人工确认事项；没有则为 `null` |
+
+写入规则：
+- 只在审查收尾时追加 1 条最终事件，不记录中间步骤。
+- 如果 `.claude/workspace/` 或 `events.jsonl` 不存在，创建它们。
+- 路径使用仓库相对路径，不记录绝对路径、密钥、token 或敏感数据。
+- 写入失败时在最终输出中说明，但不改变审查结论。
+
+示例：
+
+```json
+{"time":"2026-07-09T10:10:00Z","command":"/review-all","task":"T0.2","taskId":"T0.2","level":"M","status":"completed","summary":"completed: 跨文件审查通过，无阻塞问题","checks":{"review":"pass","critical":0,"major":0,"fixRounds":0},"specRejectCount":0,"checkIssueCount":0,"checkFixRounds":0,"reviewRejectCount":0,"testFailureCount":0,"estimateHours":null,"actualHours":null,"artifacts":["workspace/reviews/2026-07-09-t0.2.md"],"next":"/ship"}
+```
+
 ## 跨文件分析维度
 
 ### 1. 变更完整性
@@ -127,7 +266,13 @@ git log --oneline → 相关提交历史
 ```markdown
 # 跨文件审查报告
 
+> 路径：workspace/reviews/2026-07-09-auth.md
+
 ## 结论：✅ 通过 / ❌ 需要修改 / 🔴 需要重大修改
+
+## 关联任务
+- 任务：T1.4
+- 模块：auth
 
 ## 变更概况
 - 分支：feature/user-auth → main
@@ -180,6 +325,22 @@ git log --oneline → 相关提交历史
 ## 修复记录
 - [x] src/auth.controller.ts:23 — 更新 create() 调用参数
 - [ ] src/user/register.ts:15 — 统一使用 AppError（建议）
+
+## 剩余风险
+- `src/user/register.ts` 的错误处理不一致为建议项，不阻塞发布。
+
+## Gate 结果
+- review: pass
+- critical: 0
+- major: 0
+- minor: 1
+- fix rounds: 1
+
+## Summary
+- status: completed
+- affected files/modules: src/features/auth/, workspace/reviews/2026-07-09-auth.md
+- checks: review pass / critical 0 / major 0 / fix rounds 1
+- next action: 进入 /ship
 ```
 
 ## 后续动作

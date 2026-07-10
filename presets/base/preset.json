@@ -1,0 +1,19 @@
+{
+  "name": "base",
+  "order": 5,
+  "displayName": "基础底座",
+  "help": "基础团队底座（不含技术栈）",
+  "description": "无技术栈偏见的 AI 开发团队底座",
+  "skillCount": 0,
+  "rules": [],
+  "expectSpecs": false,
+  "mcpSmokeServer": "github",
+  "examples": [
+    "cd my-project && npx create-claude-team init --preset base"
+  ],
+  "nextSteps": [
+    "运行 /project-preset，或在 Codex 输入 $team-command-project-preset，生成项目专属预设",
+    "确认 project-profile/ 与 project-preset/ 后，再用 /plan 或 /dev 开始开发",
+    "后续开发以 project-preset/PRESET.md 和 project-preset/rules/ 为项目级最高优先级"
+  ]
+}

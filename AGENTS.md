@@ -86,12 +86,37 @@ L/XL 级：
 | 你说的话 | 用什么 | AI 行为 |
 |----------|--------|---------|
 | `/plan 我想做个产品` | /plan | 分析产品，输出功能模块清单（roadmap.md），不写代码 |
+| `/project-preset 生成项目预设` | /project-preset | 讨论/扫描项目，生成 project-profile/ 与 project-preset/，不写业务代码 |
 | `/taste 给项目定设计风格` | /taste | 带你找到想要的 UI 审美，产出设计方向（preview/），不写代码 |
 | `/dev 做一个功能` | /dev | 走完全流程，你只管确认 |
 | `/check` | /check | 快检当前代码，1 分钟出结果 |
 | `/fix 这个函数有问题` | /fix | 直接改这一处，不走流程 |
 | `/review-all src/` | /review-all | 跨文件审查，自动修 |
 | `/standup` | /standup | 告诉你做到哪了 |
+
+### 自然语言路由契约
+
+当用户没有显式写命令，而是用自然语言表达目标时，AI 必须先判断最合适的流程，并用一句话说明推荐命令和原因；如果意图明确，可以直接进入该流程，不要求用户记住命令。
+
+| 用户表达 | 推荐命令 | 路由依据 |
+|----------|----------|----------|
+| “我想做一个产品/应用/系统” | `/plan` | 需要先定义 Product Brief、roadmap 和 MVP |
+| “做一个功能/模块/页面/API” | `/dev` | 已有目标，需要进入开发交付流程 |
+| “这个 bug 帮我修 / 某文件某行有问题” | `/fix` | 已知具体问题，走定点修复 |
+| “写完了帮我看有没有问题 / 快查一下” | `/check` | 当前变更需要轻量快检 |
+| “合并前审一下 / 全面 review” | `/review-all` | 需要跨文件审查和报告 |
+| “准备上线 / 发布前检查” | `/ship` | 需要发布门禁、release report 和回滚方案 |
+| “今天做到哪 / 现在状态 / 下一步做什么” | `/standup` | 需要读取 roadmap/tasks/events/git 生成状态和 Next Best Action |
+| “项目该用什么风格 / 先定 UI 审美” | `/taste` | UI 方向未定，写代码前先定设计方向 |
+| “生成项目预设 / 适配这个仓库规则” | `/project-preset` | 需要生成 project-profile 与 project-preset |
+
+路由规则：
+- 用户显式写了命令时，优先尊重显式命令。
+- 同时匹配多个命令时，优先选择最轻流程：`/fix` > `/check` > `/dev` > `/review-all` > `/ship`。
+- 产品级意图优先 `/plan`，不要直接进入 `/dev`。
+- 小修复优先 `/fix`，不要把 S 级问题拖入完整 `/dev`。
+- 发布或合并前意图不得跳过 `/review-all` / `/ship` 对应门禁。
+- 意图不清时，最多问 1-3 个澄清问题；可合理判断时直接推荐命令并继续。
 
 ## UI 设计要求
 
@@ -199,6 +224,8 @@ L/XL 级：
 - **.agents/rules/**：始终加载的必须遵守规则
 - **.agents/specs/**：详细技术参考，AI 在需要深入参考时主动读取
 - **presets/**：可插拔技术栈配置，安装时叠加到 `.agents/` 与 `.claude/`
+- **project-profile/**：项目画像，由 `/project-preset` 生成，记录产品、技术栈、架构、质量与验收
+- **project-preset/**：项目专属预设，由 `/project-preset` 生成，优先于通用技术栈 preset
 - **workspace/journal.md**：会话记忆，新会话开始时读取
 - **workspace/metrics.md**：效能指标，/dev 完成后追加
 

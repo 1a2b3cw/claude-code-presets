@@ -7,18 +7,41 @@
  * 不依赖任何测试框架，纯 node 断言 + 退出码。
  */
 
-import { mkdtempSync, rmSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { init } from '../lib/init.js';
-import { update } from '../lib/update.js';
+import { missingPresetMcpServers, update } from '../lib/update.js';
+import { readPresetCatalog } from '../lib/presets.js';
+import { validateProject } from '../lib/validate.js';
+import { validateSkills } from '../lib/skill-contracts.js';
+import { toCodexText } from '../lib/codex/text.js';
 
-const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'testing', 'ui-prototype'];
+const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'skill-curator', 'testing', 'ui-prototype'];
 const PUBLIC_RULES = ['git.md', 'design.md'];
-const COMMAND_SKILL_COUNT = 8;
+const COMMAND_SKILL_COUNT = 9;
 const AGENT_COUNT = 6;
+const EVENT_COMMANDS = ['dev', 'check', 'review-all', 'ship', 'standup'];
+const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
+const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journal.md', 'git log', '下一步建议', '重复问题/流程改进建议'];
+const PRODUCT_BRIEF_REQUIRED_TEXT = ['product-brief.md', 'prd.md', '目标用户', '核心价值', '本期范围', '明确不做', '验收标准'];
+const ROADMAP_REQUIRED_TEXT = ['模块 ID', '状态', '依赖', '验收标准', '风险', '最近更新', 'planned', 'in_progress', 'blocked', 'done', 'shipped'];
+const TASKS_REQUIRED_TEXT = ['tasks.md', 'ready', 'needs_clarification', 'planned', 'in_progress', 'local_gate', 'review_gate', 'release_gate', 'blocked', 'shipped', 'done', '阻塞原因', 'Gate 结果', '验收命令'];
+const M_TASKS_REQUIRED_TEXT = ['M 级', '轻量 `tasks.md` checklist', '1-3 个任务'];
+const SHIP_ROADMAP_REQUIRED_TEXT = ['roadmap.md 状态更新', '产品模块状态源', 'done` 更新为 `shipped'];
+const INTENT_ROUTING_REQUIRED_TEXT = ['自然语言路由契约', '推荐命令', '路由依据', '最轻流程', '`/plan`', '`/dev`', '`/fix`', '`/check`', '`/review-all`', '`/ship`', '`/standup`'];
+const NEXT_BEST_ACTION_REQUIRED_TEXT = ['Next Best Action 契约', '## Next Best Action', 'action:', 'reason:', 'requires human confirmation: yes / no', 'source:'];
+const METRICS_EVENTS_REQUIRED_TEXT = ['taskId', 'level', 'specRejectCount', 'checkIssueCount', 'checkFixRounds', 'reviewRejectCount', 'testFailureCount', 'estimateHours', 'actualHours'];
+const STANDUP_METRICS_REQUIRED_TEXT = ['Metrics 聚合规则', '最近 5/10 次任务', '`events.jsonl` 是 metrics 的机器事实来源', '`metrics.md` 是人类可读摘要'];
+const STANDUP_IMPROVEMENT_REQUIRED_TEXT = ['流程改进建议规则', '`specRejectCount >= 3`', '平均 `checkIssueCount >= 5`', '`reviewRejectCount >= 1`', '`testFailureCount >= 1`', '估算偏差绝对值 `>= 50%`', '数据必须可追溯到 `events.jsonl`'];
+const FAILURE_RECOVERY_REQUIRED_TEXT = ['失败恢复记录契约', '`failureRecovery`', '`failureType`', '`test_failure`', '`ci_failure`', '`pack_failure`', '`hook_false_positive`', '`release_failure`', '`recoveryAction`', '`finalStatus`'];
+const STANDUP_FAILURE_REQUIRED_TEXT = ['失败恢复聚合规则', '最近失败 Top N', '重复失败建议', '`failureRecovery`', '同一 `failureType`', '`hook_false_positive` 出现', '`release_failure` 出现'];
+const STANDUP_TODAY_REQUIRED_TEXT = ['Today 轻量视图', '10 秒内知道', '## Today', '今日焦点', '当前阻塞', '最近 run', '下一步建议', '风险提示'];
+const STANDUP_VARIANTS_REQUIRED_TEXT = ['Standup 输出版本', '开发者版', '团队版', '产品版', '默认输出开发者版', '事实必须一致'];
+const REVIEW_REPORT_REQUIRED_TEXT = ['workspace/reviews/YYYY-MM-DD-<scope>.md', '结论', '关联任务', '变更范围', '问题列表', '严重度', '自动修复项', '剩余风险', 'events.jsonl.artifacts'];
+const RELEASE_REPORT_REQUIRED_TEXT = ['workspace/releases/YYYY-MM-DD-<version-or-scope>.md', '发布结论', '检查结果', '风险', '回滚步骤', '发布后验证', 'Gate 结果', 'events.jsonl.artifacts'];
 
 let passed = 0;
 let failed = 0;
@@ -48,6 +71,94 @@ function fileNames(p) {
   return readdirSync(p, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name);
 }
 
+function codexCommandSkillText(agentsDir, commandName) {
+  return readFileSync(join(agentsDir, 'skills', `team-command-${commandName}`, 'SKILL.md'), 'utf8');
+}
+
+function codexCommandText(agentsDir, commandName) {
+  return readFileSync(join(agentsDir, 'commands', `${commandName}.md`), 'utf8');
+}
+
+function hasSummaryContract(text) {
+  return text.includes('## Summary') &&
+    text.includes('affected files/modules') &&
+    text.includes('checks') &&
+    text.includes('next action') &&
+    text.includes('events.jsonl.summary');
+}
+
+function hasProductBriefContract(text) {
+  return PRODUCT_BRIEF_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasRoadmapContract(text) {
+  return ROADMAP_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasTasksContract(text) {
+  return TASKS_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasMTasksContract(text) {
+  return M_TASKS_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasShipRoadmapContract(text) {
+  return SHIP_ROADMAP_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasIntentRoutingContract(text) {
+  return INTENT_ROUTING_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasNextBestActionContract(text) {
+  return NEXT_BEST_ACTION_REQUIRED_TEXT.every((part) => text.includes(part)) &&
+    (text.includes('Summary.next action') || text.includes('下一步建议'));
+}
+
+function hasMetricsEventsContract(text) {
+  return METRICS_EVENTS_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasStandupMetricsContract(text) {
+  return hasMetricsEventsContract(text) && STANDUP_METRICS_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasStandupImprovementContract(text) {
+  return hasStandupMetricsContract(text) && STANDUP_IMPROVEMENT_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasFailureRecoveryContract(text) {
+  return FAILURE_RECOVERY_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasStandupFailureContract(text) {
+  return hasFailureRecoveryContract(text) && STANDUP_FAILURE_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasStandupTodayContract(text) {
+  return STANDUP_TODAY_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasStandupVariantsContract(text) {
+  return STANDUP_VARIANTS_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasReviewReportContract(text) {
+  return REVIEW_REPORT_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasReleaseReportContract(text) {
+  return RELEASE_REPORT_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function runHook(scriptPath, payload) {
+  return spawnSync(process.execPath, [scriptPath], {
+    input: JSON.stringify(payload),
+    encoding: 'utf8',
+  });
+}
+
 // 静默 init/update 的日志，保持测试输出干净
 async function silent(fn) {
   const orig = console.log;
@@ -59,7 +170,15 @@ async function silent(fn) {
   }
 }
 
-async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, expectRule = null, absentRule = null }) {
+async function runScenario(manifest, {
+  lang = null,
+} = {}) {
+  const preset = manifest.name;
+  const langConfig = lang ? manifest.languages?.[lang] ?? {} : {};
+  const requiredRules = manifest.rules ?? [];
+  const absentRules = langConfig.absentRules ?? [];
+  const expectRule = langConfig.expectRule ?? null;
+  const expectSpecs = manifest.expectSpecs || Boolean(lang);
   const title = lang ? `${preset} (${lang})` : preset;
   console.log(`\n[${title}]`);
   const tmp = mkdtempSync(join(tmpdir(), 'cct-'));
@@ -78,33 +197,166 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
 
     assert(existsSync(join(claudeDir, 'CLAUDE.md')), 'init: CLAUDE.md 存在');
     assert(existsSync(join(tmp, 'AGENTS.md')), 'init: Codex AGENTS.md 存在');
+    assert(
+      hasIntentRoutingContract(readFileSync(join(claudeDir, 'CLAUDE.md'), 'utf8')) &&
+        hasIntentRoutingContract(readFileSync(join(tmp, 'AGENTS.md'), 'utf8')),
+      'init: Claude/Codex 入口包含自然语言路由契约'
+    );
     assert(existsSync(join(claudeDir, '.preset')), 'init: .preset 标记存在');
     const marker = readFileSync(join(claudeDir, '.preset'), 'utf8').split('\n').map((l) => l.trim());
     assert(marker[0] === preset, `init: .preset 预设为 ${preset}`);
     if (lang) assert(marker[1] === lang, `init: .preset 语言为 ${lang}`);
 
-    const expectedSkills = PUBLIC_SKILLS.length + presetSkillCount + COMMAND_SKILL_COUNT;
+    const expectedSkills = PUBLIC_SKILLS.length + manifest.skillCount + COMMAND_SKILL_COUNT;
     const initSkills = countDirs(skillsDir);
     assert(initSkills === expectedSkills - COMMAND_SKILL_COUNT, `init: Claude 技能数 = ${initSkills}（期望 ${expectedSkills - COMMAND_SKILL_COUNT}）`);
     assert(countDirs(join(agentsDir, 'skills')) === expectedSkills, `init: Codex 技能数 = ${expectedSkills}`);
     assert(existsSync(join(agentsDir, 'skills', 'team-command-dev', 'SKILL.md')), 'init: Codex 命令 skill 已生成');
+    assert(
+      EVENT_COMMANDS.every((commandName) => codexCommandSkillText(agentsDir, commandName).includes('.claude/workspace/events.jsonl')),
+      'init: Codex command skills 包含 events.jsonl 契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        const text = codexCommandSkillText(agentsDir, commandName);
+        return text.includes('`time`') && text.includes('`command`') && text.includes('`status`') && text.includes('`summary`');
+      }),
+      'init: events.jsonl 契约包含核心字段'
+    );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => {
+        return hasSummaryContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasSummaryContract(codexCommandText(agentsDir, commandName));
+      }),
+      'init: dev/check/review-all/ship command 与 skill 包含标准结果摘要契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasNextBestActionContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasNextBestActionContract(codexCommandText(agentsDir, commandName));
+      }),
+      'init: core command 与 skill 包含 Next Best Action 契约'
+    );
+    {
+      const standupSkill = codexCommandSkillText(agentsDir, 'standup');
+      const standupCommand = codexCommandText(agentsDir, 'standup');
+      assert(
+        STANDUP_REQUIRED_TEXT.every((text) => standupSkill.includes(text) && standupCommand.includes(text)) &&
+          standupSkill.includes('非 `/standup` 事件') &&
+          standupCommand.includes('非 `/standup` 事件'),
+        'init: standup command 与 skill 包含真实状态读取契约'
+      );
+    }
+    {
+      const planSkill = codexCommandSkillText(agentsDir, 'plan');
+      const planCommand = codexCommandText(agentsDir, 'plan');
+      const projectPresetSkillText = codexCommandSkillText(agentsDir, 'project-preset');
+      const projectPresetCommand = codexCommandText(agentsDir, 'project-preset');
+      assert(
+        hasProductBriefContract(planSkill) &&
+          hasProductBriefContract(planCommand) &&
+          hasProductBriefContract(projectPresetSkillText) &&
+          hasProductBriefContract(projectPresetCommand),
+        'init: plan/project-preset command 与 skill 包含 Product Brief 契约'
+      );
+    }
+    assert(
+      hasRoadmapContract(codexCommandSkillText(agentsDir, 'plan')) &&
+        hasRoadmapContract(codexCommandText(agentsDir, 'plan')) &&
+        hasRoadmapContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasRoadmapContract(codexCommandText(agentsDir, 'dev')),
+      'init: plan/dev command 与 skill 包含 roadmap 状态源契约'
+    );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => {
+        return hasTasksContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasTasksContract(codexCommandText(agentsDir, commandName));
+      }),
+      'init: dev/check/review-all/ship command 与 skill 包含 tasks.md 状态机契约'
+    );
+    assert(
+      hasMTasksContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasMTasksContract(codexCommandText(agentsDir, 'dev')),
+      'init: dev command 与 skill 要求 M 级使用轻量 tasks.md checklist'
+    );
+    assert(
+      hasShipRoadmapContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasShipRoadmapContract(codexCommandText(agentsDir, 'ship')),
+      'init: ship command 与 skill 包含 roadmap shipped 写回契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasMetricsEventsContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasMetricsEventsContract(codexCommandText(agentsDir, commandName));
+      }),
+      'init: core command 与 skill 包含 events.jsonl metrics 扩展字段'
+    );
+    assert(
+      hasStandupMetricsContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupMetricsContract(codexCommandText(agentsDir, 'standup')),
+      'init: standup command 与 skill 包含 metrics 聚合契约'
+    );
+    assert(
+      hasStandupImprovementContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupImprovementContract(codexCommandText(agentsDir, 'standup')),
+      'init: standup command 与 skill 包含流程改进建议契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasFailureRecoveryContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasFailureRecoveryContract(codexCommandText(agentsDir, commandName));
+      }),
+      'init: core command 与 skill 包含失败恢复记录契约'
+    );
+    assert(
+      hasStandupFailureContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupFailureContract(codexCommandText(agentsDir, 'standup')),
+      'init: standup command 与 skill 包含失败恢复聚合契约'
+    );
+    assert(
+      hasStandupTodayContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupTodayContract(codexCommandText(agentsDir, 'standup')),
+      'init: standup command 与 skill 包含 Today 轻量视图契约'
+    );
+    assert(
+      hasStandupVariantsContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupVariantsContract(codexCommandText(agentsDir, 'standup')),
+      'init: standup command 与 skill 包含三种输出版本契约'
+    );
+    assert(
+      hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+        hasReviewReportContract(codexCommandText(agentsDir, 'review-all')),
+      'init: review-all command 与 skill 包含 review report 契约'
+    );
+    assert(
+      hasReleaseReportContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasReleaseReportContract(codexCommandText(agentsDir, 'ship')),
+      'init: ship command 与 skill 包含 release report 契约'
+    );
 
     const initSkillNames = dirNames(skillsDir);
-    assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), 'init: 7 个公共技能齐全');
+    assert(PUBLIC_SKILLS.every((s) => initSkillNames.includes(s)), `init: ${PUBLIC_SKILLS.length} 个公共技能齐全`);
+    assert(validateSkills(skillsDir).length === 0, 'init: Claude skills frontmatter 有效');
+    assert(validateSkills(join(agentsDir, 'skills')).length === 0, 'init: Codex skills frontmatter 有效');
 
     const initRules = fileNames(rulesDir);
     assert(PUBLIC_RULES.every((r) => initRules.includes(r)), 'init: 公共规则（git/design）齐全');
 
     // 语言隔离断言
     if (expectRule) assert(initRules.includes(expectRule), `init: 含本语言规则 ${expectRule}`);
-    if (absentRule) assert(!initRules.includes(absentRule), `init: 不含他语言规则 ${absentRule}`);
-    if (lang) {
+    for (const absentRule of absentRules) {
+      assert(!initRules.includes(absentRule), `init: 不含他语言规则 ${absentRule}`);
+    }
+    for (const rule of requiredRules) {
+      assert(initRules.includes(rule), `init: 含规则 ${rule}`);
+    }
+    if (expectSpecs) {
       const specs = fileNames(join(claudeDir, 'specs'));
       assert(specs.length > 0, `init: specs/ 非空（${specs.length} 个）`);
     }
 
     const mcp = JSON.parse(readFileSync(join(claudeDir, '.mcp.json'), 'utf8'));
-    assert(mcp.mcpServers && mcp.mcpServers[mcpServer], `init: MCP 已合并 ${mcpServer}`);
+    assert(mcp.mcpServers && mcp.mcpServers[manifest.mcpSmokeServer], `init: MCP 已合并 ${manifest.mcpSmokeServer}`);
 
     // hooks 是 Node（.mjs），不是旧的 .sh
     const hooks = fileNames(join(claudeDir, 'hooks'));
@@ -115,15 +367,29 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     assert(existsSync(join(codexDir, 'config.toml')), 'init: Codex config.toml 存在');
     assert(fileNames(join(codexDir, 'agents')).filter((name) => name.endsWith('.toml')).length === AGENT_COUNT, `init: Codex custom agents = ${AGENT_COUNT}`);
     const codexConfig = readFileSync(join(codexDir, 'config.toml'), 'utf8');
-    assert(codexConfig.includes(`[mcp_servers.${mcpServer}]`), `init: Codex MCP 已生成 ${mcpServer}`);
-    if (mcpServer === 'postgres') {
-      assert(codexConfig.includes("process.argv.slice"), 'init: Codex MCP 参数环境变量通过 wrapper 展开');
+    assert(codexConfig.includes(`[mcp_servers.${manifest.mcpSmokeServer}]`), `init: Codex MCP 已生成 ${manifest.mcpSmokeServer}`);
+    if (manifest.codexConfigIncludes) {
+      assert(codexConfig.includes(manifest.codexConfigIncludes), 'init: Codex MCP 参数环境变量通过 wrapper 展开');
     }
     const codexBuilder = readFileSync(join(agentsDir, 'agents', 'builder.md'), 'utf8');
     assert(!codexBuilder.includes('.claude/rules'), 'init: Codex agent 文档不再指向 .claude/rules');
+    const projectPresetSkill = readFileSync(join(agentsDir, 'skills', 'team-command-project-preset', 'SKILL.md'), 'utf8');
+    assert(!projectPresetSkill.includes('project-preset/.agents/'), 'init: project-preset 子目录不被 Codex 路径重写误伤');
+    assert(projectPresetSkill.includes('`/project-preset` 是生成器'), 'init: project-preset skill 明确生成器职责');
+    const skillCurator = readFileSync(join(agentsDir, 'skills', 'skill-curator', 'SKILL.md'), 'utf8');
+    assert(
+      skillCurator.includes('Project Preset Audit') && skillCurator.includes('Project Skill Adoption Score'),
+      'init: skill-curator 包含 project-preset 审查能力'
+    );
 
     const commands = fileNames(join(claudeDir, 'commands'));
-    assert(commands.includes('plan.md') && commands.includes('taste.md') && commands.length === 8, `init: 8 个命令含 plan.md + taste.md (${commands.length})`);
+    assert(
+      commands.includes('plan.md') &&
+        commands.includes('taste.md') &&
+        commands.includes('project-preset.md') &&
+        commands.length === 9,
+      `init: 9 个命令含 plan.md + taste.md + project-preset.md (${commands.length})`
+    );
 
     // 记录 update 前的"应保留"内容
     const settingsBefore = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
@@ -135,19 +401,138 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
     const updSkills = countDirs(skillsDir);
     assert(updSkills === expectedSkills - COMMAND_SKILL_COUNT, `update: Claude 技能数仍 = ${updSkills}（P0.1 守护，期望 ${expectedSkills - COMMAND_SKILL_COUNT}）`);
     assert(countDirs(join(agentsDir, 'skills')) === expectedSkills, `update: Codex 技能数仍 = ${expectedSkills}`);
+    assert(
+      EVENT_COMMANDS.every((commandName) => codexCommandSkillText(agentsDir, commandName).includes('.claude/workspace/events.jsonl')),
+      'update: Codex command skills 保留 events.jsonl 契约'
+    );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => codexCommandSkillText(agentsDir, commandName).includes('affected files/modules')),
+      'update: Codex command skills 保留标准结果摘要契约'
+    );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => codexCommandText(agentsDir, commandName).includes('affected files/modules')),
+      'update: Codex command docs 保留标准结果摘要契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasNextBestActionContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasNextBestActionContract(codexCommandText(agentsDir, commandName));
+      }),
+      'update: core command 与 skill 保留 Next Best Action 契约'
+    );
+    {
+      const standupSkill = codexCommandSkillText(agentsDir, 'standup');
+      const standupCommand = codexCommandText(agentsDir, 'standup');
+      assert(
+        STANDUP_REQUIRED_TEXT.every((text) => standupSkill.includes(text) && standupCommand.includes(text)),
+        'update: standup command 与 skill 保留真实状态读取契约'
+      );
+    }
+    assert(
+      hasProductBriefContract(codexCommandSkillText(agentsDir, 'plan')) &&
+        hasProductBriefContract(codexCommandText(agentsDir, 'plan')) &&
+        hasProductBriefContract(codexCommandSkillText(agentsDir, 'project-preset')) &&
+        hasProductBriefContract(codexCommandText(agentsDir, 'project-preset')),
+      'update: plan/project-preset command 与 skill 保留 Product Brief 契约'
+    );
+    assert(
+      hasRoadmapContract(codexCommandSkillText(agentsDir, 'plan')) &&
+        hasRoadmapContract(codexCommandText(agentsDir, 'plan')) &&
+        hasRoadmapContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasRoadmapContract(codexCommandText(agentsDir, 'dev')),
+      'update: plan/dev command 与 skill 保留 roadmap 状态源契约'
+    );
+    assert(
+      SUMMARY_COMMANDS.every((commandName) => {
+        return hasTasksContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasTasksContract(codexCommandText(agentsDir, commandName));
+      }),
+      'update: dev/check/review-all/ship command 与 skill 保留 tasks.md 状态机契约'
+    );
+    assert(
+      hasMTasksContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasMTasksContract(codexCommandText(agentsDir, 'dev')),
+      'update: dev command 与 skill 保留 M 级轻量 tasks.md checklist 契约'
+    );
+    assert(
+      hasShipRoadmapContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasShipRoadmapContract(codexCommandText(agentsDir, 'ship')),
+      'update: ship command 与 skill 保留 roadmap shipped 写回契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasMetricsEventsContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasMetricsEventsContract(codexCommandText(agentsDir, commandName));
+      }),
+      'update: core command 与 skill 保留 events.jsonl metrics 扩展字段'
+    );
+    assert(
+      hasStandupMetricsContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupMetricsContract(codexCommandText(agentsDir, 'standup')),
+      'update: standup command 与 skill 保留 metrics 聚合契约'
+    );
+    assert(
+      hasStandupImprovementContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupImprovementContract(codexCommandText(agentsDir, 'standup')),
+      'update: standup command 与 skill 保留流程改进建议契约'
+    );
+    assert(
+      EVENT_COMMANDS.every((commandName) => {
+        return hasFailureRecoveryContract(codexCommandSkillText(agentsDir, commandName)) &&
+          hasFailureRecoveryContract(codexCommandText(agentsDir, commandName));
+      }),
+      'update: core command 与 skill 保留失败恢复记录契约'
+    );
+    assert(
+      hasStandupFailureContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupFailureContract(codexCommandText(agentsDir, 'standup')),
+      'update: standup command 与 skill 保留失败恢复聚合契约'
+    );
+    assert(
+      hasStandupTodayContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupTodayContract(codexCommandText(agentsDir, 'standup')),
+      'update: standup command 与 skill 保留 Today 轻量视图契约'
+    );
+    assert(
+      hasStandupVariantsContract(codexCommandSkillText(agentsDir, 'standup')) &&
+        hasStandupVariantsContract(codexCommandText(agentsDir, 'standup')),
+      'update: standup command 与 skill 保留三种输出版本契约'
+    );
+    assert(
+      hasReviewReportContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+        hasReviewReportContract(codexCommandText(agentsDir, 'review-all')),
+      'update: review-all command 与 skill 保留 review report 契约'
+    );
+    assert(
+      hasReleaseReportContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasReleaseReportContract(codexCommandText(agentsDir, 'ship')),
+      'update: ship command 与 skill 保留 release report 契约'
+    );
 
     const updSkillNames = dirNames(skillsDir);
     assert(PUBLIC_SKILLS.every((s) => updSkillNames.includes(s)), 'update: 公共技能未被预设叠加删除');
+    assert(validateSkills(skillsDir).length === 0, 'update: Claude skills frontmatter 有效');
+    assert(validateSkills(join(agentsDir, 'skills')).length === 0, 'update: Codex skills frontmatter 有效');
 
     const updRules = fileNames(rulesDir);
     assert(PUBLIC_RULES.every((r) => updRules.includes(r)), 'update: 公共规则未被删除');
     if (expectRule) assert(updRules.includes(expectRule), `update: 本语言规则 ${expectRule} 保留`);
-    if (absentRule) assert(!updRules.includes(absentRule), `update: 未混入他语言规则 ${absentRule}`);
+    for (const absentRule of absentRules) {
+      assert(!updRules.includes(absentRule), `update: 未混入他语言规则 ${absentRule}`);
+    }
+    for (const rule of requiredRules) {
+      assert(updRules.includes(rule), `update: 规则 ${rule} 保留`);
+    }
 
     const settingsAfter = readFileSync(join(claudeDir, 'settings.json'), 'utf8');
     assert(settingsAfter === settingsBefore, 'update: settings.json 保持不变');
     assert(workspaceExists && existsSync(join(claudeDir, 'workspace')), 'update: workspace/ 保持不变');
     assert(existsSync(join(tmp, 'AGENTS.md')) && existsSync(join(codexDir, 'hooks.json')) && existsSync(join(codexDir, 'config.toml')), 'update: Codex 入口保持同步');
+    assert(
+      hasIntentRoutingContract(readFileSync(join(claudeDir, 'CLAUDE.md'), 'utf8')) &&
+        hasIntentRoutingContract(readFileSync(join(tmp, 'AGENTS.md'), 'utf8')),
+      'update: Claude/Codex 入口保留自然语言路由契约'
+    );
   } finally {
     process.chdir(prevCwd);
     rmSync(tmp, { recursive: true, force: true });
@@ -156,15 +541,85 @@ async function runScenario(preset, { mcpServer, presetSkillCount, lang = null, e
 
 console.log('create-claude-team 冒烟测试');
 
-await runScenario('ai-app', {
-  mcpServer: 'pgvector', presetSkillCount: 8,
-  lang: 'python', expectRule: 'python.md', absentRule: 'typescript-ai.md',
-});
-await runScenario('ai-app', {
-  mcpServer: 'pgvector', presetSkillCount: 8,
-  lang: 'typescript', expectRule: 'typescript-ai.md', absentRule: 'python.md',
-});
-await runScenario('web-fullstack', { mcpServer: 'postgres', presetSkillCount: 7 });
+console.log('\n[配置校验]');
+await silent(() => validateProject());
+assert(true, 'validate: manifest / skill 结构通过');
+
+console.log('\n[Codex 文本重写]');
+{
+  const rewritten = toCodexText([
+    '见 `rules/design.md` 和 `commands/taste.md`。',
+    '保留 `project-preset/rules/project.md`。',
+    '保留 `lang/python/rules/python.md`。',
+    '显式 `.claude/specs/node.md` 应改写。',
+  ].join('\n'));
+  assert(rewritten.includes('`.agents/rules/design.md`'), 'toCodexText: 相对 rules/ 路径改写');
+  assert(rewritten.includes('`.agents/commands/taste.md`'), 'toCodexText: 相对 commands/ 路径改写');
+  assert(rewritten.includes('`project-preset/rules/project.md`'), 'toCodexText: 不误伤 project-preset/rules/');
+  assert(rewritten.includes('`lang/python/rules/python.md`'), 'toCodexText: 不误伤 lang/*/rules/');
+  assert(rewritten.includes('`.agents/specs/node.md`'), 'toCodexText: 显式 .claude/specs/ 路径改写');
+}
+
+console.log('\n[MCP 漂移检测]');
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-mcp-'));
+  try {
+    const targetPath = join(tmp, '.mcp.json');
+    const presetPath = join(tmp, 'preset.mcp.json');
+    writeFileSync(targetPath, JSON.stringify({ mcpServers: { github: {} } }));
+    writeFileSync(presetPath, JSON.stringify({ mcpServers: { github: {}, postgres: {} } }));
+    assert(
+      missingPresetMcpServers(targetPath, presetPath).join(',') === 'postgres',
+      'update: 能检测预设 MCP server 漂移'
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n[Hook 行为测试]');
+{
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const securityHook = join(repoRoot, '.claude', 'hooks', 'security-check.mjs');
+  const bashHook = join(repoRoot, '.claude', 'hooks', 'bash-check.mjs');
+  const securityCriticalCases = [
+    ['eval', { tool_input: { file_path: 'src/app.js', content: 'eval(userInput);' } }],
+    ['new Function', { tool_input: { file_path: 'src/app.js', content: 'const fn = new Function(code);' } }],
+    ['innerHTML', { tool_input: { file_path: 'src/app.js', content: 'element.innerHTML = userInput;' } }],
+    ['child_process.exec', { tool_input: { file_path: 'src/app.js', content: 'child_process.exec(command);' } }],
+  ];
+  for (const [name, payload] of securityCriticalCases) {
+    assert(runHook(securityHook, payload).status === 2, `security-check: ${name} exit 2`);
+  }
+  assert(
+    runHook(securityHook, { tool_input: { file_path: 'src/app.js', content: 'const value = JSON.stringify(input);' } }).status === 0,
+    'security-check: 普通代码不误拦'
+  );
+
+  const bashCriticalCases = [
+    ['git reset --hard', { tool_input: { command: 'git reset --hard HEAD' } }],
+    ['git clean -f', { tool_input: { command: 'git clean -fd' } }],
+    ['npm publish', { tool_input: { command: 'npm publish' } }],
+  ];
+  for (const [name, payload] of bashCriticalCases) {
+    assert(runHook(bashHook, payload).status === 2, `bash-check: ${name} exit 2`);
+  }
+  assert(
+    runHook(bashHook, { tool_input: { command: 'npm run validate' } }).status === 0,
+    'bash-check: 普通命令不误拦'
+  );
+}
+
+for (const manifest of readPresetCatalog()) {
+  const languages = Object.keys(manifest.languages ?? {});
+  if (languages.length > 0) {
+    for (const lang of languages) {
+      await runScenario(manifest, { lang });
+    }
+  } else {
+    await runScenario(manifest);
+  }
+}
 
 // 旧预设名 ai-knowledge-base 应通过别名解析到 ai-app（向后兼容）
 console.log('\n[别名兼容]');

@@ -1,5 +1,44 @@
 # 更新日志
 
+## Unreleased
+
+**新增 `/project-preset` 项目专属预设生成工作流**
+
+### 新增
+
+- 新增 `base` preset：只安装公共团队底座，不叠加任何技术栈 rules/specs/skills，适合非内置技术栈或已有项目先生成项目专属 preset。
+- 新增 `/project-preset` 命令：把新项目讨论、已有项目扫描或已有方案导入，沉淀为 `project-profile/` 与 `project-preset/`。
+- `skill-curator` 新增 Project Preset Audit：审查 `/project-preset` 生成的项目预设草稿、项目专属 skill 候选和 `project-preset/curation.md`。
+- Codex 同步生成 `$team-command-project-preset`，用于在 Codex 中执行同一套项目预设生成流程。
+- 新增 Project Preset 产物契约：`project-profile/` 记录项目画像，`project-preset/` 记录项目级规则、specs 和技能规划。
+- README/USAGE/BEST-PRACTICES 增加“基础配置 → 项目预设 → roadmap/dev”的新主线。
+
+### 变更
+
+- 工作流命令数 8 → 9，冒烟测试同步校验 `project-preset.md` 与 Codex command skill。
+- README/USAGE/BEST-PRACTICES 增加 `init --preset base → /project-preset` 推荐路径。
+- 明确 project preset 优先于通用技术栈 preset，但不写入会被 `update` 覆盖的 `.claude/`、`.agents/`、`.codex/`。
+
+**新增 `mobile-app` 预设，支持 Expo + React Native + TypeScript 移动 App 开发**
+
+### 新增
+
+- CLI 支持 `--preset mobile-app`，用于初始化移动 App 开发团队配置。
+- 新增 mobile-app rules：React Native、Expo、移动端 UI、移动端测试、移动性能、移动安全、设备验证、App 发布。
+- 新增 mobile-app specs：React Native、Expo、导航、状态管理、移动性能、React Native 升级、设备验证、商店发布。
+- 新增 9 个移动端 skill：mobile-ui、app-navigation、native-capabilities、offline-first、app-performance、rn-upgrade、device-verification、app-testing、app-release。
+- 新增公共 `skill-curator` skill，用于评估、改写和采纳 GitHub/community skills、agents、commands、hooks。
+- 新增 `EXTERNAL-SKILLS.md`，记录成熟生态参考源和采纳策略。
+- 新增 `presets/<name>/preset.json` manifest，集中声明 preset 名称、技能数量、规则清单、语言变体、测试入口和初始化提示。
+- 新增 `create-claude-team validate` / `npm run validate`，校验 preset manifest、skill frontmatter、rules/specs 声明和技能数量。
+- 冒烟测试覆盖 mobile preset 的 init/update/Codex 同步。
+
+### 变更
+
+- `init --dry-run` 在已有 `.claude/` 的项目中也允许预览，不再被已有目录阻止；实际 init 仍保持原安全限制。
+- 冒烟测试新增 `SKILL.md` frontmatter 校验，确保生成到 Claude/Codex 的 skills 都有有效 `name`、`description`，且 `name` 与目录名一致。
+- CLI help、init 下一步提示、smoke test 场景改为从 preset manifest 读取，减少硬编码计数漂移。
+
 ## v3.4.0（2026-06-20）
 
 **新增 `/taste` 设计方向探索命令，统一设计定向入口**

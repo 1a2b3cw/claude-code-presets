@@ -46,13 +46,14 @@ export async function dirHasContent(dirPath) {
 /**
  * Count files recursively in a directory
  */
-export async function countFiles(dirPath) {
+export async function countFiles(dirPath, { exclude = [] } = {}) {
   let count = 0;
   try {
     const entries = await readdir(dirPath, { withFileTypes: true });
     for (const entry of entries) {
+      if (exclude.includes(entry.name)) continue;
       if (entry.isDirectory()) {
-        count += await countFiles(join(dirPath, entry.name));
+        count += await countFiles(join(dirPath, entry.name), { exclude });
       } else {
         count++;
       }

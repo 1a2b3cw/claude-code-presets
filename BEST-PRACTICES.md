@@ -13,10 +13,10 @@
 **心智模型 —— 命令就是颗粒度旋钮**：
 
 ```
-粗 ───────────────────────────────────────────────────────► 细
-/plan         /dev          /review-all      /check          /fix
-整个产品       整个功能       合并前全面审查    写完快检         定点修一处
-出模块清单     走完整流程      跨文件分析        自动修           不走流程
+粗 ─────────────────────────────────────────────────────────────► 细
+/project-preset   /plan         /dev          /review-all      /check          /fix
+项目级约定         整个产品       整个功能       合并前全面审查    写完快检         定点修一处
+生成项目预设       出模块清单     走完整流程      跨文件分析        自动修           不走流程
 ```
 
 你说话的颗粒度，决定 AI 走多重的流程。想做功能就 `/dev`，想修一行就 `/fix`，不用每次都走全套。
@@ -29,22 +29,26 @@
 
 ## 1. 主线：从零到上线的一条龙
 
-这是骨架。一个功能从想法到上线，标准路径就这 7 步：
+这是骨架。一个功能从想法到上线，标准路径就这 9 步：
 
 ```
- ① 装配置 → ② 定方向 → ③ /plan 开局 → ④ /dev 开发 → ⑤ /check → ⑥ /review-all → ⑦ /ship → ⑧ /standup
-    │           │            │             │            │            │              │          │
-  选预设     CLAUDE.md    出模块清单      Phase 0-4    写完快检     合并前审查      发布门禁   效能复盘
-  /语言      preview/   （新项目可选）   需求→代码    自动修       跨文件一致性    回滚检查   越用越准
+ ① 装配置 → ② 项目预设 → ③ 定方向 → ④ /plan 开局 → ⑤ /dev 开发 → ⑥ /check → ⑦ /review-all → ⑧ /ship → ⑨ /standup
+    │           │            │            │             │            │            │              │          │
+  选底座     project-    preview/     出模块清单      Phase 0-4    写完快检     合并前审查      发布门禁   效能复盘
+  /预设      preset/     CLAUDE.md   （新项目可选）   需求→代码    自动修       跨文件一致性    回滚检查   越用越准
 ```
 
-> ③ Claude Code 的 `/plan` 是**新项目开局**用的；Codex 中请用 `$team-command-plan`，避免和 Codex 内置 `/plan` 混淆。
-> ④ Claude Code 的 `/dev` 内部**已自动包含** ⑤`/check` 和 ⑥`/review-all`；Codex 中对应 `$team-command-dev`。
+> ② `/project-preset` 用来把项目想法、已有方案或代码扫描结果沉淀成项目自己的规则；Codex 中请用 `$team-command-project-preset`。
+> ④ Claude Code 的 `/plan` 是**新项目开局**用的；Codex 中请用 `$team-command-plan`，避免和 Codex 内置 `/plan` 混淆。
+> ⑤ Claude Code 的 `/dev` 内部**已自动包含** ⑥`/check` 和 ⑦`/review-all`；Codex 中对应 `$team-command-dev`。
 
 ### ① 装配置
 
 ```bash
 cd 你的项目
+
+# 基础底座（不预设技术栈；Go/Rust/Django/Spring/Flutter/老项目等优先）
+npx create-claude-team init --preset base
 
 # Web 全栈（React + Node + TS）
 npx create-claude-team init
@@ -54,13 +58,33 @@ npx create-claude-team init --preset ai-app
 
 # AI 应用 — TypeScript 路线（Vercel AI SDK，你已有 web 栈时选这个）
 npx create-claude-team init --preset ai-app --lang typescript
+
+# 移动 App — Expo + React Native + TypeScript
+npx create-claude-team init --preset mobile-app
 ```
 
 装完在 Claude Code 里输入 `/mcp` 确认 MCP 已加载；在 Codex 里确认根目录有 `AGENTS.md`，且 `.agents/skills/`、`.codex/config.toml` 已生成，再用 Codex 的 `/mcp` 查看 MCP。以后升级配置用 `npx create-claude-team update`（保留你的 settings 和 workspace，并同步 Codex 入口）。
 
-### ② 定方向（只做一次，但很关键）
+### ② 生成项目预设（推荐，尤其是非默认技术栈）
 
-AI 不是读心术。开工前把"项目级约定"写进 `.claude/CLAUDE.md` 末尾或一个 `spec.md`，再运行 `npx create-claude-team update` 同步到 Codex 的 `AGENTS.md`：
+通用 preset 只是底座。真正让 AI 长期贴合项目的是项目专属 preset：
+
+```
+/project-preset
+# Codex 用 $team-command-project-preset
+```
+
+它会根据三种来源生成 `project-profile/` 和 `project-preset/`：
+
+- 新项目讨论：把产品、技术栈、架构、质量、UI 和验收标准问清楚
+- 已有项目扫描：读取依赖、脚本、目录、测试、CI 和文档，反推出真实约定
+- 已有方案导入：把 PRD/spec/架构方案转成 AI 后续开发可执行的规则
+
+后续 `/plan`、`/dev`、`/check`、`/review-all` 应优先读取 `project-preset/PRESET.md`，再回退到通用技术栈 preset。
+
+### ③ 定方向（只做一次，但很关键）
+
+AI 不是读心术。开工前把项目级约定沉淀到 `project-preset/`；只做很轻量的项目，也可以写进 `spec.md`：
 
 - **技术栈**：框架、数据库、部署目标（不写默认按预设走）
 - **设计方向**（有 UI 时必填）：风格、主色、目标用户。例：`Apple 风格白底简约，黑白灰主色，面向 18-35 岁`
@@ -70,7 +94,7 @@ AI 不是读心术。开工前把"项目级约定"写进 `.claude/CLAUDE.md` 末
 >
 > **不知道想要什么风格？** 用 `/taste` 探索定向——它带你（生成情绪板 / 快问快答 / 逛真实参考）找到审美，产出写进 `preview/design-direction.md`。**这是写第一行 UI 代码之前该做的事**，避免做完才发现"丑"再返工。已有 `preview/` 方向则跳过。
 
-### ③ `/plan` —— 项目开局（新项目可选）
+### ④ `/plan` —— 项目开局（新项目可选）
 
 不知道该先做什么、想先看产品全景时用。给一句产品想法，AI 分析后输出**功能模块清单**：
 
@@ -82,7 +106,7 @@ AI 不是读心术。开工前把"项目级约定"写进 `.claude/CLAUDE.md` 末
 
 之后 `/dev 做模块 M3` 时，AI 会先读 roadmap.md 复用该模块的分析（不重复问产品级问题），做完自动在 roadmap 里打勾。已经知道做什么、或老项目改东西，可跳过这步。
 
-### ④ `/dev` —— 主力命令，一句需求进，可运行代码出
+### ⑤ `/dev` —— 主力命令，一句需求进，可运行代码出
 
 ```
 /dev 做一个用户注册登录功能，支持邮箱+密码，登录后发 JWT
@@ -100,7 +124,7 @@ AI 会自动走 5 个阶段（你只在关键点确认）：
 
 **关键**：质量检查（`/check`、`/review-all`）和安全扫描**内嵌在 Phase 2 里持续进行**，不是等最后才查。这就是"快速但成熟"的核心——边写边把关。
 
-### ⑤ `/check` —— 写完一段想立刻查（可选，1 分钟）
+### ⑥ `/check` —— 写完一段想立刻查（可选，1 分钟）
 
 `/dev` 内部已自动跑。你手写了代码、或想单独快检某文件时用：
 
@@ -111,7 +135,7 @@ AI 会自动走 5 个阶段（你只在关键点确认）：
 
 查 3 个维度（逻辑/类型/边界），能自动修的直接修，最多 2 轮。
 
-### ⑥ `/review-all` —— 合并前全面审查（可选，3-5 分钟）
+### ⑦ `/review-all` —— 合并前全面审查（可选，3-5 分钟）
 
 `/dev` 在 L/XL 任务结束时自动跑。你在合并 PR 前想手动全查时用：
 
@@ -122,7 +146,7 @@ AI 会自动走 5 个阶段（你只在关键点确认）：
 
 它专做单文件检查做不了的事：**跨文件一致性、变更完整性（改了接口所有调用方同步没）、历史回归、依赖关系**。
 
-### ⑦ `/ship` —— 发布门禁
+### ⑧ `/ship` —— 发布门禁
 
 ```
 /ship              # 发布前全面检查
@@ -131,7 +155,7 @@ AI 会自动走 5 个阶段（你只在关键点确认）：
 
 8 道关卡：集成验证 → 安全审计 → 性能 → 无障碍 → 配置 → Git 规范 → 发布决策 → 部署。**还会强制确认回滚方案**（数据库迁移可逆、旧版本可用）。M 级以上必须过 `/ship` 才发布。
 
-### ⑧ `/standup` —— 效能复盘
+### ⑨ `/standup` —— 效能复盘
 
 ```
 /standup
@@ -163,9 +187,11 @@ AI 会自动走 5 个阶段（你只在关键点确认）：
 ### 分叉 B：做哪种项目？（决定装哪个预设）
 
 ```
+技术栈不在内置范围 / 已有项目不想被套栈 ─► init --preset base → /project-preset
 做 Web 产品（有界面、给人用）────────► init（web-fullstack）
 做 AI 数据后端（知识库/RAG/文档处理）──► init --preset ai-app
 做 AI 产品（已有 web 栈/带界面）──────► init --preset ai-app --lang typescript
+做移动 App（iOS/Android/Expo）────────► init --preset mobile-app
 ```
 
 > **AI 项目的语言怎么选**：
@@ -173,6 +199,10 @@ AI 会自动走 5 个阶段（你只在关键点确认）：
 > - 已经会 web、想快出产品 → **TypeScript**（Vercel AI SDK，零新语言成本）
 > - 混合策略：TS 为主体，单独用 Python 写文档解析服务
 > - 两条路线都**默认裸 SDK，不上 LangChain**（可控、可调试优先）
+
+**不在现有预设里怎么办？**
+
+直接装 `base`，再运行 `/project-preset`。比如 Go 后端、Rust CLI、Django、Spring、Flutter、Unity 这类非内置技术栈，不要硬套 web/ai/mobile 的细节；让 AI 扫描或追问后生成 `project-preset/`，把真实技术栈、目录、测试、部署和禁用项写成项目规则。后续开发以项目 preset 为准，`base` 只提供团队流程和安全底座。
 
 ### 分叉 C：只想修一个具体问题 → `/fix`
 
@@ -232,16 +262,16 @@ AI 不会卡死，每种情况都有预案：
 
 ```
 1. cd my-saas && npx create-claude-team init           # 分叉B：web 预设
-2. 在 CLAUDE.md 写技术栈 + 设计方向，截图丢 preview/   # ② 定方向 + 分叉E
+2. /project-preset 生成项目规则，截图丢 preview/         # ② 项目预设 + 分叉E
 3. git checkout -b feature/task-board
-4. /dev 做一个看板视图，支持拖拽任务卡片在列之间移动     # ④ 主力
+4. /dev 做一个看板视图，支持拖拽任务卡片在列之间移动     # ⑤ 主力
    → Phase 0：AI 问"卡片数据结构？拖拽要持久化吗？"
    → 你确认 → AI 判为 L 级 → 出 spec+tasks → 你确认
    → AI 逐任务 TDD，每个任务自动 /check，逐个 commit
    → 全部完成自动 /review-all
-5. /ship --dry-run                                      # ⑦ 发布门禁（先 dry-run）
+5. /ship --dry-run                                      # ⑧ 发布门禁（先 dry-run）
    → 过了再正式 /ship
-6. /standup                                             # ⑧ 复盘
+6. /standup                                             # ⑨ 复盘
 ```
 
 ### 剧本二：从零做一个 AI 知识库（TypeScript 路线）
@@ -249,17 +279,18 @@ AI 不会卡死，每种情况都有预案：
 ```
 1. npx create-claude-team init --preset ai-app --lang typescript   # 分叉B
 2. docker compose up -d postgres ；配 DATABASE_URL + ANTHROPIC_API_KEY
-3. /plan 做一个面向中小团队的 AI 知识库，能上传文档、问答   # ③ 开局
+3. /project-preset 生成项目专属 AI 规则                    # ② 项目预设
+4. /plan 做一个面向中小团队的 AI 知识库，能上传文档、问答   # ④ 开局
    → AI 问产品级问题 → 输出 roadmap.md：
      M1 认证 / M2 文档管理 / M3 向量检索 / M4 问答界面 / M5 协作(P2)
    → 标出 MVP = M1+M2+M3+M4
-4. /dev 做模块 M3                                        # ④ 挑一个开建
+5. /dev 做模块 M3                                        # ⑤ 挑一个开建
    → AI 读 roadmap，复用 M3 分析（依赖 M2，会提醒先做 M2）
    → 用 Vercel AI SDK + Hono + pgvector（不上 LangChain）
    → 做完自动在 roadmap 打勾
-5. 文档解析遇到复杂 PDF？                                 # 分叉B 混合策略
+6. 文档解析遇到复杂 PDF？                                 # 分叉B 混合策略
    → /dev 单独加一个 Python 解析微服务，主体保持 TS
-6. /ship                                                 # ⑦ 发布
+7. /ship                                                 # ⑧ 发布
 ```
 
 ### 剧本三：接手已有项目改 bug
@@ -315,6 +346,7 @@ AI 不会卡死，每种情况都有预案：
 
 | 命令 | 何时用 | 走流程 | 自动修 |
 |------|--------|--------|--------|
+| `/project-preset [项目背景]` | 生成项目专属规则，尤其是非默认技术栈或已有项目 | ✅ 仅配置 | —— |
 | `/plan <产品想法>` | 项目开局，出功能模块清单 | ✅ 仅规划 | —— |
 | `/taste [项目背景]` | 写 UI 前定设计方向，出 `preview/` | ✅ 仅定向 | —— |
 | `/dev <需求>` | 做功能（任意大小） | ✅ 完整 | ✅ |
@@ -328,6 +360,7 @@ AI 不会卡死，每种情况都有预案：
 
 ```
 我要做什么？
+├─ 安装底座后想让 AI 懂这个项目 ─► /project-preset（生成 project-profile/ + project-preset/）
 ├─ 开新项目不知从哪下手 ─► /plan（出模块清单，再挑着 /dev）
 ├─ 要做 UI 但没想好风格 ─► /taste（定方向出 preview/，再 /dev）
 ├─ 做新功能 ─────────────► /dev（不确定需求就让它先问）
@@ -341,9 +374,11 @@ AI 不会卡死，每种情况都有预案：
 ### 安装速查
 
 ```bash
+npx create-claude-team init --preset base              # 基础底座 / 非内置技术栈
 npx create-claude-team init                                       # Web 全栈
 npx create-claude-team init --preset ai-app            # AI / Python
 npx create-claude-team init --preset ai-app --lang typescript  # AI / TS
+npx create-claude-team init --preset mobile-app        # Mobile / Expo
 npx create-claude-team update                                     # 升级配置
 ```
 
