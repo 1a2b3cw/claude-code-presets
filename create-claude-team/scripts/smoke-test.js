@@ -37,6 +37,8 @@ const EVENT_COMMANDS = ['dev', 'check', 'review-all', 'ship', 'standup'];
 const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
 const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journal.md', 'git log', '下一步建议', '重复问题/流程改进建议'];
 const PRODUCT_BRIEF_REQUIRED_TEXT = ['product-brief.md', 'prd.md', '目标用户', '核心价值', '本期范围', '明确不做', '验收标准'];
+const PLANNING_UPGRADE_PLAN_TEXT = ['Product Lead', '用户价值', 'MVP 归属', '推荐顺序', 'Product Brief 来源优先级', 'project-profile/product.md'];
+const PLANNING_UPGRADE_PRESET_TEXT = ['project-preset/rules/', '不得在 `project-preset/` 内创建 `.agents/` 或 `.claude/` 子目录', '未确认推断', '只写已确认的项目差异'];
 const ROADMAP_REQUIRED_TEXT = ['模块 ID', '状态', '依赖', '验收标准', '风险', '最近更新', 'planned', 'in_progress', 'blocked', 'done', 'shipped'];
 const TASKS_REQUIRED_TEXT = ['tasks.md', 'ready', 'needs_clarification', 'planned', 'in_progress', 'local_gate', 'review_gate', 'release_gate', 'blocked', 'shipped', 'done', '阻塞原因', 'Gate 结果', '验收命令'];
 const M_TASKS_REQUIRED_TEXT = ['M 级', '轻量 `tasks.md` checklist', '1-3 个任务'];
@@ -105,6 +107,14 @@ function hasSummaryContract(text) {
 
 function hasProductBriefContract(text) {
   return PRODUCT_BRIEF_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasPlanningUpgradePlanContract(text) {
+  return PLANNING_UPGRADE_PLAN_TEXT.every((part) => text.includes(part));
+}
+
+function hasPlanningUpgradePresetContract(text) {
+  return PLANNING_UPGRADE_PRESET_TEXT.every((part) => text.includes(part));
 }
 
 function hasRoadmapContract(text) {
@@ -325,6 +335,13 @@ async function runScenario(manifest, {
           hasProductBriefContract(projectPresetCommand),
         'init: plan/project-preset command 与 skill 包含 Product Brief 契约'
       );
+      assert(
+        hasPlanningUpgradePlanContract(planSkill) &&
+          hasPlanningUpgradePlanContract(planCommand) &&
+          hasPlanningUpgradePresetContract(projectPresetSkillText) &&
+          hasPlanningUpgradePresetContract(projectPresetCommand),
+        'init: plan/project-preset command 与 skill 包含 M2 规划与边界契约'
+      );
     }
     assert(
       hasRoadmapContract(codexCommandSkillText(agentsDir, 'plan')) &&
@@ -452,7 +469,10 @@ async function runScenario(manifest, {
     const codexBuilder = readFileSync(join(agentsDir, 'agents', 'builder.md'), 'utf8');
     assert(!codexBuilder.includes('.claude/rules'), 'init: Codex agent 文档不再指向 .claude/rules');
     const projectPresetSkill = readFileSync(join(agentsDir, 'skills', 'team-command-project-preset', 'SKILL.md'), 'utf8');
-    assert(!projectPresetSkill.includes('project-preset/.agents/'), 'init: project-preset 子目录不被 Codex 路径重写误伤');
+    assert(
+      !projectPresetSkill.includes('├── .agents/') && !projectPresetSkill.includes('├── .claude/'),
+      'init: project-preset 规则目录不被 Codex 路径重写误伤'
+    );
     assert(projectPresetSkill.includes('`/project-preset` 是生成器'), 'init: project-preset skill 明确生成器职责');
     const skillCurator = readFileSync(join(agentsDir, 'skills', 'skill-curator', 'SKILL.md'), 'utf8');
     assert(
@@ -538,6 +558,13 @@ async function runScenario(manifest, {
         hasProductBriefContract(codexCommandSkillText(agentsDir, 'project-preset')) &&
         hasProductBriefContract(codexCommandText(agentsDir, 'project-preset')),
       'update: plan/project-preset command 与 skill 保留 Product Brief 契约'
+    );
+    assert(
+      hasPlanningUpgradePlanContract(codexCommandSkillText(agentsDir, 'plan')) &&
+        hasPlanningUpgradePlanContract(codexCommandText(agentsDir, 'plan')) &&
+        hasPlanningUpgradePresetContract(codexCommandSkillText(agentsDir, 'project-preset')) &&
+        hasPlanningUpgradePresetContract(codexCommandText(agentsDir, 'project-preset')),
+      'update: plan/project-preset command 与 skill 保留 M2 规划与边界契约'
     );
     assert(
       hasRoadmapContract(codexCommandSkillText(agentsDir, 'plan')) &&
@@ -667,12 +694,14 @@ console.log('\n[Codex 文本重写]');
   const rewritten = toCodexText([
     '见 `rules/design.md` 和 `commands/taste.md`。',
     '保留 `project-preset/rules/project.md`。',
+    'project-preset/\n├── rules/\n└── specs/',
     '保留 `lang/python/rules/python.md`。',
     '显式 `.claude/specs/node.md` 应改写。',
   ].join('\n'));
   assert(rewritten.includes('`.agents/rules/design.md`'), 'toCodexText: 相对 rules/ 路径改写');
   assert(rewritten.includes('`.agents/commands/taste.md`'), 'toCodexText: 相对 commands/ 路径改写');
   assert(rewritten.includes('`project-preset/rules/project.md`'), 'toCodexText: 不误伤 project-preset/rules/');
+  assert(rewritten.includes('project-preset/\n├── rules/\n└── specs/'), 'toCodexText: 不误伤 project-preset 目录树');
   assert(rewritten.includes('`lang/python/rules/python.md`'), 'toCodexText: 不误伤 lang/*/rules/');
   assert(rewritten.includes('`.agents/specs/node.md`'), 'toCodexText: 显式 .claude/specs/ 路径改写');
 }

@@ -52,6 +52,13 @@ export function toCodexText(source) {
 
 function rewriteRelativeCodexPaths(source) {
   return source
-    .replace(/(^|[^A-Za-z0-9_.\/\\-])(commands|rules|specs)\//g, '$1.agents/$2/')
+    .replace(/(^|[^A-Za-z0-9_.\/\\-])(commands|rules|specs)\//g, (match, prefix, directory, offset) => {
+      const lineStart = source.lastIndexOf('\n', offset) + 1;
+      const treePrefix = source.slice(lineStart, offset);
+      const nearby = source.slice(Math.max(0, lineStart - 600), offset);
+      const isProjectPresetTreeEntry = /^[\s│├└─]*$/.test(treePrefix) && nearby.includes('project-preset/');
+
+      return isProjectPresetTreeEntry ? match : `${prefix}.agents/${directory}/`;
+    })
     .replace(/(^|[^A-Za-z0-9_.\/\\-])(commands|rules|specs)\\/g, '$1.agents\\$2\\');
 }

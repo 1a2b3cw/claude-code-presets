@@ -44,8 +44,9 @@
 
 - 优先读取 `product-brief.md`
 - 其次读取 `prd.md`
-- 新项目没有上述文件时，在生成 `project-profile/` 前先创建 `product-brief.md`
-- 已有项目若只有 README/代码事实，则从事实中推导 Product Brief，并把不确定内容标为“推断”或“未决”
+- `project-profile/product.md` 只作为补充来源：已确认事实和决策可补充 Product Brief，推断和未决问题必须保留原标签
+- 新项目没有上述文件时，在生成 `project-profile/` 前先创建并由 Owner 确认 `product-brief.md`
+- 已有项目若只有 README/代码事实，则写入 `project-profile/product.md` 的“事实 / 推断 / 未决问题”区；不得把未确认推断升级为 Product Brief 或 preset 规则
 
 如果信息不足，只问最多 5 个高价值问题：
 
@@ -108,6 +109,8 @@ project-profile/
 - 验收标准
 - 核心用户流程
 - 未决问题
+
+同时必须分区记录：**事实**（代码或 Owner 明示）、**已确认决策**、**推断**、**未决问题**。只有事实和已确认决策可以进入 `product-brief.md`；推断和未决问题只能保留在 profile，等待 Owner 确认。
 
 #### Product Brief 契约
 
@@ -173,7 +176,7 @@ project-profile/
 
 ### Phase 3: 生成 project-preset/
 
-从 profile 中提炼 AI 后续必须遵守的项目级 preset：
+从 profile 中提炼 AI 后续必须遵守的项目级 preset。`project-preset/rules/` 是唯一可移植的规则目录；不得在 `project-preset/` 内创建 `.agents/` 或 `.claude/` 子目录：
 
 ```text
 project-preset/
@@ -220,16 +223,16 @@ project-preset/
 }
 ```
 
-#### `rules/project.md`
+#### `project-preset/rules/project.md`
 
-只写硬规则，例如：
+只写已确认的项目差异和硬规则，不复制通用团队规则或技术栈 preset，例如：
 
 - 后续开发必须先读 `project-preset/PRESET.md`
 - 业务逻辑放在哪一层
 - 禁止改动哪些边界
 - 错误处理、日志、配置、密钥规则
 
-#### `rules/tech-stack.md`
+#### `project-preset/rules/tech-stack.md`
 
 只写技术栈硬约束，例如：
 
@@ -238,7 +241,7 @@ project-preset/
 - 依赖新增原则
 - 文件组织和命名约定
 
-#### `rules/testing.md`
+#### `project-preset/rules/testing.md`
 
 只写项目测试硬约束，例如：
 
@@ -247,11 +250,11 @@ project-preset/
 - 必跑命令
 - Mock 边界
 
-#### `specs/architecture.md`
+#### `project-preset/specs/architecture.md`
 
 放详细架构说明、模块图、数据流和关键设计理由。
 
-#### `specs/domain.md`
+#### `project-preset/specs/domain.md`
 
 放业务概念、术语表、状态机、核心流程和边界条件。
 
@@ -293,8 +296,9 @@ project-preset/
 - [ ] `project-preset/PRESET.md` 存在
 - [ ] `project-preset/manifest.json` 是合法 JSON
 - [ ] `project-preset/curation.md` 存在并记录 skill-curator 审查结论
-- [ ] `rules/` 都是短硬规则，不是长篇教程
-- [ ] `specs/` 承载深入说明
+- [ ] `project-preset/rules/` 都是短硬规则，不是长篇教程
+- [ ] 没有 `project-preset/.agents/` 或 `project-preset/.claude/` 重复目录
+- [ ] `project-preset/specs/` 承载深入说明
 - [ ] 任何 `skills/<name>/SKILL.md` 都通过 skill-curator 审查
 - [ ] 推断和未决问题没有被写成确定规则
 - [ ] 没有写入真实密钥、token 或个人隐私

@@ -231,9 +231,13 @@ Phase M1：Team Operating Model。
 
 ### M2.1 升级 `/plan` 为 Product Lead 主导
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P0
 - **目标**：让 `/plan` 从产品想法生成 Product Brief、MVP、非目标、roadmap 和 Owner 决策点。
+- **产物**：`docs/m2-planning-upgrade-spec.md`、`.claude/commands/plan.md`、对应 Codex command/skill、smoke test。
+- **验收命令**：`npm run validate`、`npm test`、`git diff --check`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass；review pass（`.claude/workspace/reviews/2026-07-10-m2.md`）。
 - **验收标准**：
   - Roadmap 模块包含用户价值、MVP 归属、依赖、风险、复杂度。
   - Product Lead 给推荐顺序，不把所有选择丢给 Owner。
@@ -241,13 +245,17 @@ Phase M1：Team Operating Model。
 
 ### M2.2 强化 Product Brief 和 Project Preset 边界
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P1
 - **目标**：避免 `project-preset/` 复制通用规则或写入未经确认的推断。
+- **产物**：`.claude/commands/project-preset.md`、对应 Codex command/skill、smoke test。
+- **验收命令**：`npm run validate`、`npm test`、`git diff --check`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass；review pass（`.claude/workspace/reviews/2026-07-10-m2.md`）。
 - **验收标准**：
   - Project preset 只记录项目差异。
   - 未确认推断留在 profile/未决问题，不变成硬规则。
-  - `project-preset/.agents/rules/` 与读取路径一致。
+  - `project-preset/rules/` 是唯一规则目录，且与读取路径一致。
 
 ---
 

@@ -24,6 +24,12 @@ In Codex, invoke this as `$team-command-plan`. Do not rely on `/plan` unless Cod
 
 典型流程：`/plan 我想做个 X` → 生成/读取 Product Brief → 看 roadmap → `/dev 做模块 3`。
 
+## 角色交接
+
+- **Product Lead**：确认目标用户、核心价值、MVP、非目标和推荐顺序；只把高影响取舍交给 Owner。
+- **Architect-Planner**：把已确认的产品路线转成模块、依赖、复杂度、技术风险和验收标准。
+- **Delivery Steward**：保证 Product Brief、roadmap、project-profile 与 project-preset 各自只有一个事实用途，不制造重复状态。
+
 ## Owner Decision Brief 契约
 
 `/plan` 由 Product Lead 负责判断产品方向，不把所有细节丢给 Owner。只有遇到会明显影响产品成败、投入或风险的选择时，才输出 Owner Decision Brief，让 Owner 做该做的决定。
@@ -55,7 +61,13 @@ In Codex, invoke this as `$team-command-plan`. Do not rely on `/plan` unless Cod
 
 ### Phase 0: Product Brief / PRD（产品契约）
 
-在拆解 roadmap 之前，必须先沉淀轻量 Product Brief。优先读取已有的 `product-brief.md`；如果用户给的是更完整的 PRD，则读取 `prd.md`。两者都不存在时，先通过对话生成 `product-brief.md`，再进入模块拆解。
+在拆解 roadmap 之前，Product Lead 必须先沉淀轻量 Product Brief。Product Brief 来源优先级是：
+
+1. 已确认的 `product-brief.md`
+2. 已确认的 `prd.md`
+3. `project-profile/product.md` 中明确标为事实或已确认决策的内容
+
+如果只有 `project-profile/product.md` 的推断或未决问题，必须向 Owner 确认后才写入 Product Brief；不得把推断当作产品事实。三个来源都不足时，通过对话生成 `product-brief.md`，再进入模块拆解。
 
 #### Product Brief 字段
 
@@ -89,11 +101,22 @@ In Codex, invoke this as `$team-command-plan`. Do not rely on `/plan` unless Cod
 
 确认后写入或更新 `product-brief.md`，再进入 Phase 1。否决 → 调整，最多 3 轮。
 
+### Phase 0.5: Product Lead 推荐路线
+
+Product Lead 先给出默认推荐，而不是把所有排序选择丢给 Owner：
+
+- 哪些能力属于 MVP，为什么它们先于其他模块。
+- 哪些能力明确不做，避免范围膨胀。
+- 每个候选模块的用户价值和推荐顺序。
+- 哪些高影响取舍需要 Owner Decision Brief。
+
+没有命中高影响触发条件时，按推荐路线继续，不为普通模块命名或低风险排序打断 Owner。
+
 ### Phase 1: 功能模块拆解
 
-Architect-Planner 必须从 `product-brief.md` / `prd.md` 生成**功能模块**（不是细任务），输出 `roadmap.md`：
+Product Lead 给出 MVP 与推荐顺序后，Architect-Planner 必须从 Product Brief 生成**功能模块**（不是细任务），输出 `roadmap.md`：
 
-- 每个模块：模块 ID、状态、名称、一句话描述、优先级、复杂度、依赖、验收标准、风险、最近更新
+- 每个模块：模块 ID、状态、名称、用户价值、MVP 归属、一句话描述、优先级、复杂度、依赖、验收标准、风险、最近更新
 - 按"先做地基、再做主干、最后做枝叶"排序
 - 标出 MVP 最小集（哪些模块凑齐就能跑通核心流程）
 - roadmap 顶部必须引用 Product Brief 的目标用户、核心价值、本期范围、明确不做和验收标准
@@ -165,13 +188,13 @@ Architect-Planner 必须从 `product-brief.md` / `prd.md` 生成**功能模块**
 
 ## 功能模块
 
-| 模块 ID | 状态 | 模块 | 描述 | 优先级 | 复杂度 | 依赖 | 验收标准 | 风险 | 最近更新 |
-|---------|------|------|------|--------|--------|------|----------|------|----------|
-| M1 | planned | 用户认证 | 邮箱注册登录 + JWT | P0 | L | 无 | 用户能注册、登录并获得有效会话 | 密码策略和会话过期边界需确认 | YYYY-MM-DD |
-| M2 | planned | 知识库管理 | 文档上传、列表、删除 | P0 | M | M1 | 登录用户能管理自己的文档 | 大文件上传限制需确认 | YYYY-MM-DD |
-| M3 | planned | 向量检索 | 文档分块嵌入 + 语义搜索 | P0 | L | M2 | 能对已上传文档返回相关片段 | 嵌入模型成本和中文效果不确定 | YYYY-MM-DD |
-| M4 | planned | 问答界面 | 提问 + 流式回答 + 引用来源 | P0 | M | M3 | 用户能基于文档提问并看到引用 | 流式输出兼容性需验证 | YYYY-MM-DD |
-| M5 | planned | 多人协作 | 团队空间、权限 | P2 | XL | M1,M2 | 团队成员能按权限协作 | 权限模型容易扩大范围 | YYYY-MM-DD |
+| 模块 ID | 状态 | 模块 | 用户价值 | MVP 归属 | 描述 | 优先级 | 复杂度 | 依赖 | 验收标准 | 风险 | 最近更新 |
+|---------|------|------|----------|----------|------|--------|--------|------|----------|------|----------|
+| M1 | planned | 用户认证 | 让用户安全进入自己的空间 | MVP | 邮箱注册登录 + JWT | P0 | L | 无 | 用户能注册、登录并获得有效会话 | 密码策略和会话过期边界需确认 | YYYY-MM-DD |
+| M2 | planned | 知识库管理 | 让用户管理可问答的资料 | MVP | 文档上传、列表、删除 | P0 | M | M1 | 登录用户能管理自己的文档 | 大文件上传限制需确认 | YYYY-MM-DD |
+| M3 | planned | 向量检索 | 让提问能找到相关资料 | MVP | 文档分块嵌入 + 语义搜索 | P0 | L | M2 | 能对已上传文档返回相关片段 | 嵌入模型成本和中文效果不确定 | YYYY-MM-DD |
+| M4 | planned | 问答界面 | 让用户获得带来源的答案 | MVP | 提问 + 流式回答 + 引用来源 | P0 | M | M3 | 用户能基于文档提问并看到引用 | 流式输出兼容性需验证 | YYYY-MM-DD |
+| M5 | planned | 多人协作 | 让团队共享资料和权限 | 非 MVP | 团队空间、权限 | P2 | XL | M1,M2 | 团队成员能按权限协作 | 权限模型容易扩大范围 | YYYY-MM-DD |
 
 > 状态：planned / in_progress / blocked / done / shipped
 > 优先级：P0 必须 ｜ P1 重要 ｜ P2 锦上添花
