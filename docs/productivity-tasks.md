@@ -454,7 +454,7 @@
 
 ### T6.3 GitHub Issue / PR 集成规划
 
-- **状态**：todo
+- **状态**：done
 - **Prompt**：
 
 ```text
