@@ -310,7 +310,7 @@
 
 ### T3.3 定义 today 轻量视图
 
-- **状态**：todo
+- **状态**：done
 - **目标**：先用 `/standup` 输出 today 视图，不做 UI。
 - **Prompt**：
 

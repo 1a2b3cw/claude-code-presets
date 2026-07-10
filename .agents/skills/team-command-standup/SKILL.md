@@ -129,6 +129,20 @@ In Codex, invoke this as `$team-command-standup`. Do not rely on `/standup` unle
 - 如果 `requires human confirmation: yes`，必须说明谁需要确认什么。
 - 如果存在阻塞项，Next Best Action 优先指向解除阻塞；没有阻塞时指向最靠前的 ready/planned 任务。
 
+### Today 轻量视图
+
+`/standup` 输出必须包含 Today 轻量视图，放在详细状态前面，让用户 10 秒内知道现在该做什么。Today 视图只使用已有 artifact，不做 UI、不引入数据库。
+
+字段规则：
+
+- **今日焦点**：优先取 `tasks.md` 中最靠前的 `in_progress` / `ready` / `planned` 任务；没有任务时从 `roadmap.md` 或最近 `events.jsonl.next` 推断。
+- **当前阻塞**：列出 `tasks.md`、`roadmap.md`、`failureRecovery.finalStatus` 或最近 failed/blocked 事件中的最高优先级阻塞；没有则写“无”。
+- **最近 run**：引用最近一条非 `/standup` 事件，展示 `command`、`taskId`、`status`、关键 `checks` 和 `summary`。
+- **下一步建议**：必须与 `Next Best Action.action` 一致或可直接追溯。
+- **风险提示**：引用 metrics、失败恢复记录、release/report 风险或数据源 warning；没有则写“暂无明显风险”。
+
+如果数据源缺失，Today 仍必须输出，并在对应字段标注“数据不足”，不要空着。
+
 ### events.jsonl 契约
 
 每行是一个独立 JSON 对象，不允许跨行，不回写旧事件。
@@ -175,6 +189,13 @@ In Codex, invoke this as `$team-command-standup`. Do not rely on `/standup` unle
 ```markdown
 # 项目状态汇报
 日期：YYYY-MM-DD
+
+## Today
+- 今日焦点：[任务/模块/目标]
+- 当前阻塞：[阻塞项或无]
+- 最近 run：[command] [taskId] [status] - [summary/checks]
+- 下一步建议：[必须匹配 Next Best Action.action]
+- 风险提示：[风险、数据源 warning 或暂无明显风险]
 
 ## 数据源状态
 | 数据源 | 状态 | 说明 |
