@@ -147,6 +147,13 @@ function hasReleaseReportContract(text) {
   return RELEASE_REPORT_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
+function runHook(scriptPath, payload) {
+  return spawnSync(process.execPath, [scriptPath], {
+    input: JSON.stringify(payload),
+    encoding: 'utf8',
+  });
+}
+
 // 静默 init/update 的日志，保持测试输出干净
 async function silent(fn) {
   const orig = console.log;
@@ -553,6 +560,39 @@ console.log('\n[MCP 漂移检测]');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
+}
+
+console.log('\n[Hook 行为测试]');
+{
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const securityHook = join(repoRoot, '.claude', 'hooks', 'security-check.mjs');
+  const bashHook = join(repoRoot, '.claude', 'hooks', 'bash-check.mjs');
+  const securityCriticalCases = [
+    ['eval', { tool_input: { file_path: 'src/app.js', content: 'eval(userInput);' } }],
+    ['new Function', { tool_input: { file_path: 'src/app.js', content: 'const fn = new Function(code);' } }],
+    ['innerHTML', { tool_input: { file_path: 'src/app.js', content: 'element.innerHTML = userInput;' } }],
+    ['child_process.exec', { tool_input: { file_path: 'src/app.js', content: 'child_process.exec(command);' } }],
+  ];
+  for (const [name, payload] of securityCriticalCases) {
+    assert(runHook(securityHook, payload).status === 2, `security-check: ${name} exit 2`);
+  }
+  assert(
+    runHook(securityHook, { tool_input: { file_path: 'src/app.js', content: 'const value = JSON.stringify(input);' } }).status === 0,
+    'security-check: 普通代码不误拦'
+  );
+
+  const bashCriticalCases = [
+    ['git reset --hard', { tool_input: { command: 'git reset --hard HEAD' } }],
+    ['git clean -f', { tool_input: { command: 'git clean -fd' } }],
+    ['npm publish', { tool_input: { command: 'npm publish' } }],
+  ];
+  for (const [name, payload] of bashCriticalCases) {
+    assert(runHook(bashHook, payload).status === 2, `bash-check: ${name} exit 2`);
+  }
+  assert(
+    runHook(bashHook, { tool_input: { command: 'npm run validate' } }).status === 0,
+    'bash-check: 普通命令不误拦'
+  );
 }
 
 for (const manifest of readPresetCatalog()) {
