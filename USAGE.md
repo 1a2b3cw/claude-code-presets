@@ -158,11 +158,11 @@ Claude Code 使用 slash command；Codex 使用自动生成的 skill，避免与
 | `/plan <产品想法>` | `$team-command-plan` | 项目开局规划：分析产品 → 输出功能模块清单 `roadmap.md`，不写代码 |
 | `/project-preset [项目背景]` | `$team-command-project-preset` | 讨论/扫描项目 → 生成 `project-profile/` 与 `project-preset/`，不写业务代码 |
 | `/taste [项目背景]` | `$team-command-taste` | 设计方向探索：情绪板 / 快问快答 / 逛参考找到审美 → 输出 `preview/design-direction.md`，不写代码 |
-| `/dev <需求>` | `$team-command-dev` | 完整开发流程（Phase 0 需求确认 → 判级 → 迭代 → 验收 → 记录指标）；指定 roadmap 模块时复用其分析 |
+| `/dev <需求>` | `$team-command-dev` | 完整开发流程（Phase 0 需求确认 → 判级 → 迭代 → 验收 → 写最终 event）；指定 roadmap 模块时复用其分析 |
 | `/check [路径]` | `$team-command-check` | 写完快检（逻辑/类型/边界），自动修 |
 | `/fix <文件/问题>` | `$team-command-fix` | 定点修复，不走流程 |
-| `/review-all [路径]` | `$team-command-review-all` | 合并前跨文件审查（一致性/完整性/回归/依赖） |
-| `/ship [--dry-run]` | `$team-command-ship` | 发布门禁（8 道关卡 + 回滚检查） |
+| `/review-all [路径]` | `$team-command-review-all` | 合并前跨文件审查（一致性/完整性/回归/依赖/acceptance 风险） |
+| `/ship [--dry-run]` | `$team-command-ship` | 发布门禁（8 道关卡 + 风险处置 + 回滚检查） |
 | `/standup` | `$team-command-standup` | 进度 + 效能趋势分析 |
 
 > 完整工作流和使用时机见 [BEST-PRACTICES.md](BEST-PRACTICES.md)。
@@ -197,7 +197,7 @@ PreToolUse 自动执行，Node 实现（跨平台，无外部依赖）：
 | 文件 | 写入 | 读取 |
 |------|------|------|
 | `journal.md` | 会话结束自动追加 | 新会话开始读取，续上下文 |
-| `metrics.md` | `/dev` 完成后追加效能指标 | `/standup` 读取分析趋势 |
+| `metrics.md` | 从 `events.jsonl` 聚合生成的人类可读摘要 | `/standup` 读取分析趋势 |
 
 这是让 AI 越用越懂你项目的反馈闭环。
 

@@ -40,7 +40,7 @@
 
 7. 发布决策
    ├── 所有检查通过 → 可以发布
-   ├── 有警告 → 用户确认后发布
+   ├── 有警告 → 按 known risk 处理规则确认 accept/mitigate/defer
    └── 有严重问题 → 打回修复
 
 8. 部署（DevOps Agent）
@@ -48,6 +48,28 @@
    ├── 执行部署脚本
    ├── 验证部署成功
    └── 记录发布日志
+```
+
+## Known Risk 处理规则
+
+`/ship` 不允许只写“有风险但可接受”。每个 known risk 必须有明确处置：
+
+- `accept`：Owner 明确接受该风险后才可继续；报告必须写清影响范围、监控信号、回滚触发条件和确认人。
+- `mitigate`：发布前必须完成缓解动作；缓解未完成时 release gate 不能 pass。
+- `defer`：风险转为后续任务；必须写入任务 ID、负责人/确认人和不阻塞本次发布的理由。
+
+高风险发布必须触发 Owner Decision Brief。高风险包括：安全或隐私风险、支付/权限/数据迁移、不可逆操作、回滚不完整、SLO/性能明显不达标、合规影响、用户承诺或 MVP 验收标准改变。
+
+```markdown
+## Owner Decision Brief
+- Decision: [whether to release with this high risk]
+- Context: [release scope, risk, impact, rollback readiness]
+- Recommendation: [ship / delay / mitigate first, with reason]
+- Options:
+  - A: [recommended option] - [trade-off]
+  - B: [alternative] - [trade-off]
+  - C: [optional] - [trade-off]
+- If no reply: [pause release / safe default]
 ```
 
 ## tasks.md 状态更新
@@ -59,7 +81,7 @@
 - 更新时不要删除任务条目的验收标准、验收命令、阻塞原因、Gate 结果和产物字段。
 - 发布或上线验证完成后，将状态更新为 `shipped`；无需真实发布的文档/配置任务可在发布检查通过后更新为 `done`。
 - 发布检查失败且可自动修复时，记录失败项和修复轮次，修复后重新检查。
-- 2 轮后仍失败、存在严重风险或等待用户接受风险时，将状态更新为 `blocked`，写明阻塞原因、风险和下一步确认人。
+- 2 轮后仍失败、存在严重风险、known risk 未处置或等待用户接受风险时，将状态更新为 `blocked`，写明阻塞原因、风险处置状态和下一步确认人。
 
 `tasks.md` 状态必须使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
 
@@ -92,10 +114,11 @@
 - **关联任务**：任务 ID、模块 ID、版本号或发布范围；没有则写 `无`。
 - **发布范围**：分支、tag、变更模块、关键配置和报告关联的 review report。
 - **检查结果**：review、test、typecheck、lint、security、performance、accessibility、config、git、rollback 的 pass/fail/warn。
-- **风险**：已知风险、影响范围、是否需要用户接受。
+- **风险**：已知风险、影响范围、风险处置（accept / mitigate / defer）、确认人和是否需要 Owner Decision Brief。
 - **回滚步骤**：具体命令、旧版本/tag、数据回滚方式、触发条件。
 - **发布后验证**：上线后要检查的页面、接口、日志、监控指标或人工验收项。
 - **Gate 结果**：release gate 的 pass/fail、警告数、阻塞项和确认人。
+- **Owner Decision Brief**：高风险发布时必须记录决策摘要；无高风险时写“无”。
 - **下一步**：执行部署、等待确认、继续修复、回滚或进入 hotfix。
 
 ## 标准结果摘要
@@ -132,6 +155,7 @@
 - `Summary.next action` 必须与 `Next Best Action.action` 保持一致或可直接追溯。
 - 如果 `requires human confirmation: yes`，必须说明谁需要确认什么。
 - 如果发布门禁失败或回滚方案缺失，Next Best Action 不得建议继续部署。
+- 如果存在未处置 known risk 或高风险发布尚未完成 Owner Decision Brief，Next Best Action 必须指向风险确认或缓解动作。
 
 ## 事件记录
 
@@ -213,6 +237,14 @@
 - [ ] 回滚步骤已文档化
 - [ ] 回滚触发条件已定义
 
+## 发布后验证
+
+发布后验证必须覆盖：
+- 用户主流程或本次发布关联的 acceptance 场景。
+- 错误率、延迟、关键业务指标或日志查询。
+- 风险处置项中的监控信号和回滚触发条件。
+- 需要人工确认时，写明确认人和确认窗口。
+
 ## 输出格式
 
 ```markdown
@@ -247,6 +279,22 @@
 - 回滚触发条件：[如错误率 > 1%]
 - 旧版本：[tag/commit]
 - 数据回滚：[迁移 down 命令或无需数据回滚的说明]
+
+## Known Risks
+| 风险 | 影响 | 处置 | 确认人 | 证据/后续 |
+|------|------|------|--------|-----------|
+| 1 个中等漏洞 | 仅影响开发依赖，不进入生产包 | accept | Owner | npm audit 结果 + 生产包清单 |
+| 首屏监控缺少告警 | 发布后发现性能回退较慢 | mitigate | DevOps | 发布前补 dashboard alert |
+| 次要浏览器兼容性 | 不影响 MVP 主用户 | defer | Product Lead | 后续任务 T-browser |
+
+## Owner Decision Brief
+- Decision: 是否在中等漏洞已确认不影响生产包的前提下发布
+- Context: 发布门禁其他项通过，回滚方案完整，该风险已标记为 accept
+- Recommendation: 发布；发布后观察安全扫描和错误率
+- Options:
+  - A: 发布 - 更快交付，接受已界定风险
+  - B: 延迟发布先升级依赖 - 风险更低，但延迟交付
+- If no reply: 暂停发布
 
 ## 发布步骤
 1. 合并 PR 到 main
@@ -297,7 +345,7 @@
 | 场景 | 处理方式 |
 |------|----------|
 | /review-all 未通过 | 根据审查结果修复 → 重新 /ship |
-| 安全漏洞无法立即修复 | 记录风险，用户决定是否接受 |
+| 安全漏洞无法立即修复 | 按 known risk 规则标记 accept/mitigate/defer；高风险必须 Owner Decision Brief |
 | 测试偶发失败 | 重试 2 次 → 仍失败则标记 flaky test，用户决定 |
 | 部署失败 | 自动回滚 → 记录失败原因 → 通知用户 |
 | 发布后发现问题 | 触发回滚 → 记录问题 → 进入 hotfix 流程 |

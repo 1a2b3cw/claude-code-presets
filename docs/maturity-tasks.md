@@ -1,11 +1,11 @@
 # AI 开发团队框架成熟化任务清单
 
 > 本任务清单对应 `docs/maturity-roadmap.md`。
-> 当前主线：先修正团队角色、决策边界和文档治理，再升级规划与开发流程。
+> 当前主线：M2/M3/M4 已完成并通过审查，下一步进入 M5 Trustworthy State Tools。
 
 ## 当前主线
 
-Phase M1：Team Operating Model。
+Phase M5：Trustworthy State Tools。
 
 优先级：
 
@@ -263,9 +263,13 @@ Phase M1：Team Operating Model。
 
 ### M3.1 收敛 `/dev` 写入面
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P0
 - **目标**：让 `/dev` 专注当前任务执行，不同时承担所有状态、metrics、git、report 写入。
+- **产物**：`.claude/commands/dev.md`、`.agents/commands/dev.md`、`.agents/skills/team-command-dev/SKILL.md`、`create-claude-team/scripts/smoke-test.js`。
+- **验收命令**：`npm run validate`、`npm test`、`git diff --check`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass；review pass（`.claude/workspace/reviews/2026-07-10-m2-m3-m4.md`）。
 - **验收标准**：
   - `/dev` 更新当前 task/module 和最终 event。
   - git commit 不再默认强制自动执行，改为显式触发或交给 ship/commit 流程。
@@ -273,9 +277,13 @@ Phase M1：Team Operating Model。
 
 ### M3.2 加入产品验收视角
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P1
 - **目标**：每个产品功能完成时说明用户主流程是否真的可用。
+- **产物**：`.claude/commands/dev.md`、`.agents/commands/dev.md`、`.agents/skills/team-command-dev/SKILL.md`、`.claude/commands/review-all.md`、`.agents/commands/review-all.md`、`.agents/skills/team-command-review-all/SKILL.md`、Reviewer 角色文档、`create-claude-team/scripts/smoke-test.js`。
+- **验收命令**：`npm run validate`、`npm test`、`git diff --check`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass；review pass（`.claude/workspace/reviews/2026-07-10-m2-m3-m4.md`）。
 - **验收标准**：
   - L/XL 任务必须有 acceptance 场景。
   - Reviewer 检查“做了但不好用”的风险。
@@ -287,9 +295,13 @@ Phase M1：Team Operating Model。
 
 ### M4.1 重定位 `/review-all`
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P1
 - **目标**：让 `/review-all` 偏审查和报告，修复委托 `/fix` 或 `/dev`。
+- **产物**：`.claude/commands/review-all.md`、`.agents/commands/review-all.md`、`.agents/skills/team-command-review-all/SKILL.md`、`create-claude-team/scripts/smoke-test.js`。
+- **验收命令**：`npm run validate`、`npm test`、`git diff --check`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass；review pass（`.claude/workspace/reviews/2026-07-10-m2-m3-m4.md`）。
 - **验收标准**：
   - Review report 明确 pass/needs_fix/blocked。
   - 自动修复只允许 tiny obvious fixes，其他交给修复流程。
@@ -308,6 +320,9 @@ Phase M1：Team Operating Model。
 - **不做**：
   - 不让每次小改都做全局审查
   - 不让 system health review 默认直接改代码
+- **验收命令**：`npm run validate`、`npm test`、`git diff --check`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass；review pass（`.claude/workspace/reviews/2026-07-10-m2-m3-m4.md`）。
 - **验收标准**：
   - `/review-all --system` 明确存在。
   - 触发条件包含 XL 完成、MVP 完成、发布前跨 3+ 模块、同模块连续 3 次改动、状态/文档冲突、用户担心项目变形。
@@ -317,9 +332,13 @@ Phase M1：Team Operating Model。
 
 ### M4.3 强化 `/ship`
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P1
 - **目标**：发布前有 gate、风险、回滚、发布后验证。
+- **产物**：`.claude/commands/ship.md`、`.agents/commands/ship.md`、`.agents/skills/team-command-ship/SKILL.md`、`create-claude-team/scripts/smoke-test.js`。
+- **验收命令**：`npm run validate`、`npm test`、`git diff --check`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass；review pass（`.claude/workspace/reviews/2026-07-10-m2-m3-m4.md`）。
 - **验收标准**：
   - Release report 路径统一到 `.claude/workspace/releases/`。
   - known risk 必须有 accept/mitigate/defer。
@@ -374,7 +393,7 @@ Phase M1：Team Operating Model。
 5. M1.7 统一 workspace 路径和状态词
 6. M1.8 把 Workbench 降级为后续视图层
 7. M2.1 升级 `/plan` 为 Product Lead 主导
-8. M3.1 收敛 `/dev` 写入面
+8. M5.1 `create-claude-team status`
 
 ## 通用开工模板
 

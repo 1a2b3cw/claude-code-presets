@@ -77,7 +77,7 @@ L/XL 级：
 | Spike 发现不可行 | 告诉用户原因 + 替代方案，不继续投入 |
 | 用户不确认 spec | 根据反馈调整，最多 3 轮；3 轮后仍不确认，暂停等用户补充 |
 | 测试一直失败 | 自动修 → 重试，最多 2 轮；2 轮后仍失败，列出原因等用户决定 |
-| 审查打回 | 自动修 → 重审，最多 2 轮；2 轮后仍不通过，列出问题等用户决定 |
+| 审查打回 | 按 review report 委托修复 → 重审；仍不通过时列出问题等用户决定 |
 | 发现方向错了 | 停止当前迭代，告诉用户当前状态 + 建议的回退点，用户决定是否回退 |
 | 需求中途变了 | 停止当前迭代，重新评估影响范围，调整 tasks.md |
 
@@ -91,7 +91,7 @@ L/XL 级：
 | `/dev 做一个功能` | /dev | 走完全流程，你只管确认 |
 | `/check` | /check | 快检当前代码，1 分钟出结果 |
 | `/fix 这个函数有问题` | /fix | 直接改这一处，不走流程 |
-| `/review-all src/` | /review-all | 跨文件审查，自动修 |
+| `/review-all src/` | /review-all | 跨文件审查和报告 |
 | `/standup` | /standup | 告诉你做到哪了 |
 
 ### 自然语言路由契约
@@ -183,7 +183,7 @@ L/XL 级：
 | **Architect-Planner** | 需求分析、任务拆解、架构设计、技术选型 | L/XL 级任务 |
 | **Builder** | 编码实现、单元测试、重构 | 所有任务 |
 | **Designer** | UI 设计方向、视觉审查、设计系统维护 | 涉及 UI 的 L/XL 级任务 |
-| **Reviewer** | 代码审查（6 维度单文件 + 4 维度跨文件） | M 及以上任务 |
+| **Reviewer** | 代码审查（6 维度单文件 + 5 维度跨文件，含 acceptance 风险） | M 及以上任务 |
 | **Researcher** | 技术调研、方案对比、代码探索 | 按需调用 |
 | **DevOps** | CI/CD、部署、容器化、监控 | L/XL 级任务、发布阶段 |
 
@@ -241,4 +241,4 @@ Cleanup 默认先合并或归档，不直接删除。高影响删除、source-of
 - **project-profile/**：项目画像，由 `/project-preset` 生成，记录产品、技术栈、架构、质量与验收
 - **project-preset/**：项目专属预设，由 `/project-preset` 生成，优先于通用技术栈 preset
 - **.claude/workspace/journal.md**：会话记忆，新会话开始时读取
-- **.claude/workspace/metrics.md**：效能指标，/dev 完成后追加
+- **.claude/workspace/metrics.md**：由 events 聚合生成的人类可读效能摘要

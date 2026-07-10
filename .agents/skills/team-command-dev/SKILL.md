@@ -129,6 +129,25 @@ blocked → planned / in_progress（阻塞解除后）
 - 任一检查失败且 2 轮自动修复仍失败时，将状态改为 `blocked`，写清阻塞原因和下一步确认人。
 - 每次状态变化都刷新最近更新日期。
 
+### /dev 写入边界
+
+`/dev` 只负责当前迭代的最小事实写入，避免同时承担所有状态、metrics、git 和 report 维护：
+
+- 只更新当前 task/module 的执行状态、Gate 结果、阻塞原因、产物和最近更新日期。
+- 只在收尾时追加 1 条最终 `events.jsonl` 事件，不回写旧事件，不生成额外派生状态。
+- 不得默认执行 `git commit`；只有用户明确要求提交、或当前项目的显式 ship/commit 流程要求提交时，才执行 git stage/commit。
+- metrics 由 events 聚合工具或 `/standup` 从 `events.jsonl` 生成，`/dev` 不再手写 `.claude/workspace/metrics.md` 摘要。
+- review report、release report、cleanup report 分别由 `/review-all`、`/ship` 和 Delivery Steward 负责，`/dev` 只引用这些产物路径。
+
+### 产品验收视角
+
+产品功能完成时，`/dev` 必须说明用户主流程是否真的可用，而不只说明代码是否通过测试：
+
+- L/XL 任务的 spec/tasks 必须包含 acceptance 场景，写清目标用户、入口、主流程、成功结果和可观察证据。
+- M 级用户可见功能至少在 Summary 中说明用户能看到或完成什么；纯内部任务可说明“不涉及用户主流程”。
+- Reviewer 检查 acceptance 风险，尤其是“代码做了但用户流程不连贯、不可验证或不好用”的问题。
+- UI 任务由 Designer 检查体验、视觉和交互；Reviewer 只审代码质量、无障碍和 acceptance 风险，不重复审视觉。
+
 ## 流程
 
 ### Phase 0: 需求确认（所有级别）
@@ -182,7 +201,7 @@ blocked → planned / in_progress（阻塞解除后）
 1. Builder 直接修复
 2. /check 快检（逻辑 + 类型 + 边界）
 3. 有问题 → 自动修 → 重新检查
-4. 没问题 → git commit → 完成
+4. 没问题 → 追加最终 event → 完成
 ```
 
 #### M 级流程
@@ -197,7 +216,7 @@ blocked → planned / in_progress（阻塞解除后）
    → 开始本地验证时把任务状态更新为 local_gate
 5. 有问题 → 自动修 → 重新检查（最多 2 轮）
 6. 2 轮后仍有问题 → 标记 blocked，记录阻塞原因，等你决定
-7. 全部通过 → 记录 local gate pass，状态更新为 done，git commit → 完成
+7. 全部通过 → 记录 local gate pass，状态更新为 done，追加最终 event → 完成
 ```
 
 #### L/XL 级流程（完整迭代）
@@ -211,13 +230,13 @@ for 每个任务 in tasks.md:
      → 有问题：自动修 → 重新检查（最多 2 轮）
      → 2 轮不过：标记 blocked，记录阻塞原因，等你决定
      → 没问题：记录 local gate pass，进入 review_gate 或继续
-  3. git commit（每个逻辑单元一次提交）
+  3. 如用户明确要求提交，或当前项目显式 commit/ship 流程要求提交，再执行 git stage/commit
 
 所有任务完成后:
   4. /review-all 跨文件审查（单文件质量由 code-review skill 逐文件覆盖）
      → 通过：进入 Phase 3
-     → 不通过：自动修 → 重新审查（最多 2 轮）
-     → 2 轮不过：列出所有问题等你决定
+     → 不通过：按 review report 委托 `/fix` 或 `/dev` 修复后重新审查
+     → 仍不过或阻塞：列出所有问题和下一步确认项等你决定
 ```
 
 ---
@@ -228,17 +247,18 @@ for 每个任务 in tasks.md:
 1. 运行所有测试 → 全部通过？
 2. 类型检查 tsc --noEmit → 无错误？
 3. Lint 检查 → 无错误？
-4. Git 状态检查 → 无未提交文件？
+4. Git 状态检查 → 清楚列出本轮改动和已有无关改动？
+5. 产品验收检查 → 用户主流程或“不涉及用户主流程”的说明是否成立？
 
 全部通过 → 输出"开发完成"
 有失败 → 自动修 → 重新验收（最多 2 轮）
 2 轮后仍有失败 → 列出失败项等你决定
 ```
 
-### Phase 4: 记录指标（自动）
+### Phase 4: 记录事件与指标字段（自动）
 
 ```
-1. 收集本次任务的指标：
+1. 收集本次任务的结构化指标字段：
    - spec 否决轮数（Phase 1 中用户否决了几次方案）
    - /check 首次问题数（第一次快检发现多少问题）
    - /check 修复轮数（快检修了几轮才通过）
@@ -246,14 +266,16 @@ for 每个任务 in tasks.md:
    - /review-all 打回次数（审查不通过的次数）
    - 预估偏差（实际耗时 vs 预估）
 
-2. 追加到 .claude/workspace/metrics.md
+2. 只把这些字段写入最终 `events.jsonl` 事件。
 
-3. 如果指标触发警告值，自动提醒：
+3. metrics 由 events 聚合工具或 `/standup` 从 `events.jsonl` 生成；`metrics.md` 是人类可读摘要，不由 `/dev` 手写维护。
+
+4. 如果指标触发警告值，自动提醒：
    - spec 否决 3 轮 → "需求理解有偏差，建议改进 Phase 0"
    - /check 首次问题 5+ → "代码质量不够，建议加强 TDD"
    - /review-all 打回 1+ 次 → "自检不足，建议每个任务后强制 /check"
 
-4. 输出执行摘要：
+5. 输出执行摘要：
    ✅ 开发完成
    📊 指标：spec 0 轮 | check 2 个问题，1 轮修复 | 审查通过 | 测试通过
    ⏱️ 耗时：预估 4h / 实际 3.5h（-12%）
@@ -373,7 +395,7 @@ for 每个任务 in tasks.md:
 |------|----------|
 | 测试一直失败 | 自动修 2 轮 → 仍失败 → 列出失败原因等你决定 |
 | 类型检查不通过 | 自动修 → 重新检查 |
-| 审查打回 | 自动修 → 重新审查（最多 2 轮） |
+| 审查打回 | 按 review report 委托修复 → 重新审查 |
 | 你否决了方案 | 根据反馈调整 → 重新输出方案（最多 3 轮） |
 | 你否决了 3 次 | 暂停，建议先讨论清楚需求 |
 | Spike 发现不可行 | 告诉你原因 + 替代方案 |

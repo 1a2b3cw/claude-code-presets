@@ -207,4 +207,4 @@ M1 Team Operating Model
 
 ## 当前下一步
 
-先执行 `docs/maturity-tasks.md` 的 M1 任务，把角色、决策、gate、artifact 和状态源收口。Workbench 保持 M6 / backlog 视图层，不再作为 M1 主线。
+继续执行 `docs/maturity-tasks.md` 的 M5 任务，把状态读取和事件校验做成可信工具。Workbench 保持 M6 / backlog 视图层，不作为当前主线。

@@ -47,6 +47,11 @@ const INTENT_ROUTING_REQUIRED_TEXT = ['自然语言路由契约', '推荐命令'
 const NEXT_BEST_ACTION_REQUIRED_TEXT = ['Next Best Action 契约', '## Next Best Action', 'action:', 'reason:', 'requires human confirmation: yes / no', 'source:'];
 const OWNER_DECISION_BRIEF_REQUIRED_TEXT = ['Owner Decision Brief 契约', '## Owner Decision Brief', 'Decision:', 'Context:', 'Recommendation:', 'Options:', 'If no reply:', '产品方向', 'MVP', '成本', '隐私', '安全', '架构', '发布风险'];
 const SPEC_TASK_GATE_REQUIRED_TEXT = ['Spec/Task Quality Gate', '人话', 'Product Lead 判断 product value', 'Architect-Planner 判断技术方案', 'Delivery Steward 判断 spec/tasks', '`pass` / `needs_revision` / `blocked`', 'Builder 不得开工'];
+const DEV_WRITE_BOUNDARY_REQUIRED_TEXT = ['/dev 写入边界', '只更新当前 task/module', '最终 `events.jsonl` 事件', '不得默认执行 `git commit`', 'metrics 由 events 聚合工具'];
+const DEV_ACCEPTANCE_REQUIRED_TEXT = ['产品验收视角', 'acceptance 场景', '用户主流程', 'Reviewer 检查 acceptance 风险', 'Designer 检查体验'];
+const REVIEW_REPOSITION_REQUIRED_TEXT = ['Review 定位与修复边界', '审查和报告命令', '修复委托 `/fix` 或 `/dev`', '`pass` / `needs_fix` / `blocked`', 'tiny obvious fixes'];
+const REVIEW_ACCEPTANCE_REQUIRED_TEXT = ['acceptance 风险', '代码做了但用户流程不连贯', '用户主流程', '做了但不好用', 'Designer 检查'];
+const SHIP_RISK_REQUIRED_TEXT = ['Known Risk 处理规则', 'accept', 'mitigate', 'defer', '高风险发布必须触发 Owner Decision Brief', '发布后验证必须覆盖'];
 const ARTIFACT_STEWARDSHIP_REQUIRED_TEXT = ['Artifact Stewardship', 'active', 'reference', 'draft', 'superseded', 'archived', 'delete-candidate', 'Artifact Cleanup', '.claude/workspace/cleanup/YYYY-MM-DD-artifact-cleanup.md', 'Owner Decision Brief'];
 const WORKSPACE_ROOT_REQUIRED_TEXT = ['.claude/workspace/', 'team state/report 默认根目录', 'workspace/', 'legacy', '`tasks.md` 状态只能使用', '`roadmap.md` 模块表是唯一模块状态源'];
 const METRICS_EVENTS_REQUIRED_TEXT = ['taskId', 'level', 'specRejectCount', 'checkIssueCount', 'checkFixRounds', 'reviewRejectCount', 'testFailureCount', 'estimateHours', 'actualHours'];
@@ -148,6 +153,26 @@ function hasOwnerDecisionBriefContract(text) {
 
 function hasSpecTaskGateContract(text) {
   return SPEC_TASK_GATE_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasDevWriteBoundaryContract(text) {
+  return DEV_WRITE_BOUNDARY_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasDevAcceptanceContract(text) {
+  return DEV_ACCEPTANCE_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasReviewRepositionContract(text) {
+  return REVIEW_REPOSITION_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasReviewAcceptanceContract(text) {
+  return REVIEW_ACCEPTANCE_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasShipRiskContract(text) {
+  return SHIP_RISK_REQUIRED_TEXT.every((part) => text.includes(part));
 }
 
 function hasArtifactStewardshipContract(text) {
@@ -363,6 +388,16 @@ async function runScenario(manifest, {
       'init: dev command 与 skill 要求 M 级使用轻量 tasks.md checklist'
     );
     assert(
+      hasDevWriteBoundaryContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasDevWriteBoundaryContract(codexCommandText(agentsDir, 'dev')),
+      'init: dev command 与 skill 包含 M3 写入边界契约'
+    );
+    assert(
+      hasDevAcceptanceContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasDevAcceptanceContract(codexCommandText(agentsDir, 'dev')),
+      'init: dev command 与 skill 包含 M3 产品验收视角'
+    );
+    assert(
       hasShipRoadmapContract(codexCommandSkillText(agentsDir, 'ship')) &&
         hasShipRoadmapContract(codexCommandText(agentsDir, 'ship')),
       'init: ship command 与 skill 包含 roadmap shipped 写回契约'
@@ -417,6 +452,16 @@ async function runScenario(manifest, {
       'init: review-all command 与 skill 包含 review report 契约'
     );
     assert(
+      hasReviewRepositionContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+        hasReviewRepositionContract(codexCommandText(agentsDir, 'review-all')),
+      'init: review-all command 与 skill 包含 M4 审查报告定位契约'
+    );
+    assert(
+      hasReviewAcceptanceContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+        hasReviewAcceptanceContract(codexCommandText(agentsDir, 'review-all')),
+      'init: review-all command 与 skill 包含 acceptance 风险审查契约'
+    );
+    assert(
       hasReviewSystemHealthContract(codexCommandSkillText(agentsDir, 'review-all')) &&
         hasReviewSystemHealthContract(codexCommandText(agentsDir, 'review-all')),
       'init: review-all command 与 skill 包含 system health review 契约'
@@ -425,6 +470,11 @@ async function runScenario(manifest, {
       hasReleaseReportContract(codexCommandSkillText(agentsDir, 'ship')) &&
         hasReleaseReportContract(codexCommandText(agentsDir, 'ship')),
       'init: ship command 与 skill 包含 release report 契约'
+    );
+    assert(
+      hasShipRiskContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasShipRiskContract(codexCommandText(agentsDir, 'ship')),
+      'init: ship command 与 skill 包含 M4 known risk 和高风险决策契约'
     );
 
     const initSkillNames = dirNames(skillsDir);
@@ -588,6 +638,16 @@ async function runScenario(manifest, {
       'update: dev command 与 skill 保留 M 级轻量 tasks.md checklist 契约'
     );
     assert(
+      hasDevWriteBoundaryContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasDevWriteBoundaryContract(codexCommandText(agentsDir, 'dev')),
+      'update: dev command 与 skill 保留 M3 写入边界契约'
+    );
+    assert(
+      hasDevAcceptanceContract(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasDevAcceptanceContract(codexCommandText(agentsDir, 'dev')),
+      'update: dev command 与 skill 保留 M3 产品验收视角'
+    );
+    assert(
       hasShipRoadmapContract(codexCommandSkillText(agentsDir, 'ship')) &&
         hasShipRoadmapContract(codexCommandText(agentsDir, 'ship')),
       'update: ship command 与 skill 保留 roadmap shipped 写回契约'
@@ -642,6 +702,16 @@ async function runScenario(manifest, {
       'update: review-all command 与 skill 保留 review report 契约'
     );
     assert(
+      hasReviewRepositionContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+        hasReviewRepositionContract(codexCommandText(agentsDir, 'review-all')),
+      'update: review-all command 与 skill 保留 M4 审查报告定位契约'
+    );
+    assert(
+      hasReviewAcceptanceContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+        hasReviewAcceptanceContract(codexCommandText(agentsDir, 'review-all')),
+      'update: review-all command 与 skill 保留 acceptance 风险审查契约'
+    );
+    assert(
       hasReviewSystemHealthContract(codexCommandSkillText(agentsDir, 'review-all')) &&
         hasReviewSystemHealthContract(codexCommandText(agentsDir, 'review-all')),
       'update: review-all command 与 skill 保留 system health review 契约'
@@ -650,6 +720,11 @@ async function runScenario(manifest, {
       hasReleaseReportContract(codexCommandSkillText(agentsDir, 'ship')) &&
         hasReleaseReportContract(codexCommandText(agentsDir, 'ship')),
       'update: ship command 与 skill 保留 release report 契约'
+    );
+    assert(
+      hasShipRiskContract(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasShipRiskContract(codexCommandText(agentsDir, 'ship')),
+      'update: ship command 与 skill 保留 M4 known risk 和高风险决策契约'
     );
     const updateCodexAgents = fileNames(join(codexDir, 'agents')).filter((name) => name.endsWith('.toml'));
     assert(updateCodexAgents.length === AGENT_COUNT, `update: Codex custom agents 仍 = ${AGENT_COUNT}`);

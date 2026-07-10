@@ -8,9 +8,17 @@
 |------|------|------|------|
 | **/check** | 快速查错 | 当前变更的文件，3 个维度 | < 1 分钟 |
 | **code-review skill** | 单文件深度审查 | 1 个文件，6 个维度 | 逐文件 |
-| **/review-all** | 跨文件分析 | 分支级，文件间关系 | 3-5 分钟 |
+| **/review-all** | 跨文件分析 + acceptance 风险 | 分支级，文件间关系和用户主流程 | 3-5 分钟 |
 
-/review-all 不重复做 /check 和 code-review 的事，只做它们做不了的：
+/review-all 不重复做 /check 和 code-review 的事，只做它们做不了的。它默认是审查和报告命令，不是修复命令；发现问题后优先输出 review report 和下一步修复任务，修复委托 `/fix` 或 `/dev` 执行。
+
+## Review 定位与修复边界
+
+- `/review-all` 负责判断当前变更是否可以合并、是否需要修复、是否被阻塞，并产出 `.claude/workspace/reviews/` 下的审查报告。
+- 结论只能使用 `pass` / `needs_fix` / `blocked`。
+- 自动修复只允许 tiny obvious fixes，例如文档中的明显错别字、格式损坏、测试快照中的机械更新；凡是会改变业务逻辑、接口契约、数据迁移、安全策略、产品验收或架构边界的问题，都必须交给 `/fix` 或 `/dev`。
+- 当结论为 `needs_fix` 时，报告必须列出建议的 `/fix` 或 `/dev` 命令、修复范围和验收命令。
+- 当结论为 `blocked` 时，报告必须说明阻塞原因、需要谁确认什么，以及最小解除阻塞动作。
 
 ## 审查范围
 
@@ -51,26 +59,28 @@
 
 2. Phase 1: /check 快检（单文件级）
    - 对每个变更文件跑 /check 逻辑（正确性 + 类型 + 边界）
-   - 发现问题 → 记录，不在此修复（留给后续自动修复阶段）
+   - 发现问题 → 记录，不在此修复（留给后续修复委托）
 
 3. Phase 2: 跨文件分析（本命令核心）
    - 变更完整性检查
    - 跨文件一致性检查
    - 历史回归检查
+   - acceptance 风险检查：是否存在“代码做了但用户流程不连贯、不可验证或不好用”的问题
 
 4. Phase 3: 整体评估
    - 架构层面：变更是否引入新的技术债
-   - 设计层面：是否符合 spec.md 中的设计方向
+   - 产品层面：用户主流程是否可完成，验收证据是否足够
+   - 设计层面：仅确认 UI 任务是否已触发 Designer；视觉体验由 Designer 检查，不由 Reviewer 重复审
 
 5. 输出报告
    - 按严重程度分类
    - 每个问题附带修复代码
 
-6. 自动修复（有问题时）
-   - 严重/中等问题 → 自动修
-   - 轻微问题 → 列出建议，用户决定
-   - 修完后重新审查，最多 2 轮
-   - 2 轮后仍有问题 → 列出剩余问题等用户决定
+6. 修复委托（有问题时）
+   - tiny obvious fixes → 可当场修复并记录
+   - 其他问题 → 不在 /review-all 中修，输出 needs_fix 并委托 /fix 或 /dev
+   - P0/P1、安全、架构、产品验收问题 → 不自动修，直接输出 blocked 或 needs_fix
+   - 修复完成后由用户或后续流程重新运行 /review-all
 ```
 
 ## System Health Review 流程
@@ -118,8 +128,9 @@ system health review 默认不直接修改代码。它可以生成修复任务�
 - 审查通过时，记录 `Gate 结果.review = pass`，写入审查范围、问题数、修复轮次和报告路径（如有）。
 - 更新时不要删除任务条目的验收标准、验收命令、阻塞原因、Gate 结果和产物字段。
 - 审查通过且任务需要发布时，将状态推进到 `release_gate`；无需发布的任务可推进到 `done`。
-- 审查发现问题但已自动修复通过时，记录 review gate 为 `pass`，并写明自动修复项。
-- 2 轮后仍有阻塞问题或需要用户决策时，将状态更新为 `blocked`，写明阻塞原因和下一步确认人。
+- 只有 tiny obvious fixes 被当场修复且重审通过时，记录 review gate 为 `pass`，并写明自动修复项。
+- 存在必须修复但未阻塞决策的问题时，将状态保持或更新为 `review_gate`，记录 `Gate 结果.review = needs_fix`，并写明委托的 `/fix` 或 `/dev`。
+- 存在阻塞问题或需要用户决策时，将状态更新为 `blocked`，写明阻塞原因和下一步确认人。
 
 `tasks.md` 状态必须使用：`ready` / `needs_clarification` / `planned` / `in_progress` / `local_gate` / `review_gate` / `release_gate` / `blocked` / `shipped` / `done`。
 
@@ -144,10 +155,12 @@ system health review 默认不直接修改代码。它可以生成修复任务�
 - **变更范围**：分支、对比基准、文件/目录范围、关键模块。
 - **问题列表**：每个问题包含文件、位置、说明、建议修复。
 - **严重度**：`critical` / `major` / `minor` / `suggestion`。
-- **自动修复项**：已自动修复的文件、原因和修复轮次。
+- **自动修复项**：仅记录 tiny obvious fixes 的文件、原因和修复轮次。
+- **委托修复**：当结论为 `needs_fix` 时，写明建议执行的 `/fix` 或 `/dev` 命令、修复范围和验收命令。
 - **剩余风险**：尚未修复或需要人工接受的风险。
 - **Gate 结果**：review gate 的 pass/fail、问题计数、修复轮次。
 - **系统健康**：当使用 `--system` 时，记录架构形状、产品验收、一致性、文档熵和建议清理项。
+- **Acceptance 风险**：记录用户主流程是否完整、验收证据是否可追溯，以及是否存在“做了但不好用”的风险；UI 体验问题引用 Designer 审查结论。
 - **Artifact Cleanup**：当发现文档重复、过期、路径漂移或 source-of-truth 冲突时，记录建议合并、归档、删除的文件；高影响删除必须请求 Owner Decision Brief。
 - **下一步**：进入 `/ship`、继续修复、等待用户确认或阻塞处理。
 
@@ -158,7 +171,7 @@ system health review 默认不直接修改代码。它可以生成修复任务�
 ```markdown
 ## Summary
 - status: completed / failed / blocked / skipped
-- affected files/modules: [本次审查范围、报告路径和自动修复文件]
+- affected files/modules: [本次审查范围、报告路径和 tiny obvious fixes 文件]
 - checks: [/check、跨文件审查、严重/中等/轻微问题数、修复轮次]
 - next action: [可以合并、进入 /ship、继续修复或等待用户决策]
 ```
@@ -202,7 +215,7 @@ system health review 默认不直接修改代码。它可以生成修复任务�
 | `status` | 是 | `completed` / `failed` / `blocked` / `skipped` |
 | `summary` | 是 | 一句话审查结论摘要 |
 | `checks` | 否 | 审查结果对象，如 `{"review":"pass","critical":0,"major":0}` |
-| `artifacts` | 否 | 审查报告、自动修复文件或关键变更路径数组 |
+| `artifacts` | 否 | 审查报告、tiny obvious fixes 文件或关键变更路径数组 |
 | `next` | 否 | 下一步建议，或 `null` |
 
 #### Metrics 扩展字段
@@ -317,7 +330,25 @@ git log --oneline → 相关提交历史
 - 升级依赖 → 检查是否有 breaking change 需要适配
 - 新增 MCP 工具 → 检查相关 agent 是否引用
 
-### 5. 系统健康和长期演化
+### 5. Acceptance 风险
+
+功能完成后，用户主流程真的可用吗？
+
+**检查方法**：
+- 对照 spec/tasks 的 acceptance 场景，确认目标用户、入口、主流程、成功结果和可观察证据都存在。
+- 检查 Summary 是否说明用户能看到或完成什么；内部任务应明确“不涉及用户主流程”。
+- 判断是否存在“代码完成但产品不可用”的缺口，例如入口缺失、状态不可见、失败路径无提示、验收命令无法证明主流程。
+- UI 任务只检查是否有 Designer 审查结论；视觉层次、配色、留白和交互体验由 Designer 负责，Reviewer 不重复审视觉。
+
+**常见问题**：
+```
+❌ API 已实现，但没有任何用户入口或调用路径
+❌ 表单能提交，但成功/失败状态对用户不可见
+❌ 验收只跑单元测试，无法证明核心用户流程可完成
+❌ UI 体验明显需要 Designer，但 review-all 用代码审查替代了设计审查
+```
+
+### 6. 系统健康和长期演化
 
 多轮变更后，项目整体形状是否仍然健康？
 
@@ -366,8 +397,8 @@ git log --oneline → 相关提交历史
 
 ### 变更完整性 🔴
 1. `UserService.create()` 签名变更，但 `auth.controller.ts:23` 未同步
-   → 修复：更新 controller 调用参数
-   **状态**：已自动修复
+   → 建议：执行 `/fix src/auth.controller.ts 更新 UserService.create 调用参数`
+   **状态**：委托修复
 
 ### 跨文件一致性 🟡
 1. `auth/login.ts` 用 AppError，但 `user/register.ts` 用 throw new Error
@@ -393,30 +424,27 @@ git log --oneline → 相关提交历史
 | 历史回归 | N/A | 首次审查 |
 | 依赖关系 | N/A | 无变更 |
 
-## 自动修复轮次
-- 第 1 轮：修复 1 个变更完整性问题
-- 第 2 轮：重新审查，无新增问题
-- 结论：✅ 通过（剩余 1 个一致性问题为建议项）
-
-## 修复记录
-- [x] src/auth.controller.ts:23 — 更新 create() 调用参数
-- [ ] src/user/register.ts:15 — 统一使用 AppError（建议）
+## 委托修复
+- [ ] `/fix src/auth.controller.ts 更新 UserService.create 调用参数`
+- [ ] `/dev 统一 auth/user 注册登录错误处理为 AppError`
+- 验收命令：`npm test`、`/review-all src/features/auth/`
+- 结论：needs_fix（修复后重新运行 `/review-all`）
 
 ## 剩余风险
-- `src/user/register.ts` 的错误处理不一致为建议项，不阻塞发布。
+- 修复前不能进入 `/ship`。
 
 ## Gate 结果
-- review: pass
+- review: needs_fix
 - critical: 0
-- major: 0
+- major: 1
 - minor: 1
-- fix rounds: 1
+- fix rounds: 0
 
 ## Summary
-- status: completed
+- status: blocked
 - affected files/modules: src/features/auth/, .claude/workspace/reviews/2026-07-09-auth.md
-- checks: review pass / critical 0 / major 0 / fix rounds 1
-- next action: 进入 /ship
+- checks: review needs_fix / critical 0 / major 1 / fix rounds 0
+- next action: 执行委托的 /fix 或 /dev 后重新 /review-all
 ```
 
 ## 后续动作
@@ -424,12 +452,13 @@ git log --oneline → 相关提交历史
 ### 审查通过
 - 输出："✅ 审查通过，可以合并"
 
-### 审查不通过（自动修复后通过）
-- 输出："✅ 已修复 N 个问题，审查通过，可以合并"
+### 审查不通过（需要修复）
+- 输出："⚠️ 审查发现 N 个问题，已写入 review report，建议执行 /fix 或 /dev"
+- 选项：按报告修复 / 请求 Owner 决策 / 暂缓合并
 
-### 审查不通过（2 轮后仍有问题）
-- 输出："🔴 2 轮修复后仍有 N 个问题，请决定处理方式"
-- 选项：继续修 / 先合并标记 TODO / 放弃
+### 审查阻塞
+- 输出："🔴 审查阻塞，原因是 X，需要 Y 确认 Z"
+- 选项：解除阻塞后重审 / 调整范围 / 暂停发布
 
 ## 审查原则
 

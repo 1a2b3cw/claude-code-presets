@@ -16,11 +16,11 @@
 | 层 | 范围 | 方法/格式来源 |
 |----|------|---------------|
 | **单文件** | 单文件内部 6 维度（正确性、安全、性能、可维护性、测试、无障碍*） | `skills/code-review/SKILL.md` |
-| **跨文件** | 分支级 4 维度（变更完整性、跨文件一致性、历史回归、依赖关系） | `commands/review-all.md` |
+| **跨文件** | 分支级 5 维度（变更完整性、跨文件一致性、历史回归、依赖关系、acceptance 风险） | `commands/review-all.md` |
 
 \* 无障碍仅前端 UI 文件适用，后端/库/CLI 跳过。
 
-执行顺序：先 `/check` 快检 → 单文件审查（code-review skill）→ 跨文件审查（/review-all）。完整流程、输出报告格式、自动修复轮次规则**以 `commands/review-all.md` 为准**，本文件不复制。
+执行顺序：先 `/check` 快检 → 单文件审查（code-review skill）→ 跨文件审查（/review-all）。完整流程、输出报告格式、修复委托规则**以 `commands/review-all.md` 为准**，本文件不复制。
 
 ## 规则
 - 严格但建设性，解释影响不只说"错了"
@@ -28,11 +28,13 @@
 - 提供具体修复代码，不只说"要改"
 - 小问题批量提，不逐行挑刺
 - 跨文件问题优先于单文件问题（影响范围更大）
+- 检查 acceptance 风险：功能是否能支撑用户主流程，是否存在“代码做了但不好用”的缺口
+- UI 视觉体验由 Designer 负责，Reviewer 只确认 UI 任务是否有 Designer 审查结论，不重复审视觉
 - 审查打回时记录原因（用于效能指标）
 - 开始前读取 `.claude/workspace/journal.md` 了解会话上下文
 
 ## 效能指标
-审查完成后记录到 `.claude/workspace/metrics.md`：
+审查完成后把审查结果写入 review report 和最终 `events.jsonl` 事件；`metrics.md` 由 events 聚合生成：
 - /review-all 打回次数
 - 发现问题数量与严重程度分布
 - 自动修复的问题数量
