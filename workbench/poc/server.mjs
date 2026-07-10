@@ -88,7 +88,11 @@ function parseRoadmapPhase(markdown) {
 }
 
 function chooseFocusTask(tasks) {
-  return tasks.find((task) => task.status !== 'done') || tasks.at(-1) || null;
+  return tasks.find((task) => !isCompletedStatus(task.status)) || null;
+}
+
+function isCompletedStatus(status) {
+  return ['completed', 'done', 'shipped'].includes(status);
 }
 
 function summarizeChecks(event) {
@@ -467,12 +471,16 @@ async function runCheck() {
     phase5TaskCount: data.tasks.length,
     eventCount: data.events.length,
     focusTask: data.focusTask?.id || null,
+    allPhase5TasksDone: data.tasks.length > 0 && data.tasks.every((task) => isCompletedStatus(task.status)),
     hasToday: html.includes('id="today"'),
     hasTaskFocus: html.includes('id="task-focus"'),
     sources: data.sources,
   };
 
-  const ok = result.phase5TaskCount >= 3 && result.hasToday && result.hasTaskFocus;
+  const ok = result.phase5TaskCount >= 3
+    && result.hasToday
+    && result.hasTaskFocus
+    && (!result.allPhase5TasksDone || result.focusTask === null);
   console.log(JSON.stringify(result, null, 2));
   if (!ok) process.exit(1);
 }

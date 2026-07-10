@@ -23,9 +23,8 @@ function run(command, args, options = {}) {
     encoding: 'utf8',
     stdio: options.capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
   };
-  const result = process.platform === 'win32'
-    ? spawnSync([command, ...args].join(' '), { ...spawnOptions, shell: true })
-    : spawnSync(command, args, spawnOptions);
+  const resolved = resolveCommand(command);
+  const result = spawnSync(resolved.command, [...resolved.args, ...args], spawnOptions);
 
   if (result.status !== 0) {
     if (options.capture) {
@@ -37,6 +36,36 @@ function run(command, args, options = {}) {
   }
 
   return result.stdout ?? '';
+}
+
+function resolveCommand(command) {
+  if (process.platform !== 'win32') {
+    return { command, args: [] };
+  }
+
+  if (command === 'node') {
+    return { command: process.execPath, args: [] };
+  }
+
+  if (command === 'npm') {
+    return { command: process.execPath, args: [findNpmCli()] };
+  }
+
+  return { command, args: [] };
+}
+
+function findNpmCli() {
+  const candidates = [
+    process.env.npm_execpath,
+    join(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+  ].filter(Boolean);
+
+  const npmCli = candidates.find((candidate) => existsSync(candidate));
+  if (!npmCli) {
+    throw new Error('unable to locate npm CLI for Windows tarball smoke test');
+  }
+
+  return npmCli;
 }
 
 function parsePackJson(stdout) {
