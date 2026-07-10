@@ -328,7 +328,7 @@
 
 ### T4.1 增加本地总门禁脚本
 
-- **状态**：todo
+- **状态**：done
 - **目标**：一条命令跑完 validate、test、pack dry-run。
 - **Prompt**：
 
