@@ -443,7 +443,7 @@
 
 ### T6.2 团队 standup 格式
 
-- **状态**：todo
+- **状态**：done
 - **Prompt**：
 
 ```text

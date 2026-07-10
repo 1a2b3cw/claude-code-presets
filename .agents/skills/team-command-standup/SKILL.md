@@ -143,6 +143,31 @@ In Codex, invoke this as `$team-command-standup`. Do not rely on `/standup` unle
 
 如果数据源缺失，Today 仍必须输出，并在对应字段标注“数据不足”，不要空着。
 
+### Standup 输出版本
+
+`/standup` 必须支持三种输出版本：开发者版、团队版、产品版。所有版本必须从同一组事实生成：`roadmap.md`、`tasks.md`、`.claude/workspace/events.jsonl`、review/release reports、metrics、journal 和 git。版本之间事实必须一致，只允许调整措辞、细节密度和排序。
+
+选择规则：
+
+- 默认输出开发者版。
+- 用户说“团队版”“team”“给团队看”时，输出团队版。
+- 用户说“产品版”“product”“给产品看”时，输出产品版。
+- 用户明确要求多个版本时，可以在同一次回复中按“开发者版 / 团队版 / 产品版”分段输出。
+- 如果版本意图不清，仍默认开发者版，并在数据源状态或输出标题中标注当前版本。
+
+版本字段：
+
+- **开发者版**：Today、当前任务、阻塞项、最近 run、checks/gates、下一条命令、数据源 warning。适合个人继续执行。
+- **团队版**：团队摘要、项目健康度、已完成/进行中/阻塞、需要 owner 或人工确认的事项、风险、下一组团队动作。适合站会同步。
+- **产品版**：产品进展、已交付/已完成的用户可见价值、范围变化与风险、发布就绪度、需要产品决策的问题、下一里程碑。适合面向产品或业务方。
+
+版本约束：
+
+- 同一任务的状态、阻塞原因、gate 结果和 Next Best Action 在不同版本中不得互相矛盾。
+- 团队版和产品版可以省略底层命令细节，但不能隐藏 blocker、failed gate 或需要人工确认的事项。
+- 产品版必须把技术任务翻译成用户价值或发布影响；无法判断用户价值时标注“数据不足”。
+- 团队版必须突出 owner/确认人；无法从 artifact 判断 owner 时写“待确认”。
+
 ### events.jsonl 契约
 
 每行是一个独立 JSON 对象，不允许跨行，不回写旧事件。
@@ -189,6 +214,7 @@ In Codex, invoke this as `$team-command-standup`. Do not rely on `/standup` unle
 ```markdown
 # 项目状态汇报
 日期：YYYY-MM-DD
+输出版本：开发者版 / 团队版 / 产品版
 
 ## Today
 - 今日焦点：[任务/模块/目标]
