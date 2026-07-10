@@ -155,7 +155,7 @@
 ### 生成规则
 
 | 项目状态 | Next Best Action |
-----------|------------------|
+|----------|------------------|
 | `blocked` | 指向解除阻塞的最小人工动作 |
 | `needs_setup` | 运行 `$team-command-project-preset` 或补齐 tasks/events |
 | `watch` 且有 review 打回 | 先修 review findings |
