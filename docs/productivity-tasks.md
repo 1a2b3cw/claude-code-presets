@@ -414,7 +414,7 @@
 
 ### T5.3 读取本地 artifact 的工作台 PoC
 
-- **状态**：todo
+- **状态**：done
 - **目标**：从 roadmap/tasks/events 读取真实状态。
 - **Prompt**：
 
