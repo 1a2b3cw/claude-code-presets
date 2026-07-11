@@ -115,6 +115,7 @@ Artifact location rules are defined in `docs/artifact-architecture.md`. In short
 | Artifact | Owns | Purpose |
 |----------|------|---------|
 | `product-brief.md` / `project-profile/product.md` | Product Lead | product definition, user, value, scope, non-goals |
+| `product-model.md` | Product Lead | user results, capabilities, journeys, product boundaries and success standards |
 | `roadmap.md` | Product Lead | product modules, priority, MVP, dependency, module status |
 | `spec.md` / `.claude/workspace/specs/<feature>.md` | Product Lead + Architect-Planner | feature value, scope, contract, acceptance |
 | `tasks.md` | Architect-Planner + Delivery Steward | current execution tasks, sequencing, clarity, and gate state |

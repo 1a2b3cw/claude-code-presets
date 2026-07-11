@@ -93,6 +93,7 @@
    - 读取 project-preset、roadmap、spec/tasks、architecture/ADR、review/release reports
 
 2. 架构形状检查
+   - `architecture.md` 的 Architecture Component ID、依赖方向、安全边界和兼容规则是否被 roadmap/spec 正确引用
    - 模块边界是否清晰
    - 依赖方向是否稳定
    - 是否出现循环依赖、万能模块、重复抽象、临时兼容层堆积

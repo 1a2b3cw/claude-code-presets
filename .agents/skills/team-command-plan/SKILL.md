@@ -26,9 +26,9 @@ In Codex, invoke this as `$team-command-plan`. Do not rely on `/plan` unless Cod
 
 ## 角色交接
 
-- **Product Lead**：确认目标用户、核心价值、MVP、非目标和推荐顺序；只把高影响取舍交给 Owner。
+- **Product Lead**：确认目标用户、核心价值、MVP、非目标和推荐顺序；存在 Product Model 时，先映射用户请求到能力和旅程；只把高影响取舍交给 Owner。
 - **Architect-Planner**：把已确认的产品路线转成模块、依赖、复杂度、技术风险和验收标准。
-- **Delivery Steward**：保证 Product Brief、roadmap、project-profile 与 project-preset 各自只有一个事实用途，不制造重复状态。
+- **Delivery Steward**：保证 Product Brief、Product Model、roadmap、project-profile 与 project-preset 各自只有一个事实用途，不制造重复状态。
 
 ## Owner Decision Brief 契约
 
@@ -68,6 +68,15 @@ In Codex, invoke this as `$team-command-plan`. Do not rely on `/plan` unless Cod
 3. `project-profile/product.md` 中明确标为事实或已确认决策的内容
 
 如果只有 `project-profile/product.md` 的推断或未决问题，必须向 Owner 确认后才写入 Product Brief；不得把推断当作产品事实。三个来源都不足时，先输出 Exploration Brief，再通过对话生成 `product-brief.md`，最后进入模块拆解。
+
+#### Product Model 读取规则
+
+存在根目录 `product-model.md` 时，在 Product Brief 后、roadmap 前读取它。Product Model 负责用户结果、`Capability ID`、`Journey ID`、产品边界和成功标准；它不替代 Product Brief 的定位，也不维护 roadmap 状态或 tasks。
+
+- 新请求先映射到已有 Capability ID 和 Journey ID，并解释它改善的用户结果。
+- 命中明确非目标或边界外请求时，先说明冲突、影响和推荐路线；不得静默塞进 MVP roadmap。
+- 只有 Owner 确认产品范围变化后，才把新能力写入 Product Model；AI 推断仍保留为待验证，不当作产品事实。
+- 没有 `product-model.md` 的项目沿 Product Brief 流程继续；不要在普通 `/plan` 调用中凭空生成复杂模型。
 
 #### Exploration Brief
 
@@ -130,12 +139,13 @@ Product Lead 先给出默认推荐，而不是把所有排序选择丢给 Owner�
 
 ### Phase 1: 功能模块拆解
 
-Product Lead 给出 MVP 与推荐顺序后，Architect-Planner 必须从 Product Brief 生成**功能模块**（不是细任务），输出 `roadmap.md`：
+Product Lead 给出 MVP 与推荐顺序后，Architect-Planner 必须从 Product Brief 和已有 Product Model 生成**功能模块**（不是细任务），输出 `roadmap.md`：
 
 - 每个模块：模块 ID、状态、名称、用户价值、MVP 归属、一句话描述、优先级、复杂度、依赖、验收标准、风险、最近更新
 - 按"先做地基、再做主干、最后做枝叶"排序
 - 标出 MVP 最小集（哪些模块凑齐就能跑通核心流程）
 - roadmap 顶部必须引用 Product Brief 的目标用户、核心价值、本期范围、明确不做和验收标准
+- 存在 Product Model 时，每个模块必须引用支撑的 Capability ID；feature spec 再引用 Capability ID 和 Journey ID
 - roadmap 是产品模块状态源，`/dev` 完成模块后必须更新对应模块状态和进度区
 
 输出后你确认。方案不对 → 调整，最多 3 轮。
@@ -204,13 +214,13 @@ Product Lead 给出 MVP 与推荐顺序后，Architect-Planner 必须从 Product
 
 ## 功能模块
 
-| 模块 ID | 状态 | 模块 | 用户价值 | MVP 归属 | 描述 | 优先级 | 复杂度 | 依赖 | 验收标准 | 风险 | 最近更新 |
-|---------|------|------|----------|----------|------|--------|--------|------|----------|------|----------|
-| M1 | planned | 用户认证 | 让用户安全进入自己的空间 | MVP | 邮箱注册登录 + JWT | P0 | L | 无 | 用户能注册、登录并获得有效会话 | 密码策略和会话过期边界需确认 | YYYY-MM-DD |
-| M2 | planned | 知识库管理 | 让用户管理可问答的资料 | MVP | 文档上传、列表、删除 | P0 | M | M1 | 登录用户能管理自己的文档 | 大文件上传限制需确认 | YYYY-MM-DD |
-| M3 | planned | 向量检索 | 让提问能找到相关资料 | MVP | 文档分块嵌入 + 语义搜索 | P0 | L | M2 | 能对已上传文档返回相关片段 | 嵌入模型成本和中文效果不确定 | YYYY-MM-DD |
-| M4 | planned | 问答界面 | 让用户获得带来源的答案 | MVP | 提问 + 流式回答 + 引用来源 | P0 | M | M3 | 用户能基于文档提问并看到引用 | 流式输出兼容性需验证 | YYYY-MM-DD |
-| M5 | planned | 多人协作 | 让团队共享资料和权限 | 非 MVP | 团队空间、权限 | P2 | XL | M1,M2 | 团队成员能按权限协作 | 权限模型容易扩大范围 | YYYY-MM-DD |
+| 模块 ID | 状态 | 模块 | Capability ID | 用户价值 | MVP 归属 | 描述 | 优先级 | 复杂度 | 依赖 | 验收标准 | 风险 | 最近更新 |
+|---------|------|------|---------------|----------|----------|------|--------|--------|------|----------|------|----------|
+| M1 | planned | 用户认证 | C1 | 让用户安全进入自己的空间 | MVP | 邮箱注册登录 + JWT | P0 | L | 无 | 用户能注册、登录并获得有效会话 | 密码策略和会话过期边界需确认 | YYYY-MM-DD |
+| M2 | planned | 知识库管理 | C2 | 让用户管理可问答的资料 | MVP | 文档上传、列表、删除 | P0 | M | M1 | 登录用户能管理自己的文档 | 大文件上传限制需确认 | YYYY-MM-DD |
+| M3 | planned | 向量检索 | C2 | 让提问能找到相关资料 | MVP | 文档分块嵌入 + 语义搜索 | P0 | L | M2 | 能对已上传文档返回相关片段 | 嵌入模型成本和中文效果不确定 | YYYY-MM-DD |
+| M4 | planned | 问答界面 | C2 | 让用户获得带来源的答案 | MVP | 提问 + 流式回答 + 引用来源 | P0 | M | M3 | 用户能基于文档提问并看到引用 | 流式输出兼容性需验证 | YYYY-MM-DD |
+| M5 | planned | 多人协作 | C3 | 让团队共享资料和权限 | 非 MVP | 团队空间、权限 | P2 | XL | M1,M2 | 团队成员能按权限协作 | 权限模型容易扩大范围 | YYYY-MM-DD |
 
 > 状态：planned / in_progress / blocked / done / shipped
 > 优先级：P0 必须 ｜ P1 重要 ｜ P2 锦上添花

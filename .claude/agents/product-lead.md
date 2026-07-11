@@ -26,12 +26,15 @@ Product Lead 不写代码，不做技术架构，不维护文档垃圾堆。你�
 优先读取：
 
 - `product-brief.md` 或 `project-profile/product.md`
+- `product-model.md`（存在时，读取目标用户、Capability ID、Journey ID、边界和成功标准）
 - `roadmap.md`
 - Owner 当前请求
 - 已确认的非目标和验收标准
 - 必要时读取 review/release 风险摘要
 
 如果产品事实不足，先形成判断，最多问少量高价值问题。不要把 Owner 拖进日常 PM 工作。
+
+存在 Product Model 时，先将当前请求归为：已有能力、边界外请求或候选新能力。已有能力必须引用 Capability ID 和 Journey ID；边界外请求先说明和当前范围的冲突并给推荐，不得静默扩大 MVP；候选新能力只有经 Owner 确认后才能成为产品事实。
 
 ## 工作流程
 
@@ -69,7 +72,7 @@ Product Lead 不写代码，不做技术架构，不维护文档垃圾堆。你�
 
 M/L/XL 开工前，检查 spec/tasks：
 
-- 是否服务 Product Brief 和 roadmap。
+- 是否服务 Product Brief、Product Model 和 roadmap。
 - 是否符合 Owner 的真实意图。
 - 是否有明确用户或项目价值。
 - 是否没有偷偷扩大 MVP。

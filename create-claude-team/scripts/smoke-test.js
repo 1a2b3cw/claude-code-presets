@@ -39,6 +39,10 @@ const EVENT_COMMANDS = ['dev', 'check', 'review-all', 'ship', 'standup'];
 const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
 const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journal.md', 'git log', '下一步建议', '重复问题/流程改进建议'];
 const PRODUCT_BRIEF_REQUIRED_TEXT = ['product-brief.md', 'prd.md', '目标用户', '核心价值', '本期范围', '明确不做', '验收标准'];
+const PRODUCT_MODEL_PLAN_TEXT = ['product-model.md', 'Capability ID', 'Journey ID', '边界外请求', '不得静默'];
+const PRODUCT_MODEL_ROLE_TEXT = ['product-model.md', 'Capability ID', 'Journey ID'];
+const ARCHITECTURE_CONTEXT_TEXT = ['architecture.md', 'Architecture Component ID', '依赖方向', '安全边界', '兼容'];
+const ARCHITECTURE_DECISION_TEXT = '不得只用普通建议';
 const PLANNING_UPGRADE_PLAN_TEXT = ['Product Lead', '用户价值', 'MVP 归属', '推荐顺序', 'Product Brief 来源优先级', 'project-profile/product.md'];
 const EXPLORATION_BRIEF_PLAN_TEXT = ['Exploration Brief', '不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '当前请求其实是局部功能或修复', '不得只用普通“下一步”问题或散文选项代替'];
 const EXPLORATION_BRIEF_PRODUCT_LEAD_TEXT = ['不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '不能只用普通“下一步”问题代替'];
@@ -116,6 +120,22 @@ function hasSummaryContract(text) {
 
 function hasProductBriefContract(text) {
   return PRODUCT_BRIEF_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasProductModelPlanContract(text) {
+  return PRODUCT_MODEL_PLAN_TEXT.every((part) => text.includes(part));
+}
+
+function hasProductModelRoleContract(text) {
+  return PRODUCT_MODEL_ROLE_TEXT.every((part) => text.includes(part));
+}
+
+function hasArchitectureContextContract(text) {
+  return ARCHITECTURE_CONTEXT_TEXT.every((part) => text.includes(part));
+}
+
+function hasArchitectureDecisionContract(text) {
+  return text.includes(ARCHITECTURE_DECISION_TEXT);
 }
 
 function hasPlanningUpgradePlanContract(text) {
@@ -431,6 +451,21 @@ async function runScenario(manifest, {
           hasProductBriefContract(projectPresetCommand),
         'init: plan/project-preset command 与 skill 包含 Product Brief 契约'
       );
+      const architect = readFileSync(join(claudeDir, 'agents', 'architect-planner.md'), 'utf8');
+      const deliverySteward = readFileSync(join(claudeDir, 'agents', 'delivery-steward.md'), 'utf8');
+      const codexArchitect = readFileSync(join(agentsDir, 'agents', 'architect-planner.md'), 'utf8');
+      const codexDeliverySteward = readFileSync(join(agentsDir, 'agents', 'delivery-steward.md'), 'utf8');
+      assert(
+        hasProductModelPlanContract(planSkill) &&
+          hasProductModelPlanContract(planCommand) &&
+          hasProductModelPlanContract(productLead) &&
+          hasProductModelPlanContract(codexProductLead) &&
+          hasProductModelRoleContract(architect) &&
+          hasProductModelRoleContract(codexArchitect) &&
+          hasProductModelRoleContract(deliverySteward) &&
+          hasProductModelRoleContract(codexDeliverySteward),
+        'init: plan 与核心角色包含 N2 Product Model 契约'
+      );
       assert(
         hasPlanningUpgradePlanContract(planSkill) &&
           hasPlanningUpgradePlanContract(planCommand) &&
@@ -453,6 +488,25 @@ async function runScenario(manifest, {
         hasRoadmapContract(codexCommandText(agentsDir, 'dev')),
       'init: plan/dev command 与 skill 包含 roadmap 状态源契约'
     );
+    {
+      const architect = readFileSync(join(claudeDir, 'agents', 'architect-planner.md'), 'utf8');
+      const deliverySteward = readFileSync(join(claudeDir, 'agents', 'delivery-steward.md'), 'utf8');
+      const codexArchitect = readFileSync(join(agentsDir, 'agents', 'architect-planner.md'), 'utf8');
+      const codexDeliverySteward = readFileSync(join(agentsDir, 'agents', 'delivery-steward.md'), 'utf8');
+      assert(
+        hasArchitectureContextContract(codexCommandSkillText(agentsDir, 'dev')) &&
+          hasArchitectureDecisionContract(codexCommandSkillText(agentsDir, 'dev')) &&
+          hasArchitectureContextContract(codexCommandText(agentsDir, 'dev')) &&
+          hasArchitectureDecisionContract(codexCommandText(agentsDir, 'dev')) &&
+          hasArchitectureContextContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+          hasArchitectureContextContract(codexCommandText(agentsDir, 'review-all')) &&
+          hasArchitectureContextContract(architect) &&
+          hasArchitectureContextContract(codexArchitect) &&
+          hasArchitectureContextContract(deliverySteward) &&
+          hasArchitectureContextContract(codexDeliverySteward),
+        'init: dev/review 与核心角色包含 N3 Architecture Context 契约'
+      );
+    }
     assert(
       SUMMARY_COMMANDS.every((commandName) => {
         return hasTasksContract(codexCommandSkillText(agentsDir, commandName)) &&
@@ -689,6 +743,25 @@ async function runScenario(manifest, {
         hasProductBriefContract(codexCommandText(agentsDir, 'project-preset')),
       'update: plan/project-preset command 与 skill 保留 Product Brief 契约'
     );
+    {
+      const productLead = readFileSync(join(claudeDir, 'agents', 'product-lead.md'), 'utf8');
+      const architect = readFileSync(join(claudeDir, 'agents', 'architect-planner.md'), 'utf8');
+      const deliverySteward = readFileSync(join(claudeDir, 'agents', 'delivery-steward.md'), 'utf8');
+      const codexProductLead = readFileSync(join(agentsDir, 'agents', 'product-lead.md'), 'utf8');
+      const codexArchitect = readFileSync(join(agentsDir, 'agents', 'architect-planner.md'), 'utf8');
+      const codexDeliverySteward = readFileSync(join(agentsDir, 'agents', 'delivery-steward.md'), 'utf8');
+      assert(
+        hasProductModelPlanContract(codexCommandSkillText(agentsDir, 'plan')) &&
+          hasProductModelPlanContract(codexCommandText(agentsDir, 'plan')) &&
+          hasProductModelPlanContract(productLead) &&
+          hasProductModelPlanContract(codexProductLead) &&
+          hasProductModelRoleContract(architect) &&
+          hasProductModelRoleContract(codexArchitect) &&
+          hasProductModelRoleContract(deliverySteward) &&
+          hasProductModelRoleContract(codexDeliverySteward),
+        'update: plan 与核心角色保留 N2 Product Model 契约'
+      );
+    }
     assert(
       hasPlanningUpgradePlanContract(codexCommandSkillText(agentsDir, 'plan')) &&
         hasPlanningUpgradePlanContract(codexCommandText(agentsDir, 'plan')) &&
@@ -714,6 +787,25 @@ async function runScenario(manifest, {
         hasRoadmapContract(codexCommandText(agentsDir, 'dev')),
       'update: plan/dev command 与 skill 保留 roadmap 状态源契约'
     );
+    {
+      const architect = readFileSync(join(claudeDir, 'agents', 'architect-planner.md'), 'utf8');
+      const deliverySteward = readFileSync(join(claudeDir, 'agents', 'delivery-steward.md'), 'utf8');
+      const codexArchitect = readFileSync(join(agentsDir, 'agents', 'architect-planner.md'), 'utf8');
+      const codexDeliverySteward = readFileSync(join(agentsDir, 'agents', 'delivery-steward.md'), 'utf8');
+      assert(
+        hasArchitectureContextContract(codexCommandSkillText(agentsDir, 'dev')) &&
+          hasArchitectureDecisionContract(codexCommandSkillText(agentsDir, 'dev')) &&
+          hasArchitectureContextContract(codexCommandText(agentsDir, 'dev')) &&
+          hasArchitectureDecisionContract(codexCommandText(agentsDir, 'dev')) &&
+          hasArchitectureContextContract(codexCommandSkillText(agentsDir, 'review-all')) &&
+          hasArchitectureContextContract(codexCommandText(agentsDir, 'review-all')) &&
+          hasArchitectureContextContract(architect) &&
+          hasArchitectureContextContract(codexArchitect) &&
+          hasArchitectureContextContract(deliverySteward) &&
+          hasArchitectureContextContract(codexDeliverySteward),
+        'update: dev/review 与核心角色保留 N3 Architecture Context 契约'
+      );
+    }
     assert(
       SUMMARY_COMMANDS.every((commandName) => {
         return hasTasksContract(codexCommandSkillText(agentsDir, commandName)) &&

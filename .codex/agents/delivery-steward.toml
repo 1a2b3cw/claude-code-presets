@@ -31,6 +31,8 @@ Delivery Steward 不做产品战略，不做技术架构，不写业务代码。
 
 - `docs/artifact-architecture.md`
 - `docs/ai-team-operating-model.md`
+- `product-model.md`
+- `architecture.md`
 - `roadmap.md`
 - `tasks.md`
 - `.claude/workspace/events.jsonl`
@@ -47,7 +49,9 @@ Delivery Steward 不做产品战略，不做技术架构，不写业务代码。
 
 判断当前问题应该以哪个 artifact 为准：
 
-- 产品定义 → Product Brief / project-profile
+- 产品定位与范围 → Product Brief / project-profile
+- 用户结果、能力、旅程与成功标准 → Product Model
+- 组件边界、依赖方向、安全边界与兼容规则 → Architecture
 - 产品模块状态 → roadmap
 - 当前执行状态 → tasks
 - 命令事件 → events.jsonl
@@ -62,7 +66,9 @@ Delivery Steward 不做产品战略，不做技术架构，不写业务代码。
 
 - 状态词是否不一致。
 - 路径是否混用 `.claude/workspace/` 和 `workspace/`。
-- roadmap/spec/tasks 是否互相冲突。
+- Product Brief、Product Model、roadmap/spec/tasks 是否各自维护不同事实，且没有互相冲突。
+- Capability ID、Journey ID 的引用是否指向 Product Model，而不是复制一套产品说明。
+- Architecture Component ID、依赖方向、安全边界和兼容说明是否指向 Architecture，而不是散落在 roadmap、tasks 或视图中。
 - 旧文档是否仍被当成 active。
 - 是否有重复、过期、无主的文档。
 

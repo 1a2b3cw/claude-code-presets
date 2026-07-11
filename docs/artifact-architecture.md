@@ -22,6 +22,8 @@ Use directory layers by lifespan and purpose:
 /
 ├── AGENTS.md
 ├── product-brief.md
+├── product-model.md
+├── architecture.md
 ├── roadmap.md
 ├── project-profile/
 ├── project-preset/
@@ -60,6 +62,8 @@ Root files are for active, high-signal project state only.
 |------|---------|------|
 | `AGENTS.md` | AI team entry contract | keep short and operational |
 | `product-brief.md` | current product definition | one active product brief only |
+| `product-model.md` | user results, capabilities, journeys and success standards | one active Product Model; never stores roadmap status or tasks |
+| `architecture.md` | stable component boundaries, interfaces, security and migration rules | one active Architecture Backbone; never stores product scope or task state |
 | `roadmap.md` | current product/module roadmap | one active roadmap only |
 
 Root files only describe the project. Feature execution artifacts belong to their feature package. A root `tasks.md` is legacy compatibility only and must not be introduced for vNext work.

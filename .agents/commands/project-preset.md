@@ -43,6 +43,7 @@
 无论哪种入口，都必须先形成或读取 Product Brief：
 
 - 优先读取 `product-brief.md`
+- 如果存在，也读取 `product-model.md`，但只把已确认的用户结果、能力、旅程和边界写入项目画像；不复制 roadmap 状态或 tasks。
 - 其次读取 `prd.md`
 - `project-profile/product.md` 只作为补充来源：已确认事实和决策可补充 Product Brief，推断和未决问题必须保留原标签
 - 新项目没有上述文件时，在生成 `project-profile/` 前先创建并由 Owner 确认 `product-brief.md`

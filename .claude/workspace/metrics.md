@@ -7,8 +7,8 @@
 
 ## 摘要
 
-- 事件总数：30
-- 最近事件：completed: 完成 N1 共同探索与决策，Codex A1-A4 dogfood 与跨文件审查均通过
+- 事件总数：32
+- 最近事件：completed: 完成 N2 产品模型，Codex B1/B2 dogfood 与跨文件审查均通过
 - 最近 10 条非 standup 事件：10
 
 ## 最近 10 次任务
@@ -16,8 +16,8 @@
 | 指标 | 平均值 | 状态 |
 |------|--------|------|
 | specRejectCount | 0 | healthy |
-| checkIssueCount | 0.60 | healthy |
-| checkFixRounds | 0.60 | healthy |
+| checkIssueCount | 0.70 | healthy |
+| checkFixRounds | 0.70 | healthy |
 | reviewRejectCount | 0 | healthy |
 | testFailureCount | 0 | healthy |
 
@@ -28,4 +28,4 @@
 ## 原始数据
 
 - 来源：`.claude/workspace/events.jsonl`
-- 生成时间：2026-07-11T03:11:56.242Z
+- 生成时间：2026-07-11T03:26:58.159Z
