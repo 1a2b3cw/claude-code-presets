@@ -1,11 +1,11 @@
 # AI 开发团队框架成熟化任务清单
 
 > 本任务清单对应 `docs/maturity-roadmap.md`。
-> 当前主线：M2/M3/M4 已完成并通过审查，下一步进入 M5 Trustworthy State Tools。
+> 当前主线：M6 Workbench As View 已完成，下一步进入 dogfood 和下一轮产品化路线规划。
 
 ## 当前主线
 
-Phase M5：Trustworthy State Tools。
+Phase M6：Workbench As View 已完成。
 
 优先级：
 
@@ -350,21 +350,45 @@ Phase M5：Trustworthy State Tools。
 
 ### M5.1 `create-claude-team status`
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P1
 - **目标**：从本地 artifact 输出项目状态 JSON 和人类摘要。
+- **产物**：`create-claude-team/cli.js`、`create-claude-team/lib/state-tools.js`、`create-claude-team/scripts/smoke-test.js`、`README.md`、`USAGE.md`。
+- **验收命令**：`node create-claude-team/cli.js status`、`node create-claude-team/cli.js status --json`、`npm test`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass。
+- **验收标准**：
+  - 能读取 `.claude/workspace/events.jsonl`、`docs/maturity-tasks.md` 和 workspace 关键 artifact。
+  - 支持人类摘要和 `--json` 机器可读输出。
+  - 输出当前主线、下一任务、最近事件和 events/metrics/journal 状态。
 
 ### M5.2 `create-claude-team events validate`
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P1
 - **目标**：校验 events JSONL、必填字段、状态枚举、artifact 引用。
+- **产物**：`create-claude-team/cli.js`、`create-claude-team/lib/state-tools.js`、`create-claude-team/scripts/smoke-test.js`。
+- **验收命令**：`node create-claude-team/cli.js events validate`、`npm test`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass。
+- **验收标准**：
+  - 校验每行 JSON、必填字段、状态枚举和时间格式。
+  - 校验 artifact 必须为仓库相对路径且存在。
+  - 校验失败时返回非零退出码并列出问题。
 
 ### M5.3 `create-claude-team metrics update`
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P2
 - **目标**：从 events 聚合 metrics，不再依赖手工维护。
+- **产物**：`create-claude-team/cli.js`、`create-claude-team/lib/state-tools.js`、`create-claude-team/scripts/smoke-test.js`、`.claude/workspace/metrics.md`。
+- **验收命令**：`node create-claude-team/cli.js metrics update --dry-run`、`node create-claude-team/cli.js metrics update`、`npm test`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass。
+- **验收标准**：
+  - 从非 standup 事件聚合最近 10 次任务指标。
+  - 生成 `metrics.md` 人类可读摘要，并明确 events 是机器事实来源。
+  - 支持 `--dry-run` 预览不写入。
 
 ---
 
@@ -372,15 +396,31 @@ Phase M5：Trustworthy State Tools。
 
 ### M6.1 Workbench 读取可信状态
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P2
 - **目标**：Workbench 只读 status/reports，不做主流程事实源。
+- **产物**：`workbench/poc/server.mjs`、`workbench/poc/README.md`。
+- **验收命令**：`node workbench/poc/server.mjs --check`、`node create-claude-team/cli.js status --json`、`npm test`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass。
+- **验收标准**：
+  - Workbench 使用 `create-claude-team/lib/state-tools.js` 读取当前主线、下一任务和 events 校验状态。
+  - Workbench 只读 `.claude/workspace/*` 与 legacy release fallback，不写 artifact。
+  - `--check` 能证明页面包含今日、任务、运行、证据和可信状态。
 
 ### M6.2 Artifact Cleanup 视图
 
-- **状态**：planned
+- **状态**：done
 - **优先级**：P2
 - **目标**：展示 Delivery Steward 建议合并、归档、删除的文档。
+- **产物**：`workbench/poc/server.mjs`、`workbench/poc/README.md`。
+- **验收命令**：`node workbench/poc/server.mjs --check`。
+- **阻塞原因**：无。
+- **Gate 结果**：local pass。
+- **验收标准**：
+  - 页面有 Artifact Cleanup 区块。
+  - 存在 `.claude/workspace/cleanup/*.md` 时展示最新报告和建议。
+  - 不存在 cleanup 报告时展示明确空状态，不制造新的事实源。
 
 ---
 
@@ -393,7 +433,14 @@ Phase M5：Trustworthy State Tools。
 5. M1.7 统一 workspace 路径和状态词
 6. M1.8 把 Workbench 降级为后续视图层
 7. M2.1 升级 `/plan` 为 Product Lead 主导
-8. M5.1 `create-claude-team status`
+8. M6.1 Workbench 读取可信状态
+9. M6.2 Artifact Cleanup 视图
+
+## 当前后续建议
+
+1. 用 Workbench dogfood 当前项目，记录真实阻塞、下一步建议是否准确。
+2. 根据 dogfood 结果决定继续打磨 Workbench，或规划 M7 Dogfood And Open Source。
+3. legacy `workspace/` artifact 先保持只读兼容，迁移或归档需 Owner 确认。
 
 ## 通用开工模板
 

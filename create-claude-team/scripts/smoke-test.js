@@ -7,7 +7,7 @@
  * 不依赖任何测试框架，纯 node 断言 + 退出码。
  */
 
-import { mkdtempSync, rmSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -15,9 +15,11 @@ import { spawnSync } from 'node:child_process';
 import { init } from '../lib/init.js';
 import { missingPresetMcpServers, update } from '../lib/update.js';
 import { readPresetCatalog } from '../lib/presets.js';
+import { buildStatus, updateMetrics, validateEvents } from '../lib/state-tools.js';
 import { validateProject } from '../lib/validate.js';
 import { validateSkills } from '../lib/skill-contracts.js';
 import { toCodexText } from '../lib/codex/text.js';
+import { buildCodexAgentToml } from '../lib/codex/agents.js';
 
 const PUBLIC_SKILLS = ['architecture', 'code-review', 'debugging', 'performance', 'project-planning', 'skill-curator', 'testing', 'ui-prototype'];
 const PUBLIC_RULES = ['git.md', 'design.md'];
@@ -38,6 +40,8 @@ const SUMMARY_COMMANDS = ['dev', 'check', 'review-all', 'ship'];
 const STANDUP_REQUIRED_TEXT = ['roadmap.md', 'tasks.md', 'events.jsonl', 'journal.md', 'git log', '下一步建议', '重复问题/流程改进建议'];
 const PRODUCT_BRIEF_REQUIRED_TEXT = ['product-brief.md', 'prd.md', '目标用户', '核心价值', '本期范围', '明确不做', '验收标准'];
 const PLANNING_UPGRADE_PLAN_TEXT = ['Product Lead', '用户价值', 'MVP 归属', '推荐顺序', 'Product Brief 来源优先级', 'project-profile/product.md'];
+const EXPLORATION_BRIEF_PLAN_TEXT = ['Exploration Brief', '不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '当前请求其实是局部功能或修复', '不得只用普通“下一步”问题或散文选项代替'];
+const EXPLORATION_BRIEF_PRODUCT_LEAD_TEXT = ['不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '不能只用普通“下一步”问题代替'];
 const PLANNING_UPGRADE_PRESET_TEXT = ['project-preset/rules/', '不得在 `project-preset/` 内创建 `.agents/` 或 `.claude/` 子目录', '未确认推断', '只写已确认的项目差异'];
 const ROADMAP_REQUIRED_TEXT = ['模块 ID', '状态', '依赖', '验收标准', '风险', '最近更新', 'planned', 'in_progress', 'blocked', 'done', 'shipped'];
 const TASKS_REQUIRED_TEXT = ['tasks.md', 'ready', 'needs_clarification', 'planned', 'in_progress', 'local_gate', 'review_gate', 'release_gate', 'blocked', 'shipped', 'done', '阻塞原因', 'Gate 结果', '验收命令'];
@@ -116,6 +120,14 @@ function hasProductBriefContract(text) {
 
 function hasPlanningUpgradePlanContract(text) {
   return PLANNING_UPGRADE_PLAN_TEXT.every((part) => text.includes(part));
+}
+
+function hasExplorationBriefPlanContract(text) {
+  return EXPLORATION_BRIEF_PLAN_TEXT.every((part) => text.includes(part));
+}
+
+function hasExplorationBriefProductLeadContract(text) {
+  return EXPLORATION_BRIEF_PRODUCT_LEAD_TEXT.every((part) => text.includes(part));
 }
 
 function hasPlanningUpgradePresetContract(text) {
@@ -232,6 +244,63 @@ function runHook(scriptPath, payload) {
     input: JSON.stringify(payload),
     encoding: 'utf8',
   });
+}
+
+function writeFixtureEvents(root) {
+  const workspace = join(root, '.claude', 'workspace');
+  const artifactDir = join(root, 'docs');
+  const reviewDir = join(workspace, 'reviews');
+  mkdirSync(workspace, { recursive: true });
+  mkdirSync(artifactDir, { recursive: true });
+  mkdirSync(reviewDir, { recursive: true });
+  writeFileSync(join(artifactDir, 'maturity-tasks.md'), [
+    '## 当前主线',
+    '',
+    'Phase M5：Trustworthy State Tools。',
+    '',
+    '### M5.1 `create-claude-team status`',
+    '',
+    '- **状态**：planned',
+    '',
+  ].join('\n'));
+  writeFileSync(join(artifactDir, 'sample.md'), '# sample\n');
+  writeFileSync(join(reviewDir, 'sample.md'), '# review\n');
+  writeFileSync(join(workspace, 'events.jsonl'), [
+    JSON.stringify({
+      time: '2026-07-10T10:00:00Z',
+      command: '/dev',
+      task: 'M5.1',
+      taskId: 'M5.1',
+      level: 'M',
+      status: 'completed',
+      summary: 'completed: status fixture',
+      checks: { test: 'pass' },
+      specRejectCount: 0,
+      checkIssueCount: 1,
+      checkFixRounds: 0,
+      reviewRejectCount: 0,
+      testFailureCount: 0,
+      artifacts: ['docs/sample.md'],
+      next: 'M5.2',
+    }),
+    JSON.stringify({
+      time: '2026-07-10T10:05:00Z',
+      command: '/review-all',
+      task: 'M5',
+      taskId: 'M5',
+      level: 'L',
+      status: 'completed',
+      summary: 'completed: review fixture',
+      checks: { review: 'pass' },
+      specRejectCount: 0,
+      checkIssueCount: 0,
+      checkFixRounds: 0,
+      reviewRejectCount: 0,
+      testFailureCount: 0,
+      artifacts: ['.claude/workspace/reviews/sample.md'],
+      next: 'metrics update',
+    }),
+  ].join('\n') + '\n');
 }
 
 // 静默 init/update 的日志，保持测试输出干净
@@ -351,6 +420,8 @@ async function runScenario(manifest, {
     {
       const planSkill = codexCommandSkillText(agentsDir, 'plan');
       const planCommand = codexCommandText(agentsDir, 'plan');
+      const productLead = readFileSync(join(claudeDir, 'agents', 'product-lead.md'), 'utf8');
+      const codexProductLead = readFileSync(join(agentsDir, 'agents', 'product-lead.md'), 'utf8');
       const projectPresetSkillText = codexCommandSkillText(agentsDir, 'project-preset');
       const projectPresetCommand = codexCommandText(agentsDir, 'project-preset');
       assert(
@@ -366,6 +437,13 @@ async function runScenario(manifest, {
           hasPlanningUpgradePresetContract(projectPresetSkillText) &&
           hasPlanningUpgradePresetContract(projectPresetCommand),
         'init: plan/project-preset command 与 skill 包含 M2 规划与边界契约'
+      );
+      assert(
+        hasExplorationBriefPlanContract(planSkill) &&
+          hasExplorationBriefPlanContract(planCommand) &&
+          hasExplorationBriefProductLeadContract(productLead) &&
+          hasExplorationBriefProductLeadContract(codexProductLead),
+        'init: plan/Product Lead 包含 N1 共同探索契约'
       );
     }
     assert(
@@ -618,6 +696,17 @@ async function runScenario(manifest, {
         hasPlanningUpgradePresetContract(codexCommandText(agentsDir, 'project-preset')),
       'update: plan/project-preset command 与 skill 保留 M2 规划与边界契约'
     );
+    {
+      const productLead = readFileSync(join(claudeDir, 'agents', 'product-lead.md'), 'utf8');
+      const codexProductLead = readFileSync(join(agentsDir, 'agents', 'product-lead.md'), 'utf8');
+      assert(
+        hasExplorationBriefPlanContract(codexCommandSkillText(agentsDir, 'plan')) &&
+          hasExplorationBriefPlanContract(codexCommandText(agentsDir, 'plan')) &&
+          hasExplorationBriefProductLeadContract(productLead) &&
+          hasExplorationBriefProductLeadContract(codexProductLead),
+        'update: plan/Product Lead 保留 N1 共同探索契约'
+      );
+    }
     assert(
       hasRoadmapContract(codexCommandSkillText(agentsDir, 'plan')) &&
         hasRoadmapContract(codexCommandText(agentsDir, 'plan')) &&
@@ -767,6 +856,8 @@ await silent(() => validateProject());
 assert(true, 'validate: manifest / skill 结构通过');
 
 console.log('\n[Codex 文本重写]');
+const escapedAgentToml = buildCodexAgentToml('reviewer', 'Markdown footnote: \\* applies to UI only.');
+assert(escapedAgentToml.includes('Markdown footnote: \\\\* applies to UI only.'), 'Codex agent TOML: 反斜杠被正确转义');
 {
   const rewritten = toCodexText([
     '见 `rules/design.md` 和 `commands/taste.md`。',
@@ -831,6 +922,55 @@ console.log('\n[Hook 行为测试]');
     runHook(bashHook, { tool_input: { command: 'npm run validate' } }).status === 0,
     'bash-check: 普通命令不误拦'
   );
+}
+
+console.log('\n[M5 状态工具]');
+{
+  const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-state-'));
+  try {
+    writeFixtureEvents(tmp);
+
+    let eventsOk = false;
+    try {
+      await silent(() => validateEvents({ cwd: tmp }));
+      eventsOk = true;
+    } catch {
+      eventsOk = false;
+    }
+    assert(eventsOk, 'events validate: JSONL 和 artifact 引用通过');
+
+    const status = await buildStatus({ cwd: tmp });
+    assert(
+      status.currentMain === 'Phase M5：Trustworthy State Tools。' &&
+        status.nextPlannedTask?.id === 'M5.1' &&
+        status.workspace.events.validation === 'pass',
+      'status: 从本地 artifact 输出当前主线、下一任务和 events 状态'
+    );
+
+    await silent(() => updateMetrics({ cwd: tmp }));
+    const metricsText = readFileSync(join(tmp, '.claude', 'workspace', 'metrics.md'), 'utf8');
+    assert(
+      metricsText.includes('create-claude-team metrics update') &&
+        metricsText.includes('checkIssueCount') &&
+        metricsText.includes('events.jsonl 是机器事实来源'),
+      'metrics update: 从 events 聚合 metrics.md'
+    );
+
+    const statusCli = spawnSync(process.execPath, [cli, 'status', '--json'], { cwd: tmp, encoding: 'utf8' });
+    assert(
+      statusCli.status === 0 && JSON.parse(statusCli.stdout).workspace.events.validation === 'pass',
+      'cli status --json: 输出可解析 JSON'
+    );
+
+    const eventsCli = spawnSync(process.execPath, [cli, 'events', 'validate'], { cwd: tmp, encoding: 'utf8' });
+    assert(eventsCli.status === 0 && eventsCli.stdout.includes('events 校验通过'), 'cli events validate: 通过有效事件日志');
+
+    const metricsCli = spawnSync(process.execPath, [cli, 'metrics', 'update', '--dry-run'], { cwd: tmp, encoding: 'utf8' });
+    assert(metricsCli.status === 0 && metricsCli.stdout.includes('最近 10 次任务'), 'cli metrics update --dry-run: 输出聚合摘要');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 }
 
 for (const manifest of readPresetCatalog()) {

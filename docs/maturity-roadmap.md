@@ -207,4 +207,4 @@ M1 Team Operating Model
 
 ## 当前下一步
 
-继续执行 `docs/maturity-tasks.md` 的 M5 任务，把状态读取和事件校验做成可信工具。Workbench 保持 M6 / backlog 视图层，不作为当前主线。
+M6 已把 Workbench 接到可信状态工具输出。下一步根据 dogfood 结果决定继续打磨 Workbench，或进入新的产品化路线规划。

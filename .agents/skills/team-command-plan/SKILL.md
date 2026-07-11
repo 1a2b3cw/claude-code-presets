@@ -59,15 +59,38 @@ In Codex, invoke this as `$team-command-plan`. Do not rely on `/plan` unless Cod
 
 ## 流程
 
-### Phase 0: Product Brief / PRD（产品契约）
+### Phase 0: 共同探索 -> Product Brief（产品契约）
 
-在拆解 roadmap 之前，Product Lead 必须先沉淀轻量 Product Brief。Product Brief 来源优先级是：
+在拆解 roadmap 之前，Product Lead 必须先完成共同探索，再沉淀轻量 Product Brief。Product Brief 来源优先级是：
 
 1. 已确认的 `product-brief.md`
 2. 已确认的 `prd.md`
 3. `project-profile/product.md` 中明确标为事实或已确认决策的内容
 
-如果只有 `project-profile/product.md` 的推断或未决问题，必须向 Owner 确认后才写入 Product Brief；不得把推断当作产品事实。三个来源都不足时，通过对话生成 `product-brief.md`，再进入模块拆解。
+如果只有 `project-profile/product.md` 的推断或未决问题，必须向 Owner 确认后才写入 Product Brief；不得把推断当作产品事实。三个来源都不足时，先输出 Exploration Brief，再通过对话生成 `product-brief.md`，最后进入模块拆解。
+
+#### Exploration Brief
+
+不以固定问卷开场。AI 先根据 Owner 已经表达的想法、困惑、约束或不满意体验进行综合判断，然后给出一份短而有判断力的 Exploration Brief：
+
+- **一句话理解**：AI 认为当前真正要解决的问题。
+- **已确认信号**：Owner 已经明确表达的事实、偏好和约束。
+- **AI 推断**：AI 基于信号提出、但允许 Owner 纠正的判断。
+- **需要验证**：会改变产品方向的重要未知项；不列日常实现细节。
+- **候选方向**：复杂问题给 2-4 条有实质差异的路线；简单问题可以只给推荐路线。
+- **推荐方案**：明确说明推荐什么、为什么，以及主要代价。
+- **下一步**：继续形成 Product Brief，或只请 Owner 决定一个高影响问题。
+
+默认先给结论和推荐，再按需展开依据。首轮不重复 Owner 原话，不输出长表格，也不把“你想怎么做”丢回给 Owner。
+
+#### 提问与决策规则
+
+- 每轮默认只问 0-2 个高价值问题，只有答案会明显改变产品方向、成本、安全、隐私或长期架构时才问。
+- 信息不足但存在安全默认时，标记为 AI 推断 后沿推荐路线继续，不立即暂停。
+- 命中 Owner Decision Brief 触发条件时，必须在 Exploration Brief 后按固定格式输出 Owner Decision Brief，并先给默认推荐；不得只用普通“下一步”问题或散文选项代替。
+- 目标冲突时，先指出冲突并提出可行的取舍，不把冲突隐藏在后续 tasks 中。
+- 当前请求其实是局部功能或修复 时，说明原因并建议 `/dev` 或 `/fix`，不强行启动产品规划。
+- 用户说“继续”时，沿已给出的推荐推进，不重新询问已经确认的信息。
 
 #### Product Brief 字段
 
@@ -88,18 +111,11 @@ In Codex, invoke this as `$team-command-plan`. Do not rely on `/plan` unless Cod
 
 #### 生成规则
 
-- 如果已有 `product-brief.md` / `prd.md`，先复述关键信息并标出缺失字段，再询问是否补齐。
-- 如果没有产品契约，AI 问 3-4 个问题：
-
-1. **目标用户是谁？** — 给谁用，决定功能取舍
-2. **核心价值是什么？** — 这产品最不能少的那一件事
-3. **范围边界？** — 这一期要做什么、明确不做什么（防止范围膨胀）
-4. **有无硬约束？** — 技术栈、合规、上线时间、预算
-
-你可以一次性回答。AI 输出一句话摘要让你确认：
-> "你要做的是：[一句话产品定义]，核心用户是 [X]，这一期聚焦 [Y]，明确不做 [Z]"
-
-确认后写入或更新 `product-brief.md`，再进入 Phase 1。否决 → 调整，最多 3 轮。
+- 如果已有 `product-brief.md` / `prd.md`，先给出已确认信号、AI 推断 和真正缺失的高影响信息；不要重跑固定问题清单。
+- 如果没有产品契约，先给 Exploration Brief。只有 Owner 接受推荐或确认其中的安全默认后，才把内容写入 Product Brief。
+- Product Brief 只写已确认事实；AI 推断 和需要验证 保留在未决问题或 Decision Brief 中，不能伪装成 Owner 决策。
+- 简单明确的想法可以直接给一句产品定义、核心流程和 MVP 建议；复杂想法先确认高影响取舍，再补齐 Product Brief 字段。
+- Owner 否决推荐时，先解释新的理解与之前不同在哪里，再调整路线；最多 3 轮。
 
 ### Phase 0.5: Product Lead 推荐路线
 

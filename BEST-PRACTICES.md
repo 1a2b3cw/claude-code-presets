@@ -23,7 +23,7 @@
 
 **两个隐形帮手**（你不用管，AI 自动用）：
 - **安全 hooks**：每次写代码前自动扫注入/XSS/硬编码密钥，危险 Bash 命令直接拦
-- **会话记忆**：`workspace/journal.md` 记录做过什么，新会话自动续上下文
+- **会话记忆**：`.claude/workspace/journal.md` 记录做过什么，新会话自动续上下文
 
 ---
 
@@ -380,6 +380,9 @@ npx create-claude-team init --preset ai-app            # AI / Python
 npx create-claude-team init --preset ai-app --lang typescript  # AI / TS
 npx create-claude-team init --preset mobile-app        # Mobile / Expo
 npx create-claude-team update                                     # 升级配置
+npx create-claude-team status                                     # 查看当前项目状态
+npx create-claude-team events validate                            # 校验事件日志
+npx create-claude-team metrics update                             # 聚合效能摘要
 ```
 
 ---

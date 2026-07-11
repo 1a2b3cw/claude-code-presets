@@ -26,14 +26,14 @@
 
 | 来源 | 说明 | 第一版优先级 |
 |------|------|--------------|
-| 手工清单 | `workspace/projects.json` 或 `workspace/projects.md` | 高 |
+| 手工清单 | `.claude/workspace/projects.json` 或 `.claude/workspace/projects.md` | 高 |
 | 当前工作区子目录 | 扫描指定根目录下包含 `AGENTS.md` 或 `.claude/` 的目录 | 中 |
 | Git remotes | 从项目目录读取 `git remote -v` | 中 |
 | GitHub organization | 后续通过 GitHub API 发现 repo | 低，T6 不实现 |
 
 ### 推荐清单格式
 
-`workspace/projects.json`：
+`.claude/workspace/projects.json`：
 
 ```json
 [
@@ -71,7 +71,7 @@
 | Tasks | `tasks.md`、`docs/productivity-tasks.md` | 当前任务、阻塞、验收命令 |
 | Events | `.claude/workspace/events.jsonl` | 最近 run、checks、next action、失败恢复 |
 | Metrics | `.claude/workspace/metrics.md` | 趋势和流程改进信号 |
-| Reports | `workspace/reviews/`、`workspace/releases/` | 审查、发布、回滚证据 |
+| Reports | `.claude/workspace/reviews/`、`.claude/workspace/releases/` | 审查、发布、回滚证据 |
 | Git | `git status`、`git log`、`git remote -v` | 工作区是否干净、远端同步、最近提交 |
 
 ### 读取顺序
@@ -211,8 +211,8 @@
 
 后续如果项目数量增加，再引入：
 
-- `workspace/project-index.json`：项目清单和最后读取时间。
-- `workspace/project-state-cache.json`：派生状态缓存，可随时重建。
+- `.claude/workspace/project-index.json`：项目清单和最后读取时间。
+- `.claude/workspace/project-state-cache.json`：派生状态缓存，可随时重建。
 - 手动刷新：重新读取所有项目。
 - 增量刷新：只刷新最近变更的项目。
 
@@ -226,7 +226,7 @@
 
 ## 验收标准
 
-- 给定 `workspace/projects.json` 后，可以定义每个项目应读取哪些 artifact。
+- 给定 `.claude/workspace/projects.json` 后，可以定义每个项目应读取哪些 artifact。
 - 能说明项目健康度如何从 tasks/events/reports/git 派生。
 - 能说明阻塞项、最近活动、下一步建议的字段和来源。
 - 缺少 artifact 的项目不会被误判为 healthy，而是进入 `needs_setup`。

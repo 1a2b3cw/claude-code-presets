@@ -19,8 +19,8 @@ T7.2 只做文档契约，不实现自动推荐器、不自动修改 `.agents/ru
 |--------|------------|------|
 | `.claude/workspace/events.jsonl` | `checkIssueCount`、`checkFixRounds`、`reviewRejectCount`、`testFailureCount`、`failureRecovery`、`estimateHours`、`actualHours` | 机器事实来源 |
 | `.claude/workspace/metrics.md` | 最近 5/10 次趋势摘要 | 人类可读趋势 |
-| `workspace/reviews/*.md` | finding、severity、剩余风险 | 审查打回原因 |
-| `workspace/releases/*.md` | release gate、风险、回滚 | 发布失败或风险来源 |
+| `.claude/workspace/reviews/*.md` | finding、severity、剩余风险 | 审查打回原因 |
+| `.claude/workspace/releases/*.md` | release gate、风险、回滚 | 发布失败或风险来源 |
 | `docs/productivity-tasks.md` / `tasks.md` | blocked、Gate 结果、验收命令 | 当前任务上下文 |
 | `.agents/rules/` / `project-preset/rules/` | 已有规则文本 | 判断是否缺规则或规则过重 |
 
@@ -106,8 +106,8 @@ T7.2 只做文档契约，不实现自动推荐器、不自动修改 `.agents/ru
 
 | 路径 | 用途 |
 |------|------|
-| `workspace/rule-recommendations/YYYY-MM-DD-<scope>.md` | 单次推荐报告 |
-| `workspace/rule-recommendations/index.md` | 可选总览 |
+| `.claude/workspace/rule-recommendations/YYYY-MM-DD-<scope>.md` | 单次推荐报告 |
+| `.claude/workspace/rule-recommendations/index.md` | 可选总览 |
 | `.claude/workspace/events.jsonl` | 记录推荐生成、实现或拒绝事件 |
 
 T7.2 不要求创建实际推荐报告，只定义路径和格式。

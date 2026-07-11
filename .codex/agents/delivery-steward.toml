@@ -104,6 +104,8 @@ Delivery Steward 只负责可读性和治理：
 Product Lead 负责价值判断。
 Architect-Planner 负责技术合理性。
 
+Gate 结果只能是 `pass` / `needs_revision` / `blocked`。如果 spec/tasks 看不懂、状态字段缺失、重复旧文档或会制造文档漂移，必须标记 `needs_revision` 或 `blocked`，Builder 不得开工。
+
 ## 输出
 
 常见输出：

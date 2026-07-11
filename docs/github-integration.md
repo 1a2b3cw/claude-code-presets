@@ -72,7 +72,7 @@ GitHub label 只表达快照；发生冲突时，以 `tasks.md` 为准，并在 
 
 ### 输入来源
 
-- `workspace/reviews/YYYY-MM-DD-<scope>.md`
+- `.claude/workspace/reviews/YYYY-MM-DD-<scope>.md`
 - `.claude/workspace/events.jsonl` 中对应 `/review-all` event
 - `git diff` 或 PR 文件列表
 
@@ -116,7 +116,7 @@ GitHub label 只表达快照；发生冲突时，以 `tasks.md` 为准，并在 
 
 ### 输入来源
 
-- `workspace/releases/YYYY-MM-DD-<version-or-scope>.md`
+- `.claude/workspace/releases/YYYY-MM-DD-<version-or-scope>.md`
 - `.claude/workspace/events.jsonl` 中对应 `/ship` event
 - merged PR 列表或 git log
 

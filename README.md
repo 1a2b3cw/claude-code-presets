@@ -24,7 +24,7 @@
 | **Specs** | 预设专用 | 技术栈详细参考（AI 按需读取；base 不叠加） |
 | **Hook** | 2 个 | 代码安全检查（Write/Edit）、Bash 命令拦截 |
 | **Codex 入口** | 5 类 | `AGENTS.md`、`.agents/skills`、`.codex/config.toml`、`.codex/hooks`、`.codex/agents` |
-| **CLI 工具** | 1 个 | `npx create-claude-team init` 一行命令初始化 |
+| **CLI 工具** | 1 个 | `init/update/validate/status/events/metrics` 一组本地项目工具 |
 
 ## 快速开始
 
@@ -59,11 +59,20 @@ npx create-claude-team init --preset mobile-app
 ### 更新配置
 
 ```bash
-# 更新到最新版（保留 settings.json 和 workspace）
+# 更新到最新版（保留 settings.json 和 .claude/workspace）
 npx create-claude-team update
 
 # 校验 preset / skill / manifest 完整性
 npx create-claude-team validate
+
+# 读取本地 artifact，输出项目状态
+npx create-claude-team status
+
+# 校验 events JSONL 和 artifact 引用
+npx create-claude-team events validate
+
+# 从 events 聚合 metrics.md
+npx create-claude-team metrics update
 ```
 
 ### 验证
@@ -175,7 +184,7 @@ S 级：直接写代码 → 完成
 ├── commands/              # 9 个斜杠命令
 ├── rules/                 # 公共规则（git、design）+ 预设规则
 ├── specs/                 # 详细技术参考（预设专用，AI 按需读取）
-├── workspace/             # 会话记忆
+├── workspace/             # canonical team state / reports
 │   ├── journal.md         # AI 自动追加会话日志
 │   └── metrics.md         # 效能指标
 └── hooks/                 # 安全钩子（Node，跨平台）

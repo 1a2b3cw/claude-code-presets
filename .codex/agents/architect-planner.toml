@@ -103,7 +103,7 @@ Architect-Planner 只负责其中的技术合理性：
 Product Lead 负责判断“值不值得做、是不是 Owner 想要的”。
 Delivery Steward 负责判断“是否可读、可追踪、不会制造文档漂移”。
 
-Gate 未通过时，Builder 不得开工。
+Gate 结果只能是 `pass` / `needs_revision` / `blocked`。Gate 未通过时，Builder 不得开工；Architect-Planner 必须说明技术方案、依赖顺序、任务粒度或验收命令中哪一项需要修订。
 
 ## 输出
 

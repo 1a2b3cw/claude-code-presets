@@ -53,4 +53,4 @@ description: 系统化调试方法（语言无关）——复现、缩小范围�
 - 一次只改一处
 - 修完写测试防回归
 - 不假设，用证据验证
-- 记录根因和解决方案（写入 `workspace/journal.md`）
+- 记录根因和解决方案（写入 `.claude/workspace/journal.md`）

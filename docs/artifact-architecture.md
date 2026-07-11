@@ -23,7 +23,6 @@ Use directory layers by lifespan and purpose:
 ├── AGENTS.md
 ├── product-brief.md
 ├── roadmap.md
-├── tasks.md
 ├── project-profile/
 ├── project-preset/
 ├── preview/
@@ -35,7 +34,12 @@ Use directory layers by lifespan and purpose:
 │   ├── workbench/
 │   └── archive/
 └── .claude/workspace/
-    ├── specs/
+    ├── features/
+    │   └── <module>/
+    │       ├── spec.md
+    │       ├── tasks.md
+    │       └── review.md
+    ├── specs/              # legacy flat feature specs
     ├── reviews/
     ├── releases/
     ├── decisions/
@@ -57,9 +61,18 @@ Root files are for active, high-signal project state only.
 | `AGENTS.md` | AI team entry contract | keep short and operational |
 | `product-brief.md` | current product definition | one active product brief only |
 | `roadmap.md` | current product/module roadmap | one active roadmap only |
-| `tasks.md` | current iteration tasks | one active task list only |
 
-Do not put historical plans, old task lists, or exploratory notes at root. Archive or move them into `.claude/workspace/archive/`.
+Root files only describe the project. Feature execution artifacts belong to their feature package. A root `tasks.md` is legacy compatibility only and must not be introduced for vNext work.
+
+## Feature Packages
+
+Each roadmap module owns one execution package under `.claude/workspace/features/<module>/`:
+
+- `spec.md` defines the module contract and links to Product Brief, roadmap and architecture.
+- `tasks.md` defines only the work needed for that spec.
+- `review.md` records validation and planning-quality findings for that module.
+
+The roadmap records the active package path. N4 will update all generic commands and state readers to resolve tasks from that path; until then, a module-specific prompt must name the package explicitly.
 
 ## `project-profile/`
 
@@ -120,6 +133,7 @@ Active execution memory and machine-readable state.
 
 | Path | Purpose |
 |------|---------|
+| `.claude/workspace/features/<module>/` | feature-owned spec, tasks and review artifacts |
 | `.claude/workspace/specs/` | feature specs for current or recent work |
 | `.claude/workspace/reviews/` | review reports |
 | `.claude/workspace/releases/` | release reports |
@@ -149,7 +163,10 @@ Do not mix product planning or task tracking into `preview/`.
 Use predictable names:
 
 ```text
-.claude/workspace/specs/YYYY-MM-DD-<feature>.md
+.claude/workspace/features/<module>/spec.md
+.claude/workspace/features/<module>/tasks.md
+.claude/workspace/features/<module>/review.md
+.claude/workspace/specs/YYYY-MM-DD-<feature>.md  # legacy flat spec
 .claude/workspace/reviews/YYYY-MM-DD-<scope>.md
 .claude/workspace/releases/YYYY-MM-DD-<version-or-scope>.md
 .claude/workspace/decisions/YYYY-MM-DD-<decision>.md

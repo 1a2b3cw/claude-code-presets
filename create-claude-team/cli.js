@@ -2,6 +2,7 @@
 
 import { parseArgs } from 'node:util';
 import { init } from './lib/init.js';
+import { printStatus, updateMetrics, validateEvents } from './lib/state-tools.js';
 import { update } from './lib/update.js';
 import { validateProject } from './lib/validate.js';
 import {
@@ -30,6 +31,9 @@ const HELP = `
 ${presetUsage}
     npx create-claude-team update                        更新到最新版
     npx create-claude-team validate                      校验配置完整性
+    npx create-claude-team status [--json]                读取本地 artifact，输出项目状态
+    npx create-claude-team events validate                校验 events JSONL 和 artifact 引用
+    npx create-claude-team metrics update                 从 events 聚合 metrics.md
     npx create-claude-team --help                        显示帮助
 
   选项:
@@ -37,11 +41,15 @@ ${presetUsage}
     --lang     语言变体（${LANGS.join(' | ') || '无'}）
     --force    强制覆盖已存在的 .claude/ 目录，并重新同步 Codex 入口
     --dry-run  预览操作，不实际修改文件
+    --json     status 输出 JSON
 
   示例:
 ${presetExamples}
     npx create-claude-team update
     npx create-claude-team validate
+    npx create-claude-team status
+    npx create-claude-team events validate
+    npx create-claude-team metrics update
 `;
 
 const { values, positionals } = parseArgs({
@@ -51,6 +59,7 @@ const { values, positionals } = parseArgs({
     lang: { type: 'string' },
     force: { type: 'boolean', default: false },
     'dry-run': { type: 'boolean', default: false },
+    json: { type: 'boolean', default: false },
     help: { type: 'boolean', short: 'h', default: false },
   },
   allowPositionals: true,
@@ -96,6 +105,21 @@ try {
       break;
     case 'validate':
       await validateProject();
+      break;
+    case 'status':
+      await printStatus({ json: values.json });
+      break;
+    case 'events':
+      if (positionals[1] !== 'validate') {
+        throw new Error('未知 events 子命令。可用: events validate');
+      }
+      await validateEvents();
+      break;
+    case 'metrics':
+      if (positionals[1] !== 'update') {
+        throw new Error('未知 metrics 子命令。可用: metrics update');
+      }
+      await updateMetrics({ dryRun: values['dry-run'] });
       break;
     default:
       console.error(`未知命令: ${command}`);

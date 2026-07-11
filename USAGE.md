@@ -41,6 +41,10 @@ npx create-claude-team init --preset mobile-app        # Expo / React Native
 
 npx create-claude-team update                                     # 升级（保留 settings/workspace）
 npx create-claude-team validate                                   # 校验 preset / skill / manifest
+npx create-claude-team status                                     # 读取本地 artifact 输出项目状态
+npx create-claude-team status --json                              # 输出机器可读状态 JSON
+npx create-claude-team events validate                            # 校验 events JSONL 和 artifact 引用
+npx create-claude-team metrics update                             # 从 events 聚合 metrics.md
 npx create-claude-team init --dry-run                             # 预览不写入
 npx create-claude-team init --force                               # 覆盖已存在的 .claude/ 并同步 Codex 入口
 ```
@@ -54,13 +58,15 @@ npx create-claude-team init --force                               # 覆盖已存
   + 语言叠加（仅 AI）   → lang/<python|typescript>/ 的 rules/specs 合并进来
   + MCP 合并            → preset.mcp.json 合并进 .mcp.json
   + 写 .preset 标记     → 记录预设名 + 语言（update 据此刷新）
-  + 建 workspace/       → journal.md + metrics.md
+  + 建 .claude/workspace/ → journal.md + metrics.md
   + 同步 Codex 入口      → AGENTS.md + .agents/ + .codex/config.toml + .codex/agents + .codex/hooks
 ```
 
-`update` 只刷新 agents/skills/commands/rules/specs/hooks 和 CLAUDE.md，并同步 `AGENTS.md`、`.agents/`、`.codex/`；**保留** settings.json、.mcp.json、workspace/（CLAUDE.md 覆盖前自动备份 .bak）。
+`update` 只刷新 agents/skills/commands/rules/specs/hooks 和 CLAUDE.md，并同步 `AGENTS.md`、`.agents/`、`.codex/`；**保留** settings.json、.mcp.json、`.claude/workspace/`（CLAUDE.md 覆盖前自动备份 .bak）。
 
 `validate` 会检查 preset manifest、`preset.mcp.json`、rules/specs 声明、skill frontmatter 和 skill 数量，适合在发版或合并前运行。
+
+`status`、`events validate` 和 `metrics update` 都只读取当前项目的本地 artifact；`metrics update` 会把 `.claude/workspace/events.jsonl` 聚合成 `.claude/workspace/metrics.md`。
 
 ---
 
@@ -77,7 +83,7 @@ npx create-claude-team init --force                               # 覆盖已存
 ├── commands/          # 9 个斜杠命令
 ├── rules/             # 始终加载的必守规则
 ├── specs/             # 详细技术参考（AI 按需读取）
-├── workspace/         # journal.md（会话记忆）+ metrics.md（效能）
+├── workspace/         # canonical team state：journal.md + metrics.md + reports
 └── hooks/             # security-check.mjs + bash-check.mjs（Node）
 
 AGENTS.md              # Codex 入口指令（从 CLAUDE.md 同步生成）

@@ -1,5 +1,7 @@
 # AI 开发交付自动化与提效路线图
 
+> 状态：superseded/reference。当前成熟化事实源是 `docs/maturity-roadmap.md` 和 `docs/maturity-tasks.md`；本文保留为历史思路参考，文中的旧 `workspace/` 路径不代表当前规范。
+>
 > 本文档聚焦“如何把做产品、做项目、写代码、审查、发布、复盘变得更自动化、更可追踪、更省心”。
 > 它不是 preset 扩展路线。preset 只是底座，真正目标是形成一套 AI 驱动的软件交付系统。
 

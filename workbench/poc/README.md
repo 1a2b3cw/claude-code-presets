@@ -1,6 +1,6 @@
 # Workbench PoC
 
-本目录是 Phase 5 的本地 artifact PoC。它只读本仓库里的 Markdown/JSONL 文件，不写数据库、不接云服务、不修改 CLI。
+本目录是本地项目驾驶舱 PoC。它只读本仓库里的可信状态 artifact，不写数据库、不接云服务、不修改项目状态。
 
 ## 运行
 
@@ -22,14 +22,27 @@ node workbench/poc/server.mjs --check
 
 ## 数据源
 
+- `docs/maturity-roadmap.md`
+- `docs/maturity-tasks.md`
 - `docs/productivity-roadmap.md`
 - `docs/productivity-tasks.md`
 - `.claude/workspace/events.jsonl`
+- `.claude/workspace/reviews/*.md`
+- `.claude/workspace/releases/*.md`
+- `.claude/workspace/cleanup/*.md`
+- `.claude/workspace/dogfood.md`
+- `create-claude-team/lib/state-tools.js`
+
+代码仍保留对旧 `workspace/releases/*.md` 和 `workspace/dogfood.md` 的只读 fallback，用于打开未迁移的历史项目；本仓库的当前事实源已经迁到 `.claude/workspace/`。
 
 ## 当前范围
 
-- Today：当前阶段、焦点任务、阻塞数、最近 run、下一步建议。
-- Task Focus：Phase 5 当前任务、目标、状态、任务队列和进度。
+- 今日：可信状态、阻塞、审查、发布、最近运行和下一步动作。
+- 任务：点击任务查看目标、验收和复制任务命令。
+- 运行：点击运行记录查看检查结果。
+- 证据：查看 review/release 报告、artifact 和 failureRecovery。
+- 清理：展示 Delivery Steward 的 Artifact Cleanup 报告或空状态。
+- all-done：当前任务集全部完成时，给出发布确认、dogfood、复盘或下一轮动作。
 
 ## 不做
 

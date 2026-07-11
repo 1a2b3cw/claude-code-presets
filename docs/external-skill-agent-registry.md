@@ -15,8 +15,8 @@ T7.1 只定义文档和模板，不实现自动安装、不拉取远程代码、
 
 | 路径 | 用途 |
 |------|------|
-| `workspace/ecosystem/registry.md` | 当前项目的人类可读 registry |
-| `workspace/ecosystem/candidates/<slug>.md` | 单个候选项评估记录 |
+| `.claude/workspace/ecosystem/registry.md` | 当前项目的人类可读 registry |
+| `.claude/workspace/ecosystem/candidates/<slug>.md` | 单个候选项评估记录 |
 | `docs/templates/external-skill-agent-entry.md` | 可复制的候选项模板 |
 
 第一版可以只维护 Markdown；未来需要机器读取时，再增加 JSONL 或 frontmatter。
@@ -50,7 +50,7 @@ T7.1 只定义文档和模板，不实现自动安装、不拉取远程代码、
 | Agent | 需要角色边界、长期职责或独立上下文 | `.agents/agents/<name>.md` 或 `.codex/agents/<name>.toml` |
 | Rule | 应一直遵守的项目约束 | `.agents/rules/<name>.md` 或 `project-preset/rules/` |
 | Command doc | 一条可执行流程入口 | `.agents/commands/<name>.md` |
-| Template | 可复制的 artifact 格式 | `docs/templates/` 或 `workspace/templates/` |
+| Template | 可复制的 artifact 格式 | `docs/templates/` 或 `.claude/workspace/templates/` |
 | Reference | 只作为资料，不进入执行流程 | `docs/` 或候选记录 |
 
 默认优先采纳为 reference/template/rule，只有明确有重复流程价值时才升级为 skill 或 agent。

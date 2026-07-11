@@ -38,5 +38,8 @@ function tomlString(value) {
 }
 
 function tomlMultilineString(value) {
-  return `"""\n${String(value).replaceAll('"""', '\\"\\"\\"')}\n"""`;
+  const escaped = String(value)
+    .replaceAll('\\', '\\\\')
+    .replaceAll('"""', '\\"\\"\\"');
+  return `"""\n${escaped}\n"""`;
 }
