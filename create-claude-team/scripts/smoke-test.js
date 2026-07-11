@@ -1400,6 +1400,7 @@ console.log('\n[N6 变更影响与完整性]');
 {
   const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
   const tmp = mkdtempSync(join(tmpdir(), 'cct-change-'));
+  const missingAffectedTmp = mkdtempSync(join(tmpdir(), 'cct-change-affected-'));
   const architectureTmp = mkdtempSync(join(tmpdir(), 'cct-change-architecture-'));
   const incompleteTmp = mkdtempSync(join(tmpdir(), 'cct-change-incomplete-'));
   try {
@@ -1417,6 +1418,15 @@ console.log('\n[N6 变更影响与完整性]');
     assert(valid.status === 'pass', 'change validate: 完整体验 Brief 通过');
     const delivery = validateDeliveryPreflight({ cwd: tmp, target: 'N1', taskId: 'N1.1', changePath: validBrief });
     assert(delivery.status === 'pass', 'delivery preflight: 可携带通过的 Change Impact Brief');
+
+    writeDeliveryFixture(missingAffectedTmp);
+    const missingAffectedBrief = writeChangeBrief(missingAffectedTmp);
+    writeFileSync(missingAffectedBrief, readFileSync(missingAffectedBrief, 'utf8').replace('> Affected Components：A4', '> Affected Components：A2'));
+    const missingAffected = validateChangeBrief({ cwd: missingAffectedTmp, path: missingAffectedBrief });
+    assert(
+      missingAffected.status === 'needs_revision' && missingAffected.issues.some((issue) => issue.code === 'affected_component_mismatch'),
+      'change validate: 拒绝漏掉目标模块核心受影响组件的 Brief'
+    );
 
     writeDeliveryFixture(architectureTmp);
     const architectureBrief = writeChangeBrief(architectureTmp, {
@@ -1438,6 +1448,7 @@ console.log('\n[N6 变更影响与完整性]');
     );
   } finally {
     rmSync(tmp, { recursive: true, force: true });
+    rmSync(missingAffectedTmp, { recursive: true, force: true });
     rmSync(architectureTmp, { recursive: true, force: true });
     rmSync(incompleteTmp, { recursive: true, force: true });
   }

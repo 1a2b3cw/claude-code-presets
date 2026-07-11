@@ -170,6 +170,10 @@ export function validateChangeBrief({ cwd = process.cwd(), path } = {}) {
     if (!expectedComponents.every((component) => declaredComponents.includes(component))) {
       addIssue(issues, 'component_mismatch', `Architecture Component ID 必须包含 ${module['Architecture Component ID']}`, '引用 Target Module 对应的 Architecture Component ID。');
     }
+    const affectedComponents = splitValues(metadata['Affected Components']);
+    if (!expectedComponents.every((component) => affectedComponents.includes(component))) {
+      addIssue(issues, 'affected_component_mismatch', `Affected Components 必须包含 ${module['Architecture Component ID']}`, '至少包含 Target Module 的 Architecture Component ID，再补充其他实际受影响组件。');
+    }
   }
   for (const journey of splitValues(metadata['Journey ID'])) {
     if (!planning.ids.journeys.includes(journey)) addIssue(issues, 'journey_unknown', `未知 Journey ID：${journey}`, '引用 product-model.md 已定义的 Journey ID。');
