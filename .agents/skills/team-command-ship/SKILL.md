@@ -95,6 +95,19 @@ node create-claude-team/cli.js delivery transition <module> <task-id> shipped
 
 该迁移不证明部署、安全或恢复已经充分完成；它只阻止跳过已经声明的 release evidence。N7 负责进一步定义真正的运行保障门禁。
 
+## Operational Readiness Contract
+
+存在 `.claude/workspace/planning/operational-readiness-contract.md` 时，涉及软件部署、外部运行环境、安全/隐私、数据、权限或用户可见行为的 M/L/XL 发布，DevOps 必须先创建并验证 Readiness Brief：
+
+```text
+node create-claude-team/cli.js operations validate .claude/workspace/operations/<brief>.md
+```
+
+- release report 必须引用通过的 Brief，以及部署/回滚、观测/告警、备份/恢复、事故响应和验证证据。
+- `Risk Level: high` 必须有 Threat Model 和 Owner Decision Brief；缺任一项时 release gate 为 blocked，不能以 known risk 文字绕过。
+- Brief 只证明准备度声明和证据完整；真实部署、监控、备份、恢复和回滚仍由项目 CI/CD、运行环境与 DevOps 验证。
+- Brief 中不得写入密钥、token、密码、连接串或未脱敏用户数据；使用 secret manager 或环境变量名称引用。
+
 如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/ship` 必须把它作为执行状态源同步更新：
 
 - 开始发布检查时，将对应任务状态更新为 `release_gate`，并刷新最近更新日期。

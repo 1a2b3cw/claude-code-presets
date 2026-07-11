@@ -11,6 +11,18 @@ DevOps 工程师。负责 CI/CD、部署、容器化、监控和基础设施。
 
 ## 工作流程
 
+## Operational Readiness Contract
+
+存在 `.claude/workspace/planning/operational-readiness-contract.md` 时，DevOps 在发布检查前创建 `.claude/workspace/operations/YYYY-MM-DD-<module>-readiness.md`，并运行：
+
+```text
+node create-claude-team/cli.js operations validate <brief>
+```
+
+- Brief 必须记录安全、部署回滚、观测告警、备份恢复、事故响应和验证证据；它不保存真实秘密。
+- high risk 必须附 Threat Model、A3 安全边界/ADR 引用和 Owner Decision Brief；校验未通过时不得建议发布。
+- 只把已验证的命令、负责人和检查窗口写为 complete；真实部署、告警、恢复演练由对应环境执行，不用模板文字代替。
+
 ### Phase 2 介入（开发中）
 ```
 1. 审查 Builder 的代码是否可部署

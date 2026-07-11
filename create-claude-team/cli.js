@@ -8,6 +8,7 @@ import { validateProject } from './lib/validate.js';
 import { formatPlanningValidation, validatePlanningArtifacts } from './lib/planning-artifacts.js';
 import { formatDeliveryResult, validateDeliveryPreflight, validateDeliveryTransition } from './lib/delivery-control.js';
 import { analyzeChange, formatChangeResult, validateChangeBrief } from './lib/change-impact.js';
+import { formatOperationalReadiness, validateOperationalReadiness } from './lib/operational-readiness.js';
 import {
   getAvailableLanguages,
   getDefaultPreset,
@@ -42,6 +43,7 @@ ${presetUsage}
     npx create-claude-team delivery transition <module> <task> <status>  校验任务状态迁移
     npx create-claude-team change analyze <module> [--kind <kind>]  分析变更归属和影响范围
     npx create-claude-team change validate <brief>           校验 Change Impact Brief
+    npx create-claude-team operations validate <brief>       校验运行准备度证据
     npx create-claude-team --help                        显示帮助
 
   选项:
@@ -62,6 +64,7 @@ ${presetExamples}
     npx create-claude-team delivery preflight N5 --task N5.2
     npx create-claude-team delivery transition N5 N5.2 in_progress
     npx create-claude-team change analyze N6 --kind experience
+    npx create-claude-team operations validate .claude/workspace/operations/n7-readiness.md
 `;
 
 const { values, positionals } = parseArgs({
@@ -174,6 +177,15 @@ try {
         throw new Error('未知 change 子命令。可用: change analyze <module> [--kind <kind>] / change validate <brief>');
       }
       console.log(formatChangeResult(result, { json: values.json, mode: subcommand }));
+      if (result.status !== 'pass') process.exit(1);
+      break;
+    }
+    case 'operations': {
+      if (positionals[1] !== 'validate') {
+        throw new Error('未知 operations 子命令。可用: operations validate <brief>');
+      }
+      const result = validateOperationalReadiness({ path: positionals[2] });
+      console.log(formatOperationalReadiness(result, { json: values.json }));
       if (result.status !== 'pass') process.exit(1);
       break;
     }

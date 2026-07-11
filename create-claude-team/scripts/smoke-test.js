@@ -19,6 +19,7 @@ import { buildStatus, updateMetrics, validateEvents } from '../lib/state-tools.j
 import { validatePlanningArtifacts } from '../lib/planning-artifacts.js';
 import { validateDeliveryPreflight, validateDeliveryTransition } from '../lib/delivery-control.js';
 import { analyzeChange, validateChangeBrief } from '../lib/change-impact.js';
+import { validateOperationalReadiness } from '../lib/operational-readiness.js';
 import { validateProject } from '../lib/validate.js';
 import { validateSkills } from '../lib/skill-contracts.js';
 import { toCodexText } from '../lib/codex/text.js';
@@ -49,6 +50,7 @@ const ARCHITECTURE_DECISION_TEXT = '不得只用普通建议';
 const PLANNING_ARTIFACT_CONTEXT_TEXT = ['artifact-contract.md', 'planning validate'];
 const CONTROLLED_DELIVERY_TEXT = ['Controlled Delivery Contract', 'delivery transition'];
 const CHANGE_IMPACT_CONTEXT_TEXT = ['Change Impact Contract', 'change analyze'];
+const OPERATIONAL_READINESS_CONTEXT_TEXT = ['Operational Readiness Contract', 'operations validate'];
 const PLANNING_UPGRADE_PLAN_TEXT = ['Product Lead', '用户价值', 'MVP 归属', '推荐顺序', 'Product Brief 来源优先级', 'project-profile/product.md'];
 const EXPLORATION_BRIEF_PLAN_TEXT = ['Exploration Brief', '不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '当前请求其实是局部功能或修复', '不得只用普通“下一步”问题或散文选项代替'];
 const EXPLORATION_BRIEF_PRODUCT_LEAD_TEXT = ['不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '不能只用普通“下一步”问题代替'];
@@ -154,6 +156,10 @@ function hasControlledDeliveryContract(text) {
 
 function hasChangeImpactContext(text) {
   return CHANGE_IMPACT_CONTEXT_TEXT.every((part) => text.includes(part));
+}
+
+function hasOperationalReadinessContext(text) {
+  return OPERATIONAL_READINESS_CONTEXT_TEXT.every((part) => text.includes(part));
 }
 
 function hasPlanningUpgradePlanContract(text) {
@@ -500,6 +506,60 @@ function writeChangeBrief(root, {
   return path;
 }
 
+function writeOperationalReadinessBrief(root, {
+  name = 'readiness.md',
+  status = 'complete',
+  riskLevel = 'standard',
+  threatModel = 'not_required',
+  ownerDecision = 'not_required',
+  extra = '',
+} = {}) {
+  const operationsDir = join(root, '.claude', 'workspace', 'operations');
+  mkdirSync(operationsDir, { recursive: true });
+  const path = join(operationsDir, name);
+  writeFileSync(path, [
+    '> Readiness ID：OR-TEST-001',
+    `> Status：${status}`,
+    '> Target Module：N1',
+    `> Risk Level：${riskLevel}`,
+    '> Release Scope：fixture release',
+    '> Deployment Target：fixture CI/CD',
+    `> Threat Model：${threatModel}`,
+    `> Owner Decision：${ownerDecision}`,
+    '> Evidence Owner：DevOps',
+    '',
+    '## Security Evidence',
+    '',
+    '- [x] Dependency and secret scan evidence is recorded.',
+    '',
+    '## Deployment & Rollback',
+    '',
+    '- [x] Deploy through the fixture pipeline; rollback to the previous tag when error rate exceeds the threshold.',
+    '',
+    '## Observability & Alerting',
+    '',
+    '- [x] Observe health and error rate; DevOps owns the alert threshold.',
+    '',
+    '## Backup & Restore',
+    '',
+    '- [x] No persistent data; restore is not applicable and the package can be reinstalled from its previous tag.',
+    '',
+    '## Incident Response',
+    '',
+    '- [x] DevOps owns escalation and the release report records user communication.',
+    '',
+    '## Verification Evidence',
+    '',
+    '- [x] npm test and tarball smoke are the pre-release checks; post-release verifies the CLI help command.',
+    '',
+    '## Known Risks',
+    '',
+    '- [x] No unmitigated fixture risks.',
+    extra,
+  ].filter(Boolean).join('\n'));
+  return path;
+}
+
 // 静默 init/update 的日志，保持测试输出干净
 async function silent(fn) {
   const orig = console.log;
@@ -705,6 +765,11 @@ async function runScenario(manifest, {
         hasChangeImpactContext(codexCommandText(agentsDir, commandName))
       )),
       'init: 变更命令与 skill 包含 N6 Change Impact Contract'
+    );
+    assert(
+      hasOperationalReadinessContext(codexCommandSkillText(agentsDir, 'ship')) &&
+      hasOperationalReadinessContext(codexCommandText(agentsDir, 'ship')),
+      'init: ship command 与 skill 包含 N7 Operational Readiness Contract'
     );
     }
     assert(
@@ -1027,6 +1092,11 @@ async function runScenario(manifest, {
         hasChangeImpactContext(codexCommandText(agentsDir, commandName))
       )),
       'update: 变更命令与 skill 保留 N6 Change Impact Contract'
+    );
+    assert(
+      hasOperationalReadinessContext(codexCommandSkillText(agentsDir, 'ship')) &&
+      hasOperationalReadinessContext(codexCommandText(agentsDir, 'ship')),
+      'update: ship command 与 skill 保留 N7 Operational Readiness Contract'
     );
     }
     assert(
@@ -1451,6 +1521,66 @@ console.log('\n[N6 变更影响与完整性]');
     rmSync(missingAffectedTmp, { recursive: true, force: true });
     rmSync(architectureTmp, { recursive: true, force: true });
     rmSync(incompleteTmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n[N7 安全、发布与运行保障]');
+{
+  const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-operations-'));
+  const highRiskTmp = mkdtempSync(join(tmpdir(), 'cct-operations-high-risk-'));
+  const highRiskEvidenceTmp = mkdtempSync(join(tmpdir(), 'cct-operations-high-risk-evidence-'));
+  const secretTmp = mkdtempSync(join(tmpdir(), 'cct-operations-secret-'));
+  try {
+    writeDeliveryFixture(tmp);
+    const validBrief = writeOperationalReadinessBrief(tmp);
+    const valid = validateOperationalReadiness({ cwd: tmp, path: validBrief });
+    assert(valid.status === 'pass', 'operations validate: 完整 standard Readiness Brief 通过');
+    const validCli = spawnSync(process.execPath, [cli, 'operations', 'validate', validBrief], { cwd: tmp, encoding: 'utf8' });
+    assert(validCli.status === 0 && validCli.stdout.includes('operations validate: pass'), 'operations cli: 输出运行准备度结论');
+
+    writeDeliveryFixture(highRiskTmp);
+    const highRiskBrief = writeOperationalReadinessBrief(highRiskTmp, { riskLevel: 'high' });
+    const highRisk = validateOperationalReadiness({ cwd: highRiskTmp, path: highRiskBrief });
+    assert(
+      highRisk.status === 'needs_revision' && highRisk.issues.some((issue) => issue.code === 'threat_model_missing') && highRisk.issues.some((issue) => issue.code === 'owner_decision_missing'),
+      'operations validate: high risk 缺 Threat Model 和 Owner Decision 时拒绝'
+    );
+
+    writeDeliveryFixture(highRiskEvidenceTmp);
+    const missingEvidenceBrief = writeOperationalReadinessBrief(highRiskEvidenceTmp, {
+      name: 'missing-evidence.md',
+      riskLevel: 'high',
+      threatModel: 'missing-threat-model.md',
+      ownerDecision: 'missing-owner-decision.md',
+    });
+    const missingEvidence = validateOperationalReadiness({ cwd: highRiskEvidenceTmp, path: missingEvidenceBrief });
+    assert(
+      missingEvidence.status === 'needs_revision' && missingEvidence.issues.some((issue) => issue.code === 'threat_model_invalid') && missingEvidence.issues.some((issue) => issue.code === 'owner_decision_invalid'),
+      'operations validate: high risk 证据路径不存在时拒绝'
+    );
+    writeFileSync(join(highRiskEvidenceTmp, 'threat-model.md'), '# Threat model\n');
+    writeFileSync(join(highRiskEvidenceTmp, 'owner-decision.md'), '# Owner decision\n');
+    const highRiskEvidenceBrief = writeOperationalReadinessBrief(highRiskEvidenceTmp, {
+      riskLevel: 'high',
+      threatModel: 'threat-model.md',
+      ownerDecision: 'owner-decision.md',
+    });
+    const highRiskEvidence = validateOperationalReadiness({ cwd: highRiskEvidenceTmp, path: highRiskEvidenceBrief });
+    assert(highRiskEvidence.status === 'pass', 'operations validate: high risk 必须引用真实 Threat Model 和 Owner Decision');
+
+    writeDeliveryFixture(secretTmp);
+    const secretBrief = writeOperationalReadinessBrief(secretTmp, { extra: '- [x] API_KEY=supersecretvalue must not be committed.' });
+    const secret = validateOperationalReadiness({ cwd: secretTmp, path: secretBrief });
+    assert(
+      secret.status === 'blocked' && secret.issues.some((issue) => issue.code === 'secret_exposed'),
+      'operations validate: 阻止包含明文秘密的运行证据'
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(highRiskTmp, { recursive: true, force: true });
+    rmSync(highRiskEvidenceTmp, { recursive: true, force: true });
+    rmSync(secretTmp, { recursive: true, force: true });
   }
 }
 

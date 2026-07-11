@@ -104,6 +104,11 @@ try {
     throw new Error(`installed CLI not found: ${cliPath}`);
   }
 
+  const helpOutput = run('node', [cliPath, '--help'], { cwd: projectDir, capture: true });
+  if (!helpOutput.includes('operations validate')) {
+    throw new Error('installed CLI help is missing operations validate');
+  }
+
   run('node', [cliPath, 'init', '--preset', 'base', '--dry-run'], { cwd: projectDir, capture: true });
   run('node', [cliPath, 'init', '--preset', 'base'], { cwd: projectDir, capture: true });
   run('node', [cliPath, 'validate'], { cwd: projectDir, capture: true });
