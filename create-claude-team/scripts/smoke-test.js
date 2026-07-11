@@ -16,6 +16,7 @@ import { init } from '../lib/init.js';
 import { missingPresetMcpServers, update } from '../lib/update.js';
 import { readPresetCatalog } from '../lib/presets.js';
 import { buildStatus, updateMetrics, validateEvents } from '../lib/state-tools.js';
+import { validatePlanningArtifacts } from '../lib/planning-artifacts.js';
 import { validateProject } from '../lib/validate.js';
 import { validateSkills } from '../lib/skill-contracts.js';
 import { toCodexText } from '../lib/codex/text.js';
@@ -43,6 +44,7 @@ const PRODUCT_MODEL_PLAN_TEXT = ['product-model.md', 'Capability ID', 'Journey I
 const PRODUCT_MODEL_ROLE_TEXT = ['product-model.md', 'Capability ID', 'Journey ID'];
 const ARCHITECTURE_CONTEXT_TEXT = ['architecture.md', 'Architecture Component ID', '依赖方向', '安全边界', '兼容'];
 const ARCHITECTURE_DECISION_TEXT = '不得只用普通建议';
+const PLANNING_ARTIFACT_CONTEXT_TEXT = ['artifact-contract.md', 'planning validate'];
 const PLANNING_UPGRADE_PLAN_TEXT = ['Product Lead', '用户价值', 'MVP 归属', '推荐顺序', 'Product Brief 来源优先级', 'project-profile/product.md'];
 const EXPLORATION_BRIEF_PLAN_TEXT = ['Exploration Brief', '不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '当前请求其实是局部功能或修复', '不得只用普通“下一步”问题或散文选项代替'];
 const EXPLORATION_BRIEF_PRODUCT_LEAD_TEXT = ['不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '不能只用普通“下一步”问题代替'];
@@ -136,6 +138,10 @@ function hasArchitectureContextContract(text) {
 
 function hasArchitectureDecisionContract(text) {
   return text.includes(ARCHITECTURE_DECISION_TEXT);
+}
+
+function hasPlanningArtifactContext(text) {
+  return PLANNING_ARTIFACT_CONTEXT_TEXT.every((part) => text.includes(part));
 }
 
 function hasPlanningUpgradePlanContract(text) {
@@ -323,6 +329,64 @@ function writeFixtureEvents(root) {
   ].join('\n') + '\n');
 }
 
+function writePlanningFixture(root, { invalidCapability = false } = {}) {
+  const featureDir = join(root, '.claude', 'workspace', 'features', 'n1-fixture');
+  mkdirSync(featureDir, { recursive: true });
+  mkdirSync(join(root, '.claude', 'workspace', 'planning'), { recursive: true });
+  writeFileSync(join(root, 'product-brief.md'), '> Product Brief ID：PB-TEST-001\n');
+  writeFileSync(join(root, 'product-model.md'), [
+    '> Model ID：PM-TEST-001',
+    '> Product Brief ID：PB-TEST-001',
+    '| Capability ID | 能力 |',
+    '|---|---|',
+    '| C1 | fixture |',
+    '',
+    '### J1：fixture',
+  ].join('\n'));
+  writeFileSync(join(root, 'architecture.md'), [
+    '> Architecture ID：ARCH-TEST-001',
+    '> Product Brief ID：PB-TEST-001',
+    '> Product Model ID：PM-TEST-001',
+    '| Architecture Component ID | 组件 |',
+    '|---|---|',
+    '| A4 | planning |',
+  ].join('\n'));
+  writeFileSync(join(root, 'roadmap.md'), [
+    '> Roadmap ID：RM-TEST-001',
+    '> Product Brief ID：PB-TEST-001',
+    '> Product Model ID：PM-TEST-001',
+    '> Architecture ID：ARCH-TEST-001',
+    '| 模块 ID | 状态 | 模块 | Capability ID | Architecture Component ID | 依赖 |',
+    '|---|---|---|---|---|---|',
+    `| N1 | in_progress | Fixture planning | ${invalidCapability ? 'C99' : 'C1'} | A4 | 无 |`,
+  ].join('\n'));
+  writeFileSync(join(root, '.claude', 'workspace', 'planning', 'artifact-contract.md'), '> Contract ID：PAC-TEST-001\n');
+  writeFileSync(join(featureDir, 'spec.md'), [
+    '> Spec ID：N1-SPEC-001',
+    '> Roadmap Module：N1',
+    '> Product Brief：`product-brief.md`',
+    '> Product Model：`product-model.md`',
+    `> Capability ID：${invalidCapability ? 'C99' : 'C1'}`,
+    '> Journey ID：J1',
+    '> Architecture：`architecture.md`',
+    '> Architecture Component ID：A4',
+    '> Affected Components：A4',
+    '> Dependency Direction：A3 -> A4',
+    '> Security Impact：none',
+    '> Operational Impact：none',
+    '> 执行包：`.claude/workspace/features/n1-fixture/`',
+  ].join('\n'));
+  writeFileSync(join(featureDir, 'tasks.md'), [
+    '> Task Set：N1-TASKS-001',
+    '> Spec：`spec.md`',
+    '> Roadmap Module：N1',
+    '> 执行包：`.claude/workspace/features/n1-fixture/`',
+    '',
+    '### N1.1 fixture task',
+    '- **状态**：in_progress',
+  ].join('\n'));
+}
+
 // 静默 init/update 的日志，保持测试输出干净
 async function silent(fn) {
   const orig = console.log;
@@ -493,8 +557,8 @@ async function runScenario(manifest, {
       const deliverySteward = readFileSync(join(claudeDir, 'agents', 'delivery-steward.md'), 'utf8');
       const codexArchitect = readFileSync(join(agentsDir, 'agents', 'architect-planner.md'), 'utf8');
       const codexDeliverySteward = readFileSync(join(agentsDir, 'agents', 'delivery-steward.md'), 'utf8');
-      assert(
-        hasArchitectureContextContract(codexCommandSkillText(agentsDir, 'dev')) &&
+    assert(
+      hasArchitectureContextContract(codexCommandSkillText(agentsDir, 'dev')) &&
           hasArchitectureDecisionContract(codexCommandSkillText(agentsDir, 'dev')) &&
           hasArchitectureContextContract(codexCommandText(agentsDir, 'dev')) &&
           hasArchitectureDecisionContract(codexCommandText(agentsDir, 'dev')) &&
@@ -504,8 +568,17 @@ async function runScenario(manifest, {
           hasArchitectureContextContract(codexArchitect) &&
           hasArchitectureContextContract(deliverySteward) &&
           hasArchitectureContextContract(codexDeliverySteward),
-        'init: dev/review 与核心角色包含 N3 Architecture Context 契约'
-      );
+      'init: dev/review 与核心角色包含 N3 Architecture Context 契约'
+    );
+    assert(
+      hasPlanningArtifactContext(codexCommandSkillText(agentsDir, 'plan')) &&
+        hasPlanningArtifactContext(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasPlanningArtifactContext(codexCommandText(agentsDir, 'plan')) &&
+        hasPlanningArtifactContext(codexCommandText(agentsDir, 'dev')) &&
+        hasPlanningArtifactContext(architect) &&
+        hasPlanningArtifactContext(deliverySteward),
+      'init: plan/dev 与核心角色包含 N4 Planning Artifact Contract'
+    );
     }
     assert(
       SUMMARY_COMMANDS.every((commandName) => {
@@ -792,8 +865,8 @@ async function runScenario(manifest, {
       const deliverySteward = readFileSync(join(claudeDir, 'agents', 'delivery-steward.md'), 'utf8');
       const codexArchitect = readFileSync(join(agentsDir, 'agents', 'architect-planner.md'), 'utf8');
       const codexDeliverySteward = readFileSync(join(agentsDir, 'agents', 'delivery-steward.md'), 'utf8');
-      assert(
-        hasArchitectureContextContract(codexCommandSkillText(agentsDir, 'dev')) &&
+    assert(
+      hasArchitectureContextContract(codexCommandSkillText(agentsDir, 'dev')) &&
           hasArchitectureDecisionContract(codexCommandSkillText(agentsDir, 'dev')) &&
           hasArchitectureContextContract(codexCommandText(agentsDir, 'dev')) &&
           hasArchitectureDecisionContract(codexCommandText(agentsDir, 'dev')) &&
@@ -803,8 +876,17 @@ async function runScenario(manifest, {
           hasArchitectureContextContract(codexArchitect) &&
           hasArchitectureContextContract(deliverySteward) &&
           hasArchitectureContextContract(codexDeliverySteward),
-        'update: dev/review 与核心角色保留 N3 Architecture Context 契约'
-      );
+      'update: dev/review 与核心角色保留 N3 Architecture Context 契约'
+    );
+    assert(
+      hasPlanningArtifactContext(codexCommandSkillText(agentsDir, 'plan')) &&
+        hasPlanningArtifactContext(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasPlanningArtifactContext(codexCommandText(agentsDir, 'plan')) &&
+        hasPlanningArtifactContext(codexCommandText(agentsDir, 'dev')) &&
+        hasPlanningArtifactContext(architect) &&
+        hasPlanningArtifactContext(deliverySteward),
+      'update: plan/dev 与核心角色保留 N4 Planning Artifact Contract'
+    );
     }
     assert(
       SUMMARY_COMMANDS.every((commandName) => {
@@ -1062,6 +1144,45 @@ console.log('\n[M5 状态工具]');
     assert(metricsCli.status === 0 && metricsCli.stdout.includes('最近 10 次任务'), 'cli metrics update --dry-run: 输出聚合摘要');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n[N4 规划产物体系]');
+{
+  const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-planning-'));
+  const invalidTmp = mkdtempSync(join(tmpdir(), 'cct-planning-invalid-'));
+  try {
+    writePlanningFixture(tmp);
+    const valid = validatePlanningArtifacts({ cwd: tmp });
+    assert(valid.valid && valid.modules.length === 1 && valid.features.length === 1, 'planning: 有效 artifact 链通过校验');
+
+    const status = await buildStatus({ cwd: tmp });
+    assert(
+      status.currentMain === 'N1 Fixture planning (in_progress)' &&
+        status.nextPlannedTask?.id === 'N1.1' &&
+        status.planning.available && status.planning.valid,
+      'planning: status 优先读取 root roadmap 与 feature tasks'
+    );
+
+    rmSync(join(tmp, '.claude', 'workspace', 'features', 'n1-fixture'), { recursive: true, force: true });
+    const roadmapOnlyStatus = await buildStatus({ cwd: tmp });
+    assert(
+      roadmapOnlyStatus.currentMain === 'N1 Fixture planning (in_progress)' &&
+        roadmapOnlyStatus.nextPlannedTask?.id === 'N1' &&
+        roadmapOnlyStatus.planning.feature === null,
+      'planning: 缺少 feature package 时以 roadmap 只读投影下一模块'
+    );
+
+    const planningCli = spawnSync(process.execPath, [cli, 'planning', 'validate'], { cwd: tmp, encoding: 'utf8' });
+    assert(planningCli.status === 0 && planningCli.stdout.includes('planning artifact 校验通过'), 'planning cli: 验证有效引用链');
+
+    writePlanningFixture(invalidTmp, { invalidCapability: true });
+    const invalid = validatePlanningArtifacts({ cwd: invalidTmp });
+    assert(!invalid.valid && invalid.issues.some((issue) => issue.includes('C99')), 'planning: 拒绝未知 Capability ID');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(invalidTmp, { recursive: true, force: true });
   }
 }
 

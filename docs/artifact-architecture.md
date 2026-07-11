@@ -76,7 +76,7 @@ Each roadmap module owns one execution package under `.claude/workspace/features
 - `tasks.md` defines only the work needed for that spec.
 - `review.md` records validation and planning-quality findings for that module.
 
-The roadmap records the active package path. N4 will update all generic commands and state readers to resolve tasks from that path; until then, a module-specific prompt must name the package explicitly.
+The roadmap records the active package path. `.claude/workspace/planning/artifact-contract.md` is the vNext contract for stable IDs, references, status ownership and reader priority; `node create-claude-team/cli.js planning validate` verifies it. Generic commands and state readers resolve tasks from the active package, while legacy docs are fallback-only.
 
 ## `project-profile/`
 

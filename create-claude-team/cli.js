@@ -5,6 +5,7 @@ import { init } from './lib/init.js';
 import { printStatus, updateMetrics, validateEvents } from './lib/state-tools.js';
 import { update } from './lib/update.js';
 import { validateProject } from './lib/validate.js';
+import { formatPlanningValidation, validatePlanningArtifacts } from './lib/planning-artifacts.js';
 import {
   getAvailableLanguages,
   getDefaultPreset,
@@ -34,6 +35,7 @@ ${presetUsage}
     npx create-claude-team status [--json]                读取本地 artifact，输出项目状态
     npx create-claude-team events validate                校验 events JSONL 和 artifact 引用
     npx create-claude-team metrics update                 从 events 聚合 metrics.md
+    npx create-claude-team planning validate               校验 vNext planning artifact 引用链
     npx create-claude-team --help                        显示帮助
 
   选项:
@@ -50,6 +52,7 @@ ${presetExamples}
     npx create-claude-team status
     npx create-claude-team events validate
     npx create-claude-team metrics update
+    npx create-claude-team planning validate
 `;
 
 const { values, positionals } = parseArgs({
@@ -121,6 +124,15 @@ try {
       }
       await updateMetrics({ dryRun: values['dry-run'] });
       break;
+    case 'planning': {
+      if (positionals[1] !== 'validate') {
+        throw new Error('未知 planning 子命令。可用: planning validate');
+      }
+      const result = validatePlanningArtifacts();
+      console.log(formatPlanningValidation(result));
+      if (!result.valid) process.exit(1);
+      break;
+    }
     default:
       console.error(`未知命令: ${command}`);
       console.log(HELP);

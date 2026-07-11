@@ -2,12 +2,17 @@
 
 > 状态：active
 > Spec ID：N3-SPEC-001
-> Roadmap Module：N3 架构主干
+> Roadmap Module：N3
 > Product Brief：`product-brief.md`
 > Product Model：`product-model.md`
 > Capability ID：C3
 > Journey ID：J1,J2,J3
 > Architecture：`architecture.md`
+> Architecture Component ID：A3
+> Affected Components：A1,A2,A3,A4,A5,A7
+> Dependency Direction：A2 -> A3 -> A4 -> A5/A7(read-only)
+> Security Impact：architecture constraints must not contain secrets
+> Operational Impact：A7 remains a read-only legacy projection
 > ADR：`.claude/workspace/decisions/2026-07-11-vnext-architecture.md`
 > 执行包：`.claude/workspace/features/n3-architecture-backbone/`
 > 更新于：2026-07-11

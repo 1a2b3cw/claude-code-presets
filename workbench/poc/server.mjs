@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildStatus, readEvents } from '../../create-claude-team/lib/state-tools.js';
+import { parseFeatureTasks } from '../../create-claude-team/lib/planning-artifacts.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '../..');
@@ -13,6 +14,7 @@ const port = Number(process.env.WORKBENCH_PORT || 4185);
 const host = '127.0.0.1';
 
 const artifactPaths = {
+  planningRoadmap: 'roadmap.md',
   roadmap: 'docs/maturity-roadmap.md',
   fallbackRoadmap: 'docs/productivity-roadmap.md',
   tasks: 'docs/maturity-tasks.md',
@@ -124,6 +126,19 @@ function parseTaskSet(maturityTasksText, productivityTasksText, status) {
   };
 }
 
+function parsePlanningTaskSet(tasksText, status) {
+  const active = status.planning.activeModule;
+  const parsedTasks = parseFeatureTasks(tasksText).map((task) => ({ ...task, priority: '', goal: '', acceptance: [] }));
+  return {
+    label: `${active.id} ${active.title}`,
+    description: status.currentMain,
+    tasks: parsedTasks.length > 0
+      ? parsedTasks
+      : [{ id: active.id, title: active.title, status: active.status, priority: '', goal: '', acceptance: [] }],
+    source: status.planning.feature?.tasksPath ?? artifactPaths.planningRoadmap,
+  };
+}
+
 function parseEvents(jsonl) {
   return jsonl
     .split(/\r?\n/)
@@ -154,6 +169,14 @@ function parseRoadmapSummary(maturityRoadmapText, productivityRoadmapText) {
     title,
     summary: summary || '本地 artifact 驱动的 AI 软件交付驾驶舱。',
     source: maturityRoadmapText ? artifactPaths.roadmap : artifactPaths.fallbackRoadmap,
+  };
+}
+
+function parsePlanningRoadmapSummary(status) {
+  return {
+    title: 'AI 产品开发团队 vNext',
+    summary: status.currentMain || 'vNext planning artifacts',
+    source: artifactPaths.planningRoadmap,
   };
 }
 
@@ -323,7 +346,12 @@ async function loadWorkbenchData(requestUrl = '/') {
   ]);
 
   const url = new URL(requestUrl, `http://${host}:${port}`);
-  const taskSet = parseTaskSet(maturityTasksText, productivityTasksText, status);
+  const planningTasksText = status.planning.available && status.planning.feature
+    ? await readText(status.planning.feature.tasksPath)
+    : '';
+  const taskSet = status.planning.available
+    ? parsePlanningTaskSet(planningTasksText, status)
+    : parseTaskSet(maturityTasksText, productivityTasksText, status);
   const tasks = taskSet.tasks;
   const events = eventsResult.events.sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
   const focusTask = chooseFocusTask(tasks);
@@ -337,7 +365,9 @@ async function loadWorkbenchData(requestUrl = '/') {
   const selectedEventIndex = selectedIndex(events, url.searchParams.get('run'), eventKey);
 
   return {
-    roadmap: parseRoadmapSummary(maturityRoadmapText, productivityRoadmapText),
+    roadmap: status.planning.available
+      ? parsePlanningRoadmapSummary(status)
+      : parseRoadmapSummary(maturityRoadmapText, productivityRoadmapText),
     taskSet,
     tasks,
     events,
@@ -356,7 +386,9 @@ async function loadWorkbenchData(requestUrl = '/') {
     status,
     eventsValidation: eventsResult.issues.length === 0 ? 'pass' : 'fail',
     eventsIssues: eventsResult.issues,
-    sources: artifactPaths,
+    sources: status.planning.available
+      ? { ...artifactPaths, roadmap: artifactPaths.planningRoadmap, tasks: taskSet.source }
+      : artifactPaths,
   };
 }
 

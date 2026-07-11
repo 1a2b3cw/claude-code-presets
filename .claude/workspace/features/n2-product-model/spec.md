@@ -2,11 +2,17 @@
 
 > 状态：active
 > Spec ID：N2-SPEC-001
-> Roadmap Module：N2 产品模型
+> Roadmap Module：N2
 > Product Brief：`product-brief.md`
 > Product Model：`product-model.md`
 > Capability ID：C2
 > Journey ID：J1
+> Architecture：`architecture.md`
+> Architecture Component ID：A2
+> Affected Components：A1,A2,A3,A4
+> Dependency Direction：A2 -> A3 -> A4
+> Security Impact：none
+> Operational Impact：none
 > 执行包：`.claude/workspace/features/n2-product-model/`
 > 更新于：2026-07-11
 

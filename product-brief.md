@@ -1,6 +1,7 @@
 # Product Brief
 
 > 状态：draft
+> Product Brief ID：PB-VNEXT-001
 > 更新于：2026-07-11
 
 ## 一句话产品定义

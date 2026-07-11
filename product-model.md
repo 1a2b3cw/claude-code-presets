@@ -2,6 +2,7 @@
 
 > 状态：active
 > Model ID：PM-VNEXT-001
+> Product Brief ID：PB-VNEXT-001
 > Product Brief：`product-brief.md`
 > Roadmap：`roadmap.md`
 > 更新于：2026-07-11

@@ -45,6 +45,7 @@ npx create-claude-team status                                     # 读取本地
 npx create-claude-team status --json                              # 输出机器可读状态 JSON
 npx create-claude-team events validate                            # 校验 events JSONL 和 artifact 引用
 npx create-claude-team metrics update                             # 从 events 聚合 metrics.md
+npx create-claude-team planning validate                          # 校验 vNext planning artifact 引用链
 npx create-claude-team init --dry-run                             # 预览不写入
 npx create-claude-team init --force                               # 覆盖已存在的 .claude/ 并同步 Codex 入口
 ```
@@ -66,7 +67,7 @@ npx create-claude-team init --force                               # 覆盖已存
 
 `validate` 会检查 preset manifest、`preset.mcp.json`、rules/specs 声明、skill frontmatter 和 skill 数量，适合在发版或合并前运行。
 
-`status`、`events validate` 和 `metrics update` 都只读取当前项目的本地 artifact；`metrics update` 会把 `.claude/workspace/events.jsonl` 聚合成 `.claude/workspace/metrics.md`。
+`status`、`events validate`、`metrics update` 和 `planning validate` 都只读取当前项目的本地 artifact；存在 vNext planning artifacts 时，`status` 优先读取根 `roadmap.md` 与对应 feature tasks，`planning validate` 校验其 ID、引用和状态 owner，`metrics update` 会把 `.claude/workspace/events.jsonl` 聚合成 `.claude/workspace/metrics.md`。
 
 ---
 

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative } from 'node:path';
+import { readPlanningStatus } from './planning-artifacts.js';
 
 const VALID_EVENT_STATUS = new Set(['completed', 'failed', 'blocked', 'skipped']);
 const METRIC_FIELDS = [
@@ -111,14 +112,14 @@ function latestEvent(events) {
   return [...events].sort((a, b) => Date.parse(b.time ?? 0) - Date.parse(a.time ?? 0))[0] ?? null;
 }
 
-async function readCurrentMain(cwd) {
+async function readLegacyCurrentMain(cwd) {
   const tasksText = await readTextIfExists(join(cwd, 'docs', 'maturity-tasks.md'));
   if (!tasksText) return null;
   const match = tasksText.match(/## 当前主线\s+([\s\S]*?)(?=\n#{2,3} |\n---|$)/);
   return match?.[1]?.trim().split(/\r?\n/).find((line) => line.trim())?.trim() ?? null;
 }
 
-async function readNextPlannedTask(cwd) {
+async function readLegacyNextPlannedTask(cwd) {
   const tasksText = await readTextIfExists(join(cwd, 'docs', 'maturity-tasks.md'));
   if (!tasksText) return null;
   const sections = [...tasksText.matchAll(/### (M\d+\.\d+) ([^\n]+)\n\n- \*\*状态\*\*：([^\n]+)/g)];
@@ -141,13 +142,26 @@ export async function buildStatus({ cwd = process.cwd() } = {}) {
   const latest = latestEvent(events);
   const metrics = metricsPath(cwd);
   const journal = join(workspaceDir(cwd), 'journal.md');
-  const currentMain = await readCurrentMain(cwd);
-  const nextPlannedTask = await readNextPlannedTask(cwd);
+  const planning = readPlanningStatus({ cwd });
+  const currentMain = planning.available
+    ? `${planning.activeModule?.id ?? 'unknown'} ${planning.activeModule?.title ?? '未找到模块'} (${planning.activeModule?.status ?? 'unknown'})`
+    : await readLegacyCurrentMain(cwd);
+  const nextPlannedTask = planning.available
+    ? planning.nextTask
+    : await readLegacyNextPlannedTask(cwd);
 
   return {
     cwd,
     currentMain,
     nextPlannedTask,
+    planning: {
+      available: planning.available,
+      valid: planning.valid,
+      issueCount: planning.issues.length,
+      roadmap: planning.available ? 'roadmap.md' : null,
+      activeModule: planning.activeModule ?? null,
+      feature: planning.feature ?? null,
+    },
     latestEvent: latest ? {
       time: latest.time,
       command: latest.command,

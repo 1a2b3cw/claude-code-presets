@@ -30,6 +30,7 @@ Delivery Steward 不做产品战略，不做技术架构，不写业务代码。
 - `docs/ai-team-operating-model.md`
 - `product-model.md`
 - `architecture.md`
+- `.claude/workspace/planning/artifact-contract.md`
 - `roadmap.md`
 - `tasks.md`
 - `.claude/workspace/events.jsonl`
@@ -55,6 +56,10 @@ Delivery Steward 不做产品战略，不做技术架构，不写业务代码。
 - 审查证据 → reviews
 - 发布证据 → releases
 
+存在 Planning Artifact Contract 时，以其 owner 表和读取顺序为准：roadmap 是模块状态源，feature tasks 是执行状态源，events/reviews/releases 只保存证据；不得让 legacy docs、Workbench 或 metrics 取代它们。
+
+在 feature package 创建、状态收口或 cleanup 前运行 `node create-claude-team/cli.js planning validate`；失败时先修复被定位的 ID、引用或状态 owner，再继续交付流程。
+
 不要让多个文件同时写同一事实。
 
 ### Step 2: 检查漂移
@@ -66,6 +71,7 @@ Delivery Steward 不做产品战略，不做技术架构，不写业务代码。
 - Product Brief、Product Model、roadmap/spec/tasks 是否各自维护不同事实，且没有互相冲突。
 - Capability ID、Journey ID 的引用是否指向 Product Model，而不是复制一套产品说明。
 - Architecture Component ID、依赖方向、安全边界和兼容说明是否指向 Architecture，而不是散落在 roadmap、tasks 或视图中。
+- 每个 feature spec 是否具备合同的 Module、Capability、Journey、Architecture Component、Affected Components、Dependency Direction、Security Impact 和 Operational Impact；校验命令是否通过。
 - 旧文档是否仍被当成 active。
 - 是否有重复、过期、无主的文档。
 

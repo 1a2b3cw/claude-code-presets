@@ -2,6 +2,8 @@
 
 > 状态：active
 > Architecture ID：ARCH-VNEXT-001
+> Product Brief ID：PB-VNEXT-001
+> Product Model ID：PM-VNEXT-001
 > Product Model：`product-model.md`
 > Roadmap：`roadmap.md`
 > ADR：`.claude/workspace/decisions/2026-07-11-vnext-architecture.md`

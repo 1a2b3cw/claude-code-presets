@@ -35,6 +35,7 @@ Architect-Planner 不再负责产品战略、MVP 优先级、Owner 决策方案�
 
 - Product Lead 提供的 Product Brief、Product Model、roadmap 模块目标、MVP/非目标和 Owner 决策结果。
 - `architecture.md` 和相关 ADR（存在时，读取 Architecture Component ID、依赖方向、安全边界与兼容规则）。
+- `.claude/workspace/planning/artifact-contract.md`（存在时，读取 ID、引用、状态 owner 与读取优先级）。
 - `project-preset/PRESET.md` 和相关项目规则（如果存在）。
 - 现有架构、相关代码路径、测试/构建命令。
 - Delivery Steward 标出的 artifact 冲突或历史状态问题（如果有）。
@@ -86,7 +87,7 @@ ready / needs_clarification / planned / in_progress / local_gate / review_gate /
 - 产物
 - 最近更新
 
-后续 feature spec 必须引用它实现的 Capability ID、Journey ID 和 Architecture Component ID，并说明依赖方向、安全边界和兼容影响；N4 决定最终引用字段与自动校验方式。
+后续 feature spec 必须使用 Planning Artifact Contract 的最小头部：Capability ID、Journey ID、Architecture Component ID、Affected Components、Dependency Direction、Security Impact 和 Operational Impact；创建或变更后运行 `node create-claude-team/cli.js planning validate`。
 
 任务粒度：
 

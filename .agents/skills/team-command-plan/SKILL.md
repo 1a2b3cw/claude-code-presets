@@ -76,6 +76,14 @@ In Codex, invoke this as `$team-command-plan`. Do not rely on `/plan` unless Cod
 - 新请求先映射到已有 Capability ID 和 Journey ID，并解释它改善的用户结果。
 - 命中明确非目标或边界外请求时，先说明冲突、影响和推荐路线；不得静默塞进 MVP roadmap。
 - 只有 Owner 确认产品范围变化后，才把新能力写入 Product Model；AI 推断仍保留为待验证，不当作产品事实。
+
+#### Planning Artifact Contract 读取规则
+
+存在 `.claude/workspace/planning/artifact-contract.md` 时，在 Product Model 与 Architecture 后读取它。它定义 roadmap、feature spec/tasks、状态和证据的唯一 owner 与读取顺序：
+
+- roadmap 只维护产品模块、优先级、依赖和模块状态；feature tasks 只维护执行状态；events 只记录证据，三者不能互相取代。
+- 新 roadmap 或 feature package 必须使用合同规定的稳定 ID 与引用字段，不能复制 Capability、Journey、Architecture 或产品范围的正文。
+- 生成或变更规划 artifact 后运行 `node create-claude-team/cli.js planning validate`；校验失败时先修引用或 owner，再交给 Builder。
 - 没有 `product-model.md` 的项目沿 Product Brief 流程继续；不要在普通 `/plan` 调用中凭空生成复杂模型。
 
 #### Exploration Brief

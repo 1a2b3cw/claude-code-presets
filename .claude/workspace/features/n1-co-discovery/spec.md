@@ -2,8 +2,17 @@
 
 > 状态：draft
 > Spec ID：N1-SPEC-001
-> Roadmap Module：N1 共同探索与决策
+> Roadmap Module：N1
 > Product Brief：`product-brief.md`
+> Product Model：`product-model.md`
+> Capability ID：C1
+> Journey ID：J1
+> Architecture：`architecture.md`
+> Architecture Component ID：A2
+> Affected Components：A1,A2,A4
+> Dependency Direction：A1 -> A2 -> A4
+> Security Impact：none
+> Operational Impact：none
 > 执行包：`.claude/workspace/features/n1-co-discovery/`
 > 更新于：2026-07-11
 

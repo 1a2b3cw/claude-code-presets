@@ -94,6 +94,7 @@
 
 2. 架构形状检查
    - `architecture.md` 的 Architecture Component ID、依赖方向、安全边界和兼容规则是否被 roadmap/spec 正确引用
+   - 存在 Planning Artifact Contract 时，运行 `node create-claude-team/cli.js planning validate`，并检查 roadmap、feature tasks 与 evidence 是否保持各自状态 owner
    - 模块边界是否清晰
    - 依赖方向是否稳定
    - 是否出现循环依赖、万能模块、重复抽象、临时兼容层堆积

@@ -7,8 +7,8 @@
 
 ## 摘要
 
-- 事件总数：34
-- 最近事件：completed: N3 架构主干系统审查通过，C1-C3 dogfood 与 A1-A7 边界验证完整
+- 事件总数：36
+- 最近事件：completed: N4 规划产物体系系统审查通过，D1-D3 dogfood 与状态 owner 验证完整
 - 最近 10 条非 standup 事件：10
 
 ## 最近 10 次任务
@@ -16,8 +16,8 @@
 | 指标 | 平均值 | 状态 |
 |------|--------|------|
 | specRejectCount | 0 | healthy |
-| checkIssueCount | 0.60 | healthy |
-| checkFixRounds | 0.80 | healthy |
+| checkIssueCount | 1.20 | healthy |
+| checkFixRounds | 1.40 | healthy |
 | reviewRejectCount | 0 | healthy |
 | testFailureCount | 0 | healthy |
 
@@ -28,4 +28,4 @@
 ## 原始数据
 
 - 来源：`.claude/workspace/events.jsonl`
-- 生成时间：2026-07-11T08:02:28.311Z
+- 生成时间：2026-07-11T08:37:16.187Z

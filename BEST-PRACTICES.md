@@ -383,6 +383,7 @@ npx create-claude-team update                                     # 升级配置
 npx create-claude-team status                                     # 查看当前项目状态
 npx create-claude-team events validate                            # 校验事件日志
 npx create-claude-team metrics update                             # 聚合效能摘要
+npx create-claude-team planning validate                          # 校验规划引用链
 ```
 
 ---

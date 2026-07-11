@@ -42,6 +42,15 @@ In Codex, invoke this as `$team-command-dev`. Do not rely on `/dev` unless Codex
 
 没有 `architecture.md` 的旧项目可以按现有流程继续；不要为了补文档而阻塞低风险修复。
 
+## Planning Artifact Context
+
+对存在 `.claude/workspace/planning/artifact-contract.md` 的项目，M/L/XL 开工前必须在 Architecture 后读取它：
+
+- roadmap 是模块状态源，feature `tasks.md` 是当前执行状态源，events/review/release 是证据；不得用其中一个覆盖另一个。
+- feature spec 必须使用合同的最小头部：Module、Capability、Journey、Architecture Component、Affected Components、Dependency Direction、Security Impact 和 Operational Impact。
+- 创建或变更 roadmap/spec/tasks 后运行 `node create-claude-team/cli.js planning validate`；失败时修复具体 artifact 引用，不以跳过校验或写入备用状态文件绕过。
+- `create-claude-team status` 与 Workbench 只投影该读取链；legacy docs 仅在 vNext artifact 缺失时回退读取。
+
 ## Owner Decision Brief 契约
 
 `/dev` 默认由团队推进实现，不把每个技术细节都交给 Owner。L/XL 级任务必须检查是否需要 Owner Decision Brief；S/M 级只有命中高影响触发条件时才使用。

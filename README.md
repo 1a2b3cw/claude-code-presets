@@ -73,6 +73,9 @@ npx create-claude-team events validate
 
 # 从 events 聚合 metrics.md
 npx create-claude-team metrics update
+
+# 校验 vNext planning artifact 的 ID、引用和状态所有权
+npx create-claude-team planning validate
 ```
 
 ### 验证
