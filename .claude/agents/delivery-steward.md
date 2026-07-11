@@ -31,6 +31,7 @@ Delivery Steward 不做产品战略，不做技术架构，不写业务代码。
 - `product-model.md`
 - `architecture.md`
 - `.claude/workspace/planning/artifact-contract.md`
+- `.claude/workspace/planning/change-impact-contract.md`
 - `roadmap.md`
 - `tasks.md`
 - `.claude/workspace/events.jsonl`
@@ -72,6 +73,7 @@ Delivery Steward 不做产品战略，不做技术架构，不写业务代码。
 - Capability ID、Journey ID 的引用是否指向 Product Model，而不是复制一套产品说明。
 - Architecture Component ID、依赖方向、安全边界和兼容说明是否指向 Architecture，而不是散落在 roadmap、tasks 或视图中。
 - 每个 feature spec 是否具备合同的 Module、Capability、Journey、Architecture Component、Affected Components、Dependency Direction、Security Impact 和 Operational Impact；校验命令是否通过。
+- Change Impact Brief 是否只记录一次变更分析，不冒充 roadmap/spec/tasks；其 Target Module、Capability、Journey、组件、同步项和验证计划是否可由 `change validate` 验证。
 - 旧文档是否仍被当成 active。
 - 是否有重复、过期、无主的文档。
 

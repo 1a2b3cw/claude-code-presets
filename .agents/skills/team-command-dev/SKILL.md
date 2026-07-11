@@ -64,6 +64,19 @@ node create-claude-team/cli.js delivery preflight <module> --task <task-id>
 - 该 CLI 只读 planning artifacts；roadmap 和 tasks 的写入责任不变，events/review/release/status/Workbench 不得作为替代依据。
 - S 级热修可跳过；安全敏感变更必须有 `Security Risk Level：high` 和 `Threat Model`，但完整上线安全与运行保障仍由 N7/`/ship` 负责。
 
+## Change Impact Contract
+
+存在 `.claude/workspace/planning/change-impact-contract.md` 时，来自体验反馈、已有功能调整、跨模块行为变化或架构/安全/运行影响的开发请求，必须先运行 `change analyze <module> --kind <kind>`，并创建和验证 Change Impact Brief：
+
+```text
+node create-claude-team/cli.js change validate .claude/workspace/changes/<brief>.md
+node create-claude-team/cli.js delivery preflight <module> --task <task-id> --change .claude/workspace/changes/<brief>.md
+```
+
+- AI 先说明主归属、影响范围、同步项和验证方式；Brief 的引用与同步项必须通过 validate，才可修改代码或规划 artifact。
+- S 级局部修复可跳过；不要为普通新功能虚构 Brief。架构、安全、兼容、迁移和产品范围变化仍按 ADR/Owner Decision Brief/N7 升级。
+- 实现后更新 Brief 的同步项和验证证据；`/review-all` 检查它与实际 diff 是否一致。
+
 ## Owner Decision Brief 契约
 
 `/dev` 默认由团队推进实现，不把每个技术细节都交给 Owner。L/XL 级任务必须检查是否需要 Owner Decision Brief；S/M 级只有命中高影响触发条件时才使用。

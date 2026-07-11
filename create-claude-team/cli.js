@@ -7,6 +7,7 @@ import { update } from './lib/update.js';
 import { validateProject } from './lib/validate.js';
 import { formatPlanningValidation, validatePlanningArtifacts } from './lib/planning-artifacts.js';
 import { formatDeliveryResult, validateDeliveryPreflight, validateDeliveryTransition } from './lib/delivery-control.js';
+import { analyzeChange, formatChangeResult, validateChangeBrief } from './lib/change-impact.js';
 import {
   getAvailableLanguages,
   getDefaultPreset,
@@ -39,6 +40,8 @@ ${presetUsage}
     npx create-claude-team planning validate               校验 vNext planning artifact 引用链
     npx create-claude-team delivery preflight <module> [--task <id>]  校验受控开发开工条件
     npx create-claude-team delivery transition <module> <task> <status>  校验任务状态迁移
+    npx create-claude-team change analyze <module> [--kind <kind>]  分析变更归属和影响范围
+    npx create-claude-team change validate <brief>           校验 Change Impact Brief
     npx create-claude-team --help                        显示帮助
 
   选项:
@@ -58,6 +61,7 @@ ${presetExamples}
     npx create-claude-team planning validate
     npx create-claude-team delivery preflight N5 --task N5.2
     npx create-claude-team delivery transition N5 N5.2 in_progress
+    npx create-claude-team change analyze N6 --kind experience
 `;
 
 const { values, positionals } = parseArgs({
@@ -69,6 +73,8 @@ const { values, positionals } = parseArgs({
     'dry-run': { type: 'boolean', default: false },
     json: { type: 'boolean', default: false },
     task: { type: 'string' },
+    change: { type: 'string' },
+    kind: { type: 'string', default: 'experience' },
     help: { type: 'boolean', short: 'h', default: false },
   },
   allowPositionals: true,
@@ -143,7 +149,7 @@ try {
       const subcommand = positionals[1];
       let result;
       if (subcommand === 'preflight') {
-        result = validateDeliveryPreflight({ target: positionals[2], taskId: values.task ?? null });
+        result = validateDeliveryPreflight({ target: positionals[2], taskId: values.task ?? null, changePath: values.change ?? null });
       } else if (subcommand === 'transition') {
         result = validateDeliveryTransition({
           target: positionals[2],
@@ -154,6 +160,20 @@ try {
         throw new Error('未知 delivery 子命令。可用: delivery preflight <module> [--task <id>] / delivery transition <module> <task> <status>');
       }
       console.log(formatDeliveryResult(result, { json: values.json }));
+      if (result.status !== 'pass') process.exit(1);
+      break;
+    }
+    case 'change': {
+      const subcommand = positionals[1];
+      let result;
+      if (subcommand === 'analyze') {
+        result = analyzeChange({ target: positionals[2], kind: values.kind });
+      } else if (subcommand === 'validate') {
+        result = validateChangeBrief({ path: positionals[2] });
+      } else {
+        throw new Error('未知 change 子命令。可用: change analyze <module> [--kind <kind>] / change validate <brief>');
+      }
+      console.log(formatChangeResult(result, { json: values.json, mode: subcommand }));
       if (result.status !== 'pass') process.exit(1);
       break;
     }

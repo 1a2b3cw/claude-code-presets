@@ -36,6 +36,7 @@ Architect-Planner 不再负责产品战略、MVP 优先级、Owner 决策方案�
 - Product Lead 提供的 Product Brief、Product Model、roadmap 模块目标、MVP/非目标和 Owner 决策结果。
 - `architecture.md` 和相关 ADR（存在时，读取 Architecture Component ID、依赖方向、安全边界与兼容规则）。
 - `.claude/workspace/planning/artifact-contract.md`（存在时，读取 ID、引用、状态 owner 与读取优先级）。
+- `.claude/workspace/planning/change-impact-contract.md` 与关联 Change Impact Brief（存在时，读取归属判断、影响范围、同步项和验证计划）。
 - `project-preset/PRESET.md` 和相关项目规则（如果存在）。
 - 现有架构、相关代码路径、测试/构建命令。
 - Delivery Steward 标出的 artifact 冲突或历史状态问题（如果有）。
@@ -47,6 +48,8 @@ Architect-Planner 不再负责产品战略、MVP 优先级、Owner 决策方案�
 ### Step 1: 技术理解
 
 存在 `product-model.md` 时，先确认本次技术规划支撑的 Capability ID、Journey ID、用户结果和产品边界；技术方案不得凭空扩大产品能力。存在 `architecture.md` 时，还必须确认 Architecture Component ID、受影响组件、依赖方向、安全边界和兼容影响。
+
+对于体验反馈或既有能力变更，先运行 `change analyze <module> --kind <kind>`，审查 Change Impact Brief 是否正确定位 A2/A3/A4/A5/A6 归属；架构、兼容、迁移、安全或范围变化缺同步项时不得交给 Builder。
 
 把产品目标翻译成技术问题：
 

@@ -18,6 +18,7 @@ import { readPresetCatalog } from '../lib/presets.js';
 import { buildStatus, updateMetrics, validateEvents } from '../lib/state-tools.js';
 import { validatePlanningArtifacts } from '../lib/planning-artifacts.js';
 import { validateDeliveryPreflight, validateDeliveryTransition } from '../lib/delivery-control.js';
+import { analyzeChange, validateChangeBrief } from '../lib/change-impact.js';
 import { validateProject } from '../lib/validate.js';
 import { validateSkills } from '../lib/skill-contracts.js';
 import { toCodexText } from '../lib/codex/text.js';
@@ -47,6 +48,7 @@ const ARCHITECTURE_CONTEXT_TEXT = ['architecture.md', 'Architecture Component ID
 const ARCHITECTURE_DECISION_TEXT = '不得只用普通建议';
 const PLANNING_ARTIFACT_CONTEXT_TEXT = ['artifact-contract.md', 'planning validate'];
 const CONTROLLED_DELIVERY_TEXT = ['Controlled Delivery Contract', 'delivery transition'];
+const CHANGE_IMPACT_CONTEXT_TEXT = ['Change Impact Contract', 'change analyze'];
 const PLANNING_UPGRADE_PLAN_TEXT = ['Product Lead', '用户价值', 'MVP 归属', '推荐顺序', 'Product Brief 来源优先级', 'project-profile/product.md'];
 const EXPLORATION_BRIEF_PLAN_TEXT = ['Exploration Brief', '不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '当前请求其实是局部功能或修复', '不得只用普通“下一步”问题或散文选项代替'];
 const EXPLORATION_BRIEF_PRODUCT_LEAD_TEXT = ['不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '不能只用普通“下一步”问题代替'];
@@ -148,6 +150,10 @@ function hasPlanningArtifactContext(text) {
 
 function hasControlledDeliveryContract(text) {
   return CONTROLLED_DELIVERY_TEXT.every((part) => text.includes(part));
+}
+
+function hasChangeImpactContext(text) {
+  return CHANGE_IMPACT_CONTEXT_TEXT.every((part) => text.includes(part));
 }
 
 function hasPlanningUpgradePlanContract(text) {
@@ -355,7 +361,9 @@ function writePlanningFixture(root, { invalidCapability = false } = {}) {
     '> Product Model ID：PM-TEST-001',
     '| Architecture Component ID | 组件 |',
     '|---|---|',
+    '| A2 | product |',
     '| A4 | planning |',
+    '| A5 | delivery |',
   ].join('\n'));
   writeFileSync(join(root, 'roadmap.md'), [
     '> Roadmap ID：RM-TEST-001',
@@ -441,6 +449,55 @@ function writeDeliveryFixture(root, { taskStatus = 'planned', gateResult = 'loca
     '- **产物**：fixture',
     '- **最近更新**：2026-07-11',
   ].join('\n'));
+}
+
+function writeChangeBrief(root, {
+  name = 'change.md',
+  kind = 'experience',
+  status = 'draft',
+  syncItems = null,
+} = {}) {
+  const changesDir = join(root, '.claude', 'workspace', 'changes');
+  mkdirSync(changesDir, { recursive: true });
+  const defaultSync = kind === 'architecture'
+    ? ['architecture.md: update component boundary.', 'ADR: record the architecture decision.', 'spec.md: update affected scope.', '兼容/迁移验证: verify compatibility.']
+    : ['product-model.md: review journey outcome.', 'spec.md: update acceptance scenario.', 'tasks.md: update implementation work.', '用户流程测试: cover the observed experience.'];
+  const entries = syncItems ?? defaultSync;
+  const path = join(changesDir, name);
+  writeFileSync(path, [
+    '> Change ID：CI-TEST-001',
+    `> Status：${status}`,
+    '> Source Feedback：The user cannot understand the current result.',
+    `> Change Kind：${kind}`,
+    '> Owner Layer：A2,A4,A5',
+    '> Target Module：N1',
+    '> Capability ID：C1',
+    '> Journey ID：J1',
+    '> Architecture Component ID：A4',
+    '> Affected Components：A4',
+    '> Dependency Direction：A2 -> A4 -> A5',
+    '> Change Scope：planning,delivery',
+    '> Analysis Command：`node create-claude-team/cli.js change analyze N1 --kind experience`',
+    '',
+    '## 归属判断',
+    '',
+    'The feedback affects the user result and the delivery presentation.',
+    '',
+    '## 影响范围',
+    '',
+    'Product Model, planning package, implementation and evidence require review.',
+    '',
+    '## 同步项',
+    '',
+    ...entries.map((entry) => `- [ ] ${entry}`),
+    '',
+    '## 验证计划',
+    '',
+    '- Run planning validate after artifact updates.',
+    '- Run delivery preflight before implementation.',
+    '- Verify the user-visible result with the relevant flow test.',
+  ].join('\n'));
+  return path;
 }
 
 // 静默 init/update 的日志，保持测试输出干净
@@ -641,6 +698,13 @@ async function runScenario(manifest, {
         hasControlledDeliveryContract(codexCommandText(agentsDir, commandName))
       )),
       'init: 核心命令与 skill 包含 N5 Controlled Delivery Contract'
+    );
+    assert(
+      ['dev', 'fix', 'review-all'].every((commandName) => (
+        hasChangeImpactContext(codexCommandSkillText(agentsDir, commandName)) &&
+        hasChangeImpactContext(codexCommandText(agentsDir, commandName))
+      )),
+      'init: 变更命令与 skill 包含 N6 Change Impact Contract'
     );
     }
     assert(
@@ -956,6 +1020,13 @@ async function runScenario(manifest, {
         hasControlledDeliveryContract(codexCommandText(agentsDir, commandName))
       )),
       'update: 核心命令与 skill 保留 N5 Controlled Delivery Contract'
+    );
+    assert(
+      ['dev', 'fix', 'review-all'].every((commandName) => (
+        hasChangeImpactContext(codexCommandSkillText(agentsDir, commandName)) &&
+        hasChangeImpactContext(codexCommandText(agentsDir, commandName))
+      )),
+      'update: 变更命令与 skill 保留 N6 Change Impact Contract'
     );
     }
     assert(
@@ -1322,6 +1393,53 @@ console.log('\n[N5 受控开发循环]');
     rmSync(dependencyTmp, { recursive: true, force: true });
     rmSync(securityTmp, { recursive: true, force: true });
     rmSync(transitionTmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n[N6 变更影响与完整性]');
+{
+  const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-change-'));
+  const architectureTmp = mkdtempSync(join(tmpdir(), 'cct-change-architecture-'));
+  const incompleteTmp = mkdtempSync(join(tmpdir(), 'cct-change-incomplete-'));
+  try {
+    writeDeliveryFixture(tmp);
+    const analysis = analyzeChange({ cwd: tmp, target: 'N1', kind: 'experience' });
+    assert(
+      analysis.status === 'pass' && analysis.module['模块 ID'] === 'N1' && analysis.ownership.includes('A2'),
+      'change analyze: 从模块定位体验反馈归属和影响范围'
+    );
+    const analysisCli = spawnSync(process.execPath, [cli, 'change', 'analyze', 'N1', '--kind', 'experience'], { cwd: tmp, encoding: 'utf8' });
+    assert(analysisCli.status === 0 && analysisCli.stdout.includes('change analyze: pass'), 'change cli: 输出影响分析结论');
+
+    const validBrief = writeChangeBrief(tmp);
+    const valid = validateChangeBrief({ cwd: tmp, path: validBrief });
+    assert(valid.status === 'pass', 'change validate: 完整体验 Brief 通过');
+    const delivery = validateDeliveryPreflight({ cwd: tmp, target: 'N1', taskId: 'N1.1', changePath: validBrief });
+    assert(delivery.status === 'pass', 'delivery preflight: 可携带通过的 Change Impact Brief');
+
+    writeDeliveryFixture(architectureTmp);
+    const architectureBrief = writeChangeBrief(architectureTmp, {
+      kind: 'architecture',
+      syncItems: ['spec.md: update affected scope.', '兼容/迁移验证: verify compatibility.'],
+    });
+    const missingArchitectureSync = validateChangeBrief({ cwd: architectureTmp, path: architectureBrief });
+    assert(
+      missingArchitectureSync.status === 'needs_revision' && missingArchitectureSync.issues.some((issue) => issue.code === 'sync_missing'),
+      'change validate: 架构变更缺 architecture/ADR 同步项时拒绝'
+    );
+
+    writeDeliveryFixture(incompleteTmp);
+    const incompleteBrief = writeChangeBrief(incompleteTmp, { status: 'complete' });
+    const incomplete = validateChangeBrief({ cwd: incompleteTmp, path: incompleteBrief });
+    assert(
+      incomplete.status === 'needs_revision' && incomplete.issues.some((issue) => issue.code === 'sync_incomplete'),
+      'change validate: complete Brief 留有未完成同步项时拒绝'
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(architectureTmp, { recursive: true, force: true });
+    rmSync(incompleteTmp, { recursive: true, force: true });
   }
 }
 

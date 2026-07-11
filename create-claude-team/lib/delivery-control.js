@@ -1,4 +1,5 @@
 import { parseFeatureTasks, validatePlanningArtifacts } from './planning-artifacts.js';
+import { validateChangeBrief } from './change-impact.js';
 
 const STARTABLE_STATUSES = new Set(['ready', 'planned', 'in_progress']);
 const REQUIRED_TASK_FIELDS = ['描述', '验收标准', '验收命令', '阻塞原因', 'Gate 结果', '产物', '最近更新'];
@@ -132,7 +133,7 @@ function basePreflight({ cwd, target }) {
   return { status, planning, issues, module, feature, task: null };
 }
 
-export function validateDeliveryPreflight({ cwd = process.cwd(), target, taskId = null } = {}) {
+export function validateDeliveryPreflight({ cwd = process.cwd(), target, taskId = null, changePath = null } = {}) {
   const result = basePreflight({ cwd, target });
   if (!result.feature || result.status === 'blocked') return result;
 
@@ -150,8 +151,21 @@ export function validateDeliveryPreflight({ cwd = process.cwd(), target, taskId 
       addIssue(result.issues, 'task_not_startable', `${task.id} 当前为 ${task.status}，不能进入实现`, '选择 ready/planned 任务，或先完成当前 gate/解除阻塞。');
     }
   }
+  if (changePath) {
+    const change = validateChangeBrief({ cwd, path: changePath });
+    result.change = change;
+    if (change.status !== 'pass') {
+      for (const issue of change.issues) {
+        addIssue(result.issues, `change_${issue.code}`, issue.message, issue.action);
+      }
+    } else if (change.module?.['模块 ID'] !== result.module?.['模块 ID']) {
+      addIssue(result.issues, 'change_target_mismatch', `Change Brief 目标为 ${change.module?.['模块 ID']}，但 delivery target 为 ${result.module?.['模块 ID']}`, '使用与当前 delivery module 相同的 Change Impact Brief。');
+    }
+  }
   result.task = task;
-  if (result.issues.length > 0) result.status = 'needs_revision';
+  if (result.issues.length > 0) {
+    result.status = result.issues.some((issue) => issue.code === 'change_brief_missing' || issue.code === 'change_target_missing') ? 'blocked' : 'needs_revision';
+  }
   return result;
 }
 

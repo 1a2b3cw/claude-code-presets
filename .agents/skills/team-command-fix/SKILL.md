@@ -55,9 +55,23 @@ In Codex, invoke this as `$team-command-fix`. Do not rely on `/fix` unless Codex
    - 如果发现同类问题，一并指出
 ```
 
+## Change Impact Contract
+
+存在 `.claude/workspace/planning/change-impact-contract.md` 时，先判断这是否只是 S 级局部修复：明确 typo、单文件格式或不改变用户结果/接口/边界的改动可直接修。其余体验反馈、行为变化、跨文件修改、架构/安全/运行影响必须先：
+
+```text
+node create-claude-team/cli.js change analyze <module> --kind <experience|behavior|architecture|security|operational>
+node create-claude-team/cli.js change validate .claude/workspace/changes/<brief>.md
+```
+
+- Brief 必须说明归属判断、影响范围、同步项和验证计划；`needs_revision` 或 `blocked` 时不得开始修复。
+- 通过后，按 Brief 的 Target Module 进入 N5 受控循环；需要时使用 `delivery preflight <module> --task <id> --change <brief>`。
+- 架构、安全、兼容、迁移、隐私或产品范围变化仍须按 ADR/Owner Decision Brief/N7 规则升级，不能借 `/fix` 绕过。
+
 ## 修复原则
 
 - **一次只修一个问题**，不要顺手"优化"其他代码
+- **先定位再修改**：非 S 级反馈先创建 Change Impact Brief，修改范围以 Brief 的同步项为边界
 - **修完不引入新问题**，检查相关代码
 - **能写测试就写测试**，防止回归
 - **如果问题比你描述的更复杂**，告诉你实际情况，让你决定要不要扩大修复范围

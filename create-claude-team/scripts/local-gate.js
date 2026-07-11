@@ -14,6 +14,7 @@ const REQUIRED_PACK_FILES = [
   'lib/update.js',
   'lib/validate.js',
   'lib/delivery-control.js',
+  'lib/change-impact.js',
   '.claude/CLAUDE.md',
   '.claude/commands/dev.md',
   '.claude/hooks/security-check.mjs',

@@ -145,6 +145,16 @@ node create-claude-team/cli.js delivery transition <module> <task-id> release_ga
 
 无需发布时必须同时记录 `release not_required`，并改用 `delivery transition <module> <task-id> done`。`needs_fix` 或 `blocked` 不得伪造 review pass；控制器只读 tasks，不取代 review report。
 
+## Change Impact Contract
+
+当本轮变更存在 `.claude/workspace/changes/<brief>.md` 时，`/review-all` 必须运行 `change validate <brief>`，必要时重新运行 `change analyze <module> --kind <kind>` 对照最新模块关系，并将 Brief 的 `## 同步项` 与实际 diff 对照：
+
+- 被勾选的产品、架构、spec/tasks、代码、测试和证据是否真实同步。
+- 未勾选但因实际 diff 已完成的项是否应更新 Brief；已勾选但没有对应变更的项是否构成漏改。
+- architecture/security/operational Kind 是否仍保留 ADR、Threat Model 或 N7 入口，不能用 review pass 取代这些证据。
+
+Brief 与实际变更不一致时结论为 `needs_fix` 或 `blocked`，不得进入 release/done。
+
 如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/review-all` 必须把它作为执行状态源同步更新：
 
 - 开始审查时，将对应任务状态更新为 `review_gate`，并刷新最近更新日期。
