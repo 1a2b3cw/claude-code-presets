@@ -46,6 +46,9 @@ npx create-claude-team status --json                              # 输出机器
 npx create-claude-team events validate                            # 校验 events JSONL 和 artifact 引用
 npx create-claude-team metrics update                             # 从 events 聚合 metrics.md
 npx create-claude-team planning validate                          # 校验 vNext planning artifact 引用链
+npx create-claude-team delivery preflight N5 --task N5.2          # 校验受控开发开工条件
+npx create-claude-team change analyze N6 --kind experience        # 分析变更归属和同步项
+npx create-claude-team operations validate <brief>                # 校验发布前运行准备度证据
 npx create-claude-team init --dry-run                             # 预览不写入
 npx create-claude-team init --force                               # 覆盖已存在的 .claude/ 并同步 Codex 入口
 ```

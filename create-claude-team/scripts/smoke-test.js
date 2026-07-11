@@ -1609,6 +1609,22 @@ console.log('\n[别名兼容]');
   rmSync(tmp, { recursive: true, force: true });
 }
 
+// 旧项目 .preset 中的旧名也必须在 update 时保留 AI 预设叠加。
+{
+  const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-legacy-ai-update-'));
+  try {
+    const initialized = spawnSync(process.execPath, [cli, 'init', '--preset', 'ai-app'], { cwd: tmp, encoding: 'utf8' });
+    writeFileSync(join(tmp, '.claude', '.preset'), 'ai-knowledge-base\n\n');
+    const updated = spawnSync(process.execPath, [cli, 'update'], { cwd: tmp, encoding: 'utf8' });
+    const ok = initialized.status === 0 && updated.status === 0 && existsSync(join(tmp, '.claude', 'skills', 'rag-pipeline', 'SKILL.md'));
+    console.log(`  ${ok ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m'} legacy ai-knowledge-base update 保留 ai-app 预设叠加 (exit ${updated.status})`);
+    ok ? passed++ : failed++;
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 console.log('\n[源目录保护]');
 {
   const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');

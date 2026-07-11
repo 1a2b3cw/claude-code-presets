@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## v3.5.0-beta.1（2026-07-11）
+
+**vNext 工作流候选版：在真实项目 dogfood 前发布到 `next` 标签。**
+
+### 新增
+
+- 建立 N1-N7：共同探索、产品模型、架构主干、规划产物、受控开发、变更影响和运行准备度闭环。
+- 新增 `planning`、`delivery`、`change` 和 `operations validate` CLI，支持可追溯的规划、开工、变更和发布准备度校验。
+- Claude/Codex 的开发、修复、审查、发布与 DevOps 入口统一到同一套合同。
+- 高风险发布要求真实 Threat Model、Owner Decision、回滚、观测、恢复和事故响应证据。
+
+### 修复
+
+- 旧 AI preset 标记 `ai-knowledge-base` 在 `update` 时自动映射为 `ai-app`，保留 AI 专用规则与 skills。
+
+### 已知边界
+
+- N8 验证、迁移与替换将在真实项目体验后启动；本版本通过 npm `next` 标签供 dogfood 使用。
+
 **新增 `/project-preset` 项目专属预设生成工作流**
 
 ### 新增

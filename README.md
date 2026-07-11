@@ -24,7 +24,7 @@
 | **Specs** | 预设专用 | 技术栈详细参考（AI 按需读取；base 不叠加） |
 | **Hook** | 2 个 | 代码安全检查（Write/Edit）、Bash 命令拦截 |
 | **Codex 入口** | 5 类 | `AGENTS.md`、`.agents/skills`、`.codex/config.toml`、`.codex/hooks`、`.codex/agents` |
-| **CLI 工具** | 1 个 | `init/update/validate/status/events/metrics` 一组本地项目工具 |
+| **CLI 工具** | 1 个 | `init/update/validate/status/events/metrics/planning/delivery/change/operations` 本地项目工具 |
 
 ## 快速开始
 
@@ -76,6 +76,9 @@ npx create-claude-team metrics update
 
 # 校验 vNext planning artifact 的 ID、引用和状态所有权
 npx create-claude-team planning validate
+
+# 校验发布前的运行准备度证据
+npx create-claude-team operations validate .claude/workspace/operations/<brief>.md
 ```
 
 ### 验证

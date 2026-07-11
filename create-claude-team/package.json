@@ -1,6 +1,6 @@
 {
   "name": "create-claude-team",
-  "version": "3.4.1",
+  "version": "3.5.0-beta.1",
   "description": "AI 开发团队配置 — 可插拔预设，一行命令初始化 Claude Code 与 Codex 团队配置",
   "keywords": [
     "claude",

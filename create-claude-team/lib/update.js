@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { rm, copyFile, readFile } from 'node:fs/promises';
 import { copyDir, countFiles, findSourceDir } from './copy.js';
 import { syncCodexConfig } from './codex.js';
+import { resolvePresetName } from './presets.js';
 
 // These directories are safe to overwrite during update
 const UPDATABLE_DIRS = [
@@ -56,6 +57,12 @@ export async function update({ dryRun = false }) {
     const lines = (await readFile(presetMarker, 'utf8')).split('\n').map((l) => l.trim());
     preset = lines[0] || null;
     lang = lines[1] || null;
+  }
+
+  const resolvedPreset = preset ? resolvePresetName(preset) : null;
+  if (resolvedPreset !== preset) {
+    console.log(`  提示: 已安装预设 "${preset}" 已更名为 "${resolvedPreset}"，将按新预设刷新。`);
+    preset = resolvedPreset;
   }
 
   const presetSourceDir = preset ? join(pkgRoot, 'presets', preset) : null;
