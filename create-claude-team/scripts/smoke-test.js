@@ -17,6 +17,7 @@ import { missingPresetMcpServers, update } from '../lib/update.js';
 import { readPresetCatalog } from '../lib/presets.js';
 import { buildStatus, updateMetrics, validateEvents } from '../lib/state-tools.js';
 import { validatePlanningArtifacts } from '../lib/planning-artifacts.js';
+import { validateDeliveryPreflight, validateDeliveryTransition } from '../lib/delivery-control.js';
 import { validateProject } from '../lib/validate.js';
 import { validateSkills } from '../lib/skill-contracts.js';
 import { toCodexText } from '../lib/codex/text.js';
@@ -45,6 +46,7 @@ const PRODUCT_MODEL_ROLE_TEXT = ['product-model.md', 'Capability ID', 'Journey I
 const ARCHITECTURE_CONTEXT_TEXT = ['architecture.md', 'Architecture Component ID', '依赖方向', '安全边界', '兼容'];
 const ARCHITECTURE_DECISION_TEXT = '不得只用普通建议';
 const PLANNING_ARTIFACT_CONTEXT_TEXT = ['artifact-contract.md', 'planning validate'];
+const CONTROLLED_DELIVERY_TEXT = ['Controlled Delivery Contract', 'delivery transition'];
 const PLANNING_UPGRADE_PLAN_TEXT = ['Product Lead', '用户价值', 'MVP 归属', '推荐顺序', 'Product Brief 来源优先级', 'project-profile/product.md'];
 const EXPLORATION_BRIEF_PLAN_TEXT = ['Exploration Brief', '不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '当前请求其实是局部功能或修复', '不得只用普通“下一步”问题或散文选项代替'];
 const EXPLORATION_BRIEF_PRODUCT_LEAD_TEXT = ['不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '不能只用普通“下一步”问题代替'];
@@ -142,6 +144,10 @@ function hasArchitectureDecisionContract(text) {
 
 function hasPlanningArtifactContext(text) {
   return PLANNING_ARTIFACT_CONTEXT_TEXT.every((part) => text.includes(part));
+}
+
+function hasControlledDeliveryContract(text) {
+  return CONTROLLED_DELIVERY_TEXT.every((part) => text.includes(part));
 }
 
 function hasPlanningUpgradePlanContract(text) {
@@ -387,6 +393,56 @@ function writePlanningFixture(root, { invalidCapability = false } = {}) {
   ].join('\n'));
 }
 
+function writeDeliveryFixture(root, { taskStatus = 'planned', gateResult = 'local pending / review pending / release not_required' } = {}) {
+  writePlanningFixture(root);
+  const featureDir = join(root, '.claude', 'workspace', 'features', 'n1-fixture');
+  writeFileSync(join(featureDir, 'spec.md'), [
+    '> Spec ID：N1-SPEC-001',
+    '> Roadmap Module：N1',
+    '> Product Brief：`product-brief.md`',
+    '> Product Model：`product-model.md`',
+    '> Capability ID：C1',
+    '> Journey ID：J1',
+    '> Architecture：`architecture.md`',
+    '> Architecture Component ID：A4',
+    '> Affected Components：A4',
+    '> Dependency Direction：A3 -> A4',
+    '> Security Impact：none',
+    '> Security Risk Level：standard',
+    '> Threat Model：not required for standard fixture',
+    '> Operational Impact：none',
+    '> 执行包：`.claude/workspace/features/n1-fixture/`',
+    '',
+    '## 验收场景',
+    '',
+    'Fixture acceptance scenario.',
+    '',
+    '## Spec/Task Quality Gate',
+    '',
+    '- Builder readiness: pass',
+  ].join('\n'));
+  writeFileSync(join(featureDir, 'tasks.md'), [
+    '> Task Set：N1-TASKS-001',
+    '> Spec：`spec.md`',
+    '> Roadmap Module：N1',
+    '> 执行包：`.claude/workspace/features/n1-fixture/`',
+    '',
+    '## Spec/Task Quality Gate',
+    '',
+    '- 当前结果: pass',
+    '',
+    '### N1.1 fixture task',
+    `- **状态**：${taskStatus}`,
+    '- **描述**：Run delivery fixture.',
+    '- **验收标准**：The fixture reports a deterministic result.',
+    '- **验收命令**：npm test',
+    '- **阻塞原因**：无',
+    `- **Gate 结果**：${gateResult}`,
+    '- **产物**：fixture',
+    '- **最近更新**：2026-07-11',
+  ].join('\n'));
+}
+
 // 静默 init/update 的日志，保持测试输出干净
 async function silent(fn) {
   const orig = console.log;
@@ -578,6 +634,13 @@ async function runScenario(manifest, {
         hasPlanningArtifactContext(architect) &&
         hasPlanningArtifactContext(deliverySteward),
       'init: plan/dev 与核心角色包含 N4 Planning Artifact Contract'
+    );
+    assert(
+      ['dev', 'check', 'review-all', 'ship'].every((commandName) => (
+        hasControlledDeliveryContract(codexCommandSkillText(agentsDir, commandName)) &&
+        hasControlledDeliveryContract(codexCommandText(agentsDir, commandName))
+      )),
+      'init: 核心命令与 skill 包含 N5 Controlled Delivery Contract'
     );
     }
     assert(
@@ -887,6 +950,13 @@ async function runScenario(manifest, {
         hasPlanningArtifactContext(deliverySteward),
       'update: plan/dev 与核心角色保留 N4 Planning Artifact Contract'
     );
+    assert(
+      ['dev', 'check', 'review-all', 'ship'].every((commandName) => (
+        hasControlledDeliveryContract(codexCommandSkillText(agentsDir, commandName)) &&
+        hasControlledDeliveryContract(codexCommandText(agentsDir, commandName))
+      )),
+      'update: 核心命令与 skill 保留 N5 Controlled Delivery Contract'
+    );
     }
     assert(
       SUMMARY_COMMANDS.every((commandName) => {
@@ -1183,6 +1253,75 @@ console.log('\n[N4 规划产物体系]');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
     rmSync(invalidTmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n[N5 受控开发循环]');
+{
+  const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
+  const tmp = mkdtempSync(join(tmpdir(), 'cct-delivery-'));
+  const missingFeatureTmp = mkdtempSync(join(tmpdir(), 'cct-delivery-feature-'));
+  const dependencyTmp = mkdtempSync(join(tmpdir(), 'cct-delivery-dependency-'));
+  const securityTmp = mkdtempSync(join(tmpdir(), 'cct-delivery-security-'));
+  const transitionTmp = mkdtempSync(join(tmpdir(), 'cct-delivery-transition-'));
+  try {
+    writeDeliveryFixture(tmp);
+    const preflight = validateDeliveryPreflight({ cwd: tmp, target: 'N1', taskId: 'N1.1' });
+    assert(preflight.status === 'pass', 'delivery preflight: 完整任务可开工');
+
+    const preflightCli = spawnSync(process.execPath, [cli, 'delivery', 'preflight', 'N1', '--task', 'N1.1'], { cwd: tmp, encoding: 'utf8' });
+    assert(preflightCli.status === 0 && preflightCli.stdout.includes('delivery preflight: pass'), 'delivery cli: 输出可开工结论');
+
+    const startTransition = validateDeliveryTransition({ cwd: tmp, target: 'N1', taskId: 'N1.1', toStatus: 'in_progress' });
+    assert(startTransition.status === 'pass', 'delivery transition: planned 经 preflight 可进入 in_progress');
+
+    writeDeliveryFixture(missingFeatureTmp);
+    rmSync(join(missingFeatureTmp, '.claude', 'workspace', 'features', 'n1-fixture'), { recursive: true, force: true });
+    const missingFeature = validateDeliveryPreflight({ cwd: missingFeatureTmp, target: 'N1', taskId: 'N1.1' });
+    assert(missingFeature.status === 'blocked' && missingFeature.issues.some((issue) => issue.code === 'feature_missing'), 'delivery preflight: 缺 feature package 时阻止开工');
+
+    writeDeliveryFixture(dependencyTmp);
+    writeFileSync(join(dependencyTmp, 'roadmap.md'), [
+      '> Roadmap ID：RM-TEST-001',
+      '> Product Brief ID：PB-TEST-001',
+      '> Product Model ID：PM-TEST-001',
+      '> Architecture ID：ARCH-TEST-001',
+      '| 模块 ID | 状态 | 模块 | Capability ID | Architecture Component ID | 依赖 |',
+      '|---|---|---|---|---|---|',
+      '| N1 | planned | Fixture planning | C1 | A4 | N2 |',
+      '| N2 | planned | Dependency fixture | C1 | A4 | 无 |',
+    ].join('\n'));
+    const dependency = validateDeliveryPreflight({ cwd: dependencyTmp, target: 'N1', taskId: 'N1.1' });
+    assert(dependency.status === 'blocked' && dependency.issues.some((issue) => issue.code === 'dependency_incomplete'), 'delivery preflight: 未完成依赖时阻止开工');
+
+    writeDeliveryFixture(securityTmp);
+    const securitySpecPath = join(securityTmp, '.claude', 'workspace', 'features', 'n1-fixture', 'spec.md');
+    const securitySpec = readFileSync(securitySpecPath, 'utf8')
+      .replace('> Security Impact：none', '> Security Impact：authentication flow')
+      .replace('> Security Risk Level：standard', '> Security Risk Level：standard')
+      .replace('> Threat Model：not required for standard fixture', '> Threat Model：none');
+    writeFileSync(securitySpecPath, securitySpec);
+    const security = validateDeliveryPreflight({ cwd: securityTmp, target: 'N1', taskId: 'N1.1' });
+    assert(
+      security.status === 'needs_revision' && security.issues.some((issue) => issue.code === 'threat_model_missing'),
+      'delivery preflight: 高风险但缺威胁分析时要求修订'
+    );
+
+    writeDeliveryFixture(transitionTmp, { taskStatus: 'local_gate' });
+    const missingLocalEvidence = validateDeliveryTransition({ cwd: transitionTmp, target: 'N1', taskId: 'N1.1', toStatus: 'review_gate' });
+    assert(
+      missingLocalEvidence.status === 'needs_revision' && missingLocalEvidence.issues.some((issue) => issue.code === 'local_evidence_missing'),
+      'delivery transition: 缺 local pass 时拒绝进入 review_gate'
+    );
+    writeDeliveryFixture(transitionTmp, { taskStatus: 'local_gate', gateResult: 'local pass / review pending / release not_required' });
+    const reviewTransition = validateDeliveryTransition({ cwd: transitionTmp, target: 'N1', taskId: 'N1.1', toStatus: 'review_gate' });
+    assert(reviewTransition.status === 'pass', 'delivery transition: local pass 后允许进入 review_gate');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(missingFeatureTmp, { recursive: true, force: true });
+    rmSync(dependencyTmp, { recursive: true, force: true });
+    rmSync(securityTmp, { recursive: true, force: true });
+    rmSync(transitionTmp, { recursive: true, force: true });
   }
 }
 

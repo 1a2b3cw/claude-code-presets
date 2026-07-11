@@ -135,6 +135,16 @@ system health review 默认不直接修改代码。它可以生成修复任务�
 
 ## tasks.md 状态更新
 
+## Controlled Delivery Contract
+
+存在 `.claude/workspace/planning/delivery-contract.md` 时，审查通过后先将 `Gate 结果` 写为 `review pass`，再运行：
+
+```text
+node create-claude-team/cli.js delivery transition <module> <task-id> release_gate
+```
+
+无需发布时必须同时记录 `release not_required`，并改用 `delivery transition <module> <task-id> done`。`needs_fix` 或 `blocked` 不得伪造 review pass；控制器只读 tasks，不取代 review report。
+
 如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/review-all` 必须把它作为执行状态源同步更新：
 
 - 开始审查时，将对应任务状态更新为 `review_gate`，并刷新最近更新日期。

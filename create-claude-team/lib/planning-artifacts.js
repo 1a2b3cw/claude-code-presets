@@ -91,12 +91,24 @@ function parseTaskStatuses(markdown) {
     .map((match) => normalize(match[1]));
 }
 
+function parseTaskFields(markdown) {
+  return Object.fromEntries(
+    [...String(markdown ?? '').matchAll(/^- \*\*([^*]+)\*\*：([^\r\n]+)/gm)]
+      .map((match) => [match[1].trim(), normalize(match[2])])
+  );
+}
+
 export function parseFeatureTasks(markdown) {
   const tasks = [];
   const pattern = /^### (N\d+\.\d+) ([^\r\n]+)\r?\n([\s\S]*?)(?=^### N\d+\.\d+ |(?![\s\S]))/gm;
   for (const match of String(markdown ?? '').matchAll(pattern)) {
-    const status = match[3].match(/- \*\*状态\*\*：([^\r\n]+)/)?.[1];
-    tasks.push({ id: match[1], title: match[2].trim(), status: normalize(status) });
+    const fields = parseTaskFields(match[3]);
+    tasks.push({
+      id: match[1],
+      title: match[2].trim(),
+      status: normalize(fields.状态),
+      fields,
+    });
   }
   return tasks;
 }
@@ -176,14 +188,18 @@ export function validatePlanningArtifacts({ cwd = process.cwd() } = {}) {
   const features = featureDirectories(cwd).map(({ name, path }) => {
     const specPath = join(path, 'spec.md');
     const tasksPath = join(path, 'tasks.md');
+    const specText = readText(specPath) ?? '';
+    const tasksText = readText(tasksPath) ?? '';
     return {
       name,
       path,
       specPath,
       tasksPath,
-      spec: parseArtifactMetadata(readText(specPath)),
-      tasks: parseArtifactMetadata(readText(tasksPath)),
-      taskStatuses: parseTaskStatuses(readText(tasksPath)),
+      specText,
+      tasksText,
+      spec: parseArtifactMetadata(specText),
+      tasks: parseArtifactMetadata(tasksText),
+      taskStatuses: parseTaskStatuses(tasksText),
     };
   });
 

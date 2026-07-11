@@ -23,7 +23,7 @@ In Codex, invoke this as `$team-command-dev`. Do not rely on `/dev` unless Codex
 
 1. 读取 `roadmap.md` 的功能模块表，定位模块 ID、状态、描述、复杂度、依赖、验收标准、风险、最近更新。
 2. 检查依赖模块是否为 `done` 或 `shipped`；依赖未满足时先提醒用户，不直接开工。
-3. 开工前把目标模块状态更新为 `in_progress`，刷新最近更新日期为当天。
+3. 存在 Controlled Delivery Contract 时，先运行 `delivery preflight`；只有 `pass` 后才能把目标模块状态更新为 `in_progress`，刷新最近更新日期为当天。
 4. 开发中复用 roadmap 的模块描述、复杂度和验收标准，不重新询问产品级问题。
 5. 模块完成后把状态更新为 `done`，刷新最近更新日期，并在 `## 进度` 区把对应模块打勾。
 6. 如果模块被发布流程确认上线，可由 `/ship` 或后续维护把状态从 `done` 更新为 `shipped`。
@@ -50,6 +50,19 @@ In Codex, invoke this as `$team-command-dev`. Do not rely on `/dev` unless Codex
 - feature spec 必须使用合同的最小头部：Module、Capability、Journey、Architecture Component、Affected Components、Dependency Direction、Security Impact 和 Operational Impact。
 - 创建或变更 roadmap/spec/tasks 后运行 `node create-claude-team/cli.js planning validate`；失败时修复具体 artifact 引用，不以跳过校验或写入备用状态文件绕过。
 - `create-claude-team status` 与 Workbench 只投影该读取链；legacy docs 仅在 vNext artifact 缺失时回退读取。
+
+## Controlled Delivery Contract
+
+存在 `.claude/workspace/planning/delivery-contract.md` 时，M/L/XL 开工前必须运行：
+
+```text
+node create-claude-team/cli.js delivery preflight <module> --task <task-id>
+```
+
+- 只有 `pass` 才能将 task 写为 `in_progress`；使用 `delivery transition <module> <task-id> in_progress` 确认迁移合法。
+- `needs_revision` 时先修复命令列出的 spec/tasks/安全缺口；`blocked` 时先完成依赖或解除上游阻塞。两种结果都不得开始实现。
+- 该 CLI 只读 planning artifacts；roadmap 和 tasks 的写入责任不变，events/review/release/status/Workbench 不得作为替代依据。
+- S 级热修可跳过；安全敏感变更必须有 `Security Risk Level：high` 和 `Threat Model`，但完整上线安全与运行保障仍由 N7/`/ship` 负责。
 
 ## Owner Decision Brief 契约
 
@@ -244,7 +257,7 @@ blocked → planned / in_progress（阻塞解除后）
 ```
 for 每个任务 in tasks.md:
   1. Builder 实现（TDD：先写测试 → 写代码 → 重构）
-     → 开始时把任务状态更新为 in_progress
+     → 先执行 `delivery preflight` 和 `delivery transition ... in_progress`，再把任务状态更新为 in_progress
   2. /check 快检（每个任务完成后立即执行）
      → 开始本地验证时把任务状态更新为 local_gate
      → 有问题：自动修 → 重新检查（最多 2 轮）

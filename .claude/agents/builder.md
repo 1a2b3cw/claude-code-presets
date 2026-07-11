@@ -16,6 +16,7 @@
 - 理解任务上下文和依赖
 - 不明确的地方直接问，不猜
 - 读取 `.claude/workspace/journal.md` 了解之前的会话上下文（如果有的话）
+- 存在 `.claude/workspace/planning/delivery-contract.md` 时，M/L/XL 先运行 `node create-claude-team/cli.js delivery preflight <module> --task <task-id>`；只有 `pass` 后运行 `delivery transition <module> <task-id> in_progress` 并写入 `tasks.md`。`needs_revision` 或 `blocked` 时停止实现并按输出处理。
 
 ### 实现
 - **TDD 流程**：先写测试 → 写代码让测试通过 → 重构
@@ -32,6 +33,7 @@
   - /check 发现问题 → 自动修复 → 重新检查（最多 2 轮）
   - 2 轮后仍有问题 → 列出问题等用户决定
 - M 及以上任务提交给 Reviewer
+- 状态推进前使用 Controlled Delivery Contract：local pass 后才进入 `review_gate`，review pass 后才进入 `release_gate` 或 `done`，release pass 后才进入 `shipped`；CLI 不写状态，不得用 events 或视图绕过它。
 
 ## 代码规范
 - **语言/框架的具体规范一律遵循 `.claude/rules/`**（TypeScript、Python 等各自的规则文件），不在此重复

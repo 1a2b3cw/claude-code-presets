@@ -13,6 +13,7 @@ const REQUIRED_PACK_FILES = [
   'lib/init.js',
   'lib/update.js',
   'lib/validate.js',
+  'lib/delivery-control.js',
   '.claude/CLAUDE.md',
   '.claude/commands/dev.md',
   '.claude/hooks/security-check.mjs',

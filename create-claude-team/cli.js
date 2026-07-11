@@ -6,6 +6,7 @@ import { printStatus, updateMetrics, validateEvents } from './lib/state-tools.js
 import { update } from './lib/update.js';
 import { validateProject } from './lib/validate.js';
 import { formatPlanningValidation, validatePlanningArtifacts } from './lib/planning-artifacts.js';
+import { formatDeliveryResult, validateDeliveryPreflight, validateDeliveryTransition } from './lib/delivery-control.js';
 import {
   getAvailableLanguages,
   getDefaultPreset,
@@ -36,6 +37,8 @@ ${presetUsage}
     npx create-claude-team events validate                校验 events JSONL 和 artifact 引用
     npx create-claude-team metrics update                 从 events 聚合 metrics.md
     npx create-claude-team planning validate               校验 vNext planning artifact 引用链
+    npx create-claude-team delivery preflight <module> [--task <id>]  校验受控开发开工条件
+    npx create-claude-team delivery transition <module> <task> <status>  校验任务状态迁移
     npx create-claude-team --help                        显示帮助
 
   选项:
@@ -53,6 +56,8 @@ ${presetExamples}
     npx create-claude-team events validate
     npx create-claude-team metrics update
     npx create-claude-team planning validate
+    npx create-claude-team delivery preflight N5 --task N5.2
+    npx create-claude-team delivery transition N5 N5.2 in_progress
 `;
 
 const { values, positionals } = parseArgs({
@@ -63,6 +68,7 @@ const { values, positionals } = parseArgs({
     force: { type: 'boolean', default: false },
     'dry-run': { type: 'boolean', default: false },
     json: { type: 'boolean', default: false },
+    task: { type: 'string' },
     help: { type: 'boolean', short: 'h', default: false },
   },
   allowPositionals: true,
@@ -131,6 +137,24 @@ try {
       const result = validatePlanningArtifacts();
       console.log(formatPlanningValidation(result));
       if (!result.valid) process.exit(1);
+      break;
+    }
+    case 'delivery': {
+      const subcommand = positionals[1];
+      let result;
+      if (subcommand === 'preflight') {
+        result = validateDeliveryPreflight({ target: positionals[2], taskId: values.task ?? null });
+      } else if (subcommand === 'transition') {
+        result = validateDeliveryTransition({
+          target: positionals[2],
+          taskId: positionals[3],
+          toStatus: positionals[4],
+        });
+      } else {
+        throw new Error('未知 delivery 子命令。可用: delivery preflight <module> [--task <id>] / delivery transition <module> <task> <status>');
+      }
+      console.log(formatDeliveryResult(result, { json: values.json }));
+      if (result.status !== 'pass') process.exit(1);
       break;
     }
     default:

@@ -68,6 +68,16 @@ In Codex, invoke this as `$team-command-check`. Do not rely on `/check` unless C
 
 ## tasks.md 状态更新
 
+## Controlled Delivery Contract
+
+存在 `.claude/workspace/planning/delivery-contract.md` 时，`/check` 在改写任务状态前运行：
+
+```text
+node create-claude-team/cli.js delivery transition <module> <task-id> local_gate
+```
+
+本地检查通过并写入 `Gate 结果` 的 `local pass` 后，再运行 `delivery transition <module> <task-id> review_gate`。CLI 只判断迁移条件，不代替 `/check` 执行测试，也不写入 `tasks.md`。
+
 如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/check` 必须把它作为执行状态源同步更新：
 
 - 开始快检时，将对应任务状态更新为 `local_gate`，并刷新最近更新日期。

@@ -85,6 +85,16 @@ In Codex, invoke this as `$team-command-ship`. Do not rely on `/ship` unless Cod
 
 ## tasks.md 状态更新
 
+## Controlled Delivery Contract
+
+存在 `.claude/workspace/planning/delivery-contract.md` 时，`/ship` 只在发布检查和上线验证通过、`Gate 结果` 已包含 `release pass` 后运行：
+
+```text
+node create-claude-team/cli.js delivery transition <module> <task-id> shipped
+```
+
+该迁移不证明部署、安全或恢复已经充分完成；它只阻止跳过已经声明的 release evidence。N7 负责进一步定义真正的运行保障门禁。
+
 如果仓库存在 `tasks.md`，或用户指定了任务/模块 ID，`/ship` 必须把它作为执行状态源同步更新：
 
 - 开始发布检查时，将对应任务状态更新为 `release_gate`，并刷新最近更新日期。
