@@ -37,7 +37,7 @@ In Codex, invoke this as `$team-command-dev`. Do not rely on `/dev` unless Codex
 
 - 从 roadmap 取得 Architecture Component ID，并确认本次变更支撑的 Capability ID、Journey ID 和用户结果。
 - 检查依赖方向、跨组件接口、安全边界、迁移和兼容影响；不得通过 status、Workbench 或 legacy 视图绕过上游事实。
-- 如果变更会改变组件职责、跨组件接口、安全边界、兼容策略或迁移路径，先给出 ADR 或 Owner Decision Brief；普通局部实现无需阻塞。
+- 如果变更会改变组件职责、跨组件接口、安全边界、兼容策略或迁移路径，必须在架构预分析后按固定格式输出 Owner Decision Brief，并给出推荐；不得只用普通建议或“需要 Owner 决策”一句话代替。普通局部实现无需阻塞。
 - feature spec 必须记录 Architecture Component ID、受影响组件、依赖方向和验证方式；N4 再统一引用格式和自动校验。
 
 没有 `architecture.md` 的旧项目可以按现有流程继续；不要为了补文档而阻塞低风险修复。
