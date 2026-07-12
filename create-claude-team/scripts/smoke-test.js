@@ -1845,6 +1845,7 @@ console.log('\n[N8.1 Project Preset Lifecycle]');
   const pendingTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-pending-'));
   const feedbackAwaitingTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-feedback-awaiting-'));
   const feedbackConfirmedTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-feedback-confirmed-'));
+  const feedbackRejectedTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-feedback-rejected-'));
   const feedbackInvalidTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-feedback-invalid-'));
   try {
     writeProjectPresetFixture(validTmp);
@@ -1917,6 +1918,14 @@ console.log('\n[N8.1 Project Preset Lifecycle]');
       'project-preset feedback cli: 确认后返回可机器读取的 pass'
     );
 
+    writeProjectPresetFixture(feedbackRejectedTmp);
+    const rejectedProposal = writeProjectPresetFeedbackProposal(feedbackRejectedTmp, { status: 'rejected' });
+    const rejectedCli = spawnSync(process.execPath, [cli, 'project-preset', 'feedback', 'validate', rejectedProposal], { cwd: feedbackRejectedTmp, encoding: 'utf8' });
+    assert(
+      rejectedCli.status === 1 && rejectedCli.stdout.includes('Owner 已拒绝该候选规则') && !rejectedCli.stdout.includes('尚未获得 Owner'),
+      'project-preset feedback cli: 拒绝的候选明确报告为不得写入'
+    );
+
     writeProjectPresetFixture(feedbackInvalidTmp);
     const invalidProposal = writeProjectPresetFeedbackProposal(feedbackInvalidTmp, { targetFiles: '.env' });
     const invalidFeedback = validateProjectPresetFeedback({ cwd: feedbackInvalidTmp, path: invalidProposal });
@@ -1933,6 +1942,7 @@ console.log('\n[N8.1 Project Preset Lifecycle]');
     rmSync(pendingTmp, { recursive: true, force: true });
     rmSync(feedbackAwaitingTmp, { recursive: true, force: true });
     rmSync(feedbackConfirmedTmp, { recursive: true, force: true });
+    rmSync(feedbackRejectedTmp, { recursive: true, force: true });
     rmSync(feedbackInvalidTmp, { recursive: true, force: true });
   }
 }

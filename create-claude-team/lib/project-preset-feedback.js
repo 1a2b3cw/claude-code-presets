@@ -158,10 +158,15 @@ export function formatProjectPresetFeedback(result, { json = false } = {}) {
     issues: result.issues,
   }, null, 2);
 
+  const proposalStatus = normalize(result.metadata?.Status).toLowerCase();
   const details = result.issues.length > 0
     ? result.issues.map((issue) => `  - [${issue.code}] ${issue.message}\n    下一步：${issue.action}`).join('\n')
     : (result.status === 'pass'
       ? '  - 无；Owner 已确认，允许按 proposal 中的最小 diff 更新目标文件，然后重新运行 project-preset validate/context。'
-      : '  - proposal 结构完整，但尚未获得 Owner 对具体规则内容的确认；不得修改 Target Files。');
+      : (proposalStatus === 'rejected'
+        ? '  - Owner 已拒绝该候选规则；保留 proposal 作为反馈证据，不得修改 Target Files，也不自动生成替代规则。'
+        : (proposalStatus === 'superseded'
+          ? '  - 该候选已被替代；不得修改 Target Files，应引用新 proposal。'
+          : '  - proposal 结构完整，但尚未获得 Owner 对具体规则内容的确认；不得修改 Target Files。')));
   return `\nproject-preset feedback validate: ${result.status}\n  Proposal: ${result.metadata?.['Proposal ID'] ?? 'unknown'}\n  Targets: ${(result.targetFiles ?? []).join(', ') || 'none'}\n  结果:\n${details}`;
 }

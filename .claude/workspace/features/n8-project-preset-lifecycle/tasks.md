@@ -70,8 +70,8 @@
 - **验收标准**：D25 通过；至少一个已激活的真实项目完成 `feedback -> proposal -> Owner confirmation -> curation -> validate/context -> reload`；拒绝或未确认时 git diff 为空；一次偶发失败不能直接变成规则。
 - **验收命令**：在 `create-claude-team/` 运行 `npm run gate` 与 `npm run test:tarball`；在仓库根目录运行 `node create-claude-team/cli.js planning validate`；在真实项目运行 `project-preset validate`、`project-preset context --json` 并核验更新前后 diff。
 - **优先级**：P0，N8 关单前必须完成。
-- **阻塞原因**：机制、回归测试、同步与审查已通过；等待 Owner 确认 PetCare 候选 `PPFB-20260712-001` 的具体规则文本。未确认前不修改其 Target Files，工具完全权限不替代该确认。
-- **Gate 结果**：spec/task pass；delivery preflight/transition pass；local pass；review pass；release not_required；acceptance blocked awaiting Owner confirmation
+- **阻塞原因**：Owner 已拒绝 PetCare 候选 `PPFB-20260712-001`；Target Files 未修改，且不自动生成替代规则。N8.1.5 需等待一条新的、与已拒绝候选实质不同的 Owner 反馈或可复核重复证据，再建立新 proposal。
+- **Gate 结果**：spec/task pass；delivery preflight/transition pass；local pass；review pass；release not_required；acceptance blocked after Owner rejection；fix pass
 - **产物**：最小 feedback proposal 契约、对应流程/回归测试、`.claude/workspace/reviews/2026-07-12-n8-feedback-lifecycle.md`、PetCare 的 `project-profile/feedback/2026-07-12-validation-evidence.md`。
 - **最近更新**：2026-07-12
 

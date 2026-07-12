@@ -60,4 +60,6 @@
 
 ## 下一步
 
-等 Owner 回复“确认”或“不确认” `PPFB-20260712-001`。在此前不修改 PetCare 的 Target Files，不关单 N8.1.5。
+Owner 已拒绝 `PPFB-20260712-001`。PetCare 的 Target Files 保持不变，proposal 已留在 `project-profile/feedback/` 作为反馈证据。不自动用另一条规则替代；N8.1.5 继续 blocked，等待新的、实质不同的反馈或重复证据。
+
+2026-07-12 补充修复：拒绝后 CLI 原本显示“尚未确认”，已改为明确输出“Owner 已拒绝，不得写入”，并增加回归测试。
