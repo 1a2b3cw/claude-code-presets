@@ -2,6 +2,10 @@
 
 代码发布前的全面检查和部署流程。M 及以上任务必须通过 /ship 才能发布。
 
+## Project Preset Lifecycle
+
+开始前运行 `node create-claude-team/cli.js project-preset context --json`。当结果为 `pass` 时，按 `PRESET.md -> rules -> specs -> base/技术栈 preset` 顺序读取；只读取与当前发布相关的 rules/specs。结果为 `needs_revision` 时，不得静默把 project-preset 当作项目事实，先说明 `project-preset validate` 的修复项。不存在 project-preset 时，继续使用 base 和已安装技术栈 preset，不阻塞既有项目，并按需建议 `/project-preset`。
+
 ## 执行流程
 
 ```
@@ -71,6 +75,14 @@
   - C: [optional] - [trade-off]
 - If no reply: [pause release / safe default]
 ```
+
+存在 `.claude/workspace/planning/owner-decision-contract.md` 时，高风险发布引用的 Brief 还必须通过：
+
+```text
+node create-claude-team/cli.js decision validate <brief>
+```
+
+只有 `confirmed`、模块和类型匹配的 Brief 才能用于 N7 Readiness Brief 或 release report。AI 不能把工具权限、自动批准或自己的风险建议写成 Owner Confirmation；缺确认时发布保持 blocked。
 
 ## tasks.md 状态更新
 

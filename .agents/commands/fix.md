@@ -2,6 +2,10 @@
 
 指定文件或描述问题，AI 直接修，不走规划流程。
 
+## Project Preset Lifecycle
+
+开始前运行 `node create-claude-team/cli.js project-preset context --json`。当结果为 `pass` 时，按 `PRESET.md -> rules -> specs -> base/技术栈 preset` 顺序读取；只读取与当前修复相关的 .agents/rules/specs。结果为 `needs_revision` 时，不得静默把 project-preset 当作项目事实，先说明 `project-preset validate` 的修复项。不存在 project-preset 时，继续使用 base 和已安装技术栈 preset，不阻塞既有项目，并按需建议 `/project-preset`。
+
 ## 和 /dev 的区别
 
 | 场景 | 用什么 |

@@ -1,5 +1,7 @@
 # Project Preset Workflow Spec
 
+> 生命周期：reference。此文件记录早期 Project Preset 工作流设计；当前 N8 主线由根 `roadmap.md`、`.claude/workspace/planning/artifact-contract.md` 与对应 feature package 拥有。不得用本文定义当前模块状态。
+
 ## 目标
 
 为 `create-claude-team` 增加项目级自适应预设工作流，并提供无技术栈偏见的 `base` preset。用户可以先安装基础团队配置，再通过和 Claude/Codex 讨论、扫描已有代码或导入已有方案，生成当前项目专属的 `project-profile/` 与 `project-preset/`。

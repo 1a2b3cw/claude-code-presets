@@ -1,6 +1,6 @@
 # AI 产品开发团队 vNext 路线图
 
-> 状态：draft
+> 状态：active
 > Roadmap ID：RM-VNEXT-001
 > Product Brief ID：PB-VNEXT-001
 > Product Model ID：PM-VNEXT-001
@@ -9,10 +9,10 @@
 > Product Brief：`product-brief.md`
 > 核心用户：依靠 AI 共同完成产品与技术判断的独立开发者和项目 Owner。
 > 核心价值：共同思考，并保持从需求到实现的整体一致性。
-> 本期范围：重建产品探索、架构规划、开发交接、变更影响、安全发布和运行保障链路。
-> 明确不做：扩展 Workbench、metrics、preset 和外部能力生态。
-> 验收标准：三个真实场景能够跑通完整、可追踪的项目主干。
-> 更新于：2026-07-11
+> 本期范围：重建产品探索、架构规划、开发交接、变更影响、安全发布和运行保障链路，并闭合项目专属 preset 与 Owner Decision 验证。
+> 明确不做：扩展 Workbench、metrics、通用 preset 目录和重复的编码执行层。
+> 验收标准：三个真实场景能够跑通完整、可追踪的项目主干，project-preset 被真实加载，完全访问权限不绕过 Owner 决策。
+> 更新于：2026-07-12
 
 ## 项目主干
 
@@ -43,6 +43,11 @@ Product Brief
 | N1 | `.claude/workspace/features/n1-co-discovery/` | 本模块的 spec、tasks 和 review；通用命令读取规则由 N4 统一迁移 |
 | N2 | `.claude/workspace/features/n2-product-model/` | 本模块的 Product Model、spec、tasks 和 review；结构化存储与自动校验由 N4 统一设计 |
 | N3 | `.claude/workspace/features/n3-architecture-backbone/` | 本模块的 Architecture、ADR、spec、tasks 和 review；artifact schema 与状态读取由 N4 统一设计 |
+| N4 | `.claude/workspace/features/n4-planning-artifact-system/` | 规划产物层级、状态与追溯契约 |
+| N5 | `.claude/workspace/features/n5-controlled-delivery-loop/` | 受控开工、迭代、验证与持续审查 |
+| N6 | `.claude/workspace/features/n6-change-impact-integrity/` | 变更归属、影响范围与完整性验证 |
+| N7 | `.claude/workspace/features/n7-operational-readiness/` | 安全、发布、运行、恢复与回滚证据 |
+| N8 | `.claude/workspace/features/n8-*/` | N8.2-N8.5 已完成；N8.1 重开一个 feedback 闭环子任务 |
 
 ## 功能模块
 
@@ -55,7 +60,7 @@ Product Brief
 | N5 | done | 受控开发循环 | C5 | A5 | AI 不再拿到局部需求就闷头实现 | 是 | 开工前检查上游契约，按小迭代开发、测试、安全检查并同步状态 | P0 | XL | N4 | 缺少关键产品、架构或安全信息时能够停下并给出建议 | 门禁过多降低开发效率 | 2026-07-11 |
 | N6 | done | 变更影响与完整性 | C6 | A4,A5 | 用户体验问题可以精准修改且不破坏整体 | 是 | 定位问题归属，生成影响范围、同步项和完整性验证 | P0 | XL | N3,N4,N5 | 体验变化能追踪到相关规划、代码、测试和文档 | 影响关系依赖 AI 自觉维护 | 2026-07-11 |
 | N7 | done | 安全、发布与运行保障 | C7 | A6 | 用户不必独自承担上线后的安全和运维风险 | 是 | 建立风险分级、威胁分析、部署、监控、告警、备份、恢复、回滚和事故处理契约 | P0 | XL | N3,N4,N5,N6 | 高风险功能有安全证据，软件可部署、可观察、可恢复和可回滚 | 不同项目运行环境差异较大 | 2026-07-11 |
-| N8 | planned | 验证、迁移与替换 | C8 | A7 | 新体系经过真实使用后再成为正式产品 | 否 | 用真实项目验证，迁移有效能力，切换状态读取器，删除或归档旧体系 | P1 | XL | N1-N7 | 三类场景通过，Claude/Codex 行为一致，status/Workbench 不再读取旧主线 | 新旧体系并存期间容易混淆 | 2026-07-11 |
+| N8 | in_progress | Project Preset、决策门禁与真实验证 | C8 | A2,A4,A5,A7 | 新体系先证明会理解项目、遵守项目规则并在高影响决策前停下 | 是 | 闭合 project-preset 生命周期，建立不受工具权限影响的 Owner Decision Gate，用三类真实项目 dogfood 后完成治理层切换 | P0 | XL | N1-N7 | 已完成生成/审查/校验/加载、Owner Gate、三类场景和治理层切换；待 N8.1.5 证明真实反馈能形成可审查候选修改，且未经 Owner 确认不会自动升级为项目规则 | feedback 目前只有更新原则、没有行为闭环；有限 Dogfood 仍可能产生假阳性；Claude gateway 恢复后需补实机验证 | 2026-07-12 |
 
 > 状态：planned / in_progress / blocked / done / shipped
 
@@ -65,20 +70,42 @@ Product Brief
 N1 -> N2 -> N3 -> N4 -> N5 -> N6 -> N7 -> N8
 ```
 
-N1-N4 先建立正确的思考和指挥体系；N5-N6 让开发与修改遵守这套体系；N7 补齐安全上线和持续运行；N8 最后处理旧项目迁移，不提前被兼容成本牵制。
+N1-N4 建立思考和指挥体系；N5-N6 让开发与修改遵守主线；N7 补齐安全上线和持续运行；N8 不再只是迁移收尾，而是先验证 project-preset 激活、Owner Decision 行为和真实项目价值，再决定正式切换或收敛。
+
+## N8 验证阶段
+
+| 阶段 | 状态 | 目标 | 最小验收 |
+|---|---|---|---|
+| N8.1 Project Preset Lifecycle | in_progress | 闭合 generate -> review -> validate -> activate -> feedback | 已完成前四步；N8.1.5 需用一条真实反馈证明“证据 -> 候选修改 -> Owner 确认 -> curate/validate -> 重新加载”，未确认推断不能升级为规则 |
+| N8.2 Owner Decision Gate | done | 将产品决策与工具权限分离 | 完全访问权限下，产品范围、长期架构、安全隐私、不可逆操作和正式发布仍必须等待 Owner 确认 |
+| N8.3 Real Project Dogfood | done_with_limitations | 在非本仓库场景验证真实价值 | 三类场景已完成；D21 为回放、仅 PetCare 完成真实 preset 激活，作为可信度限制保留，不伪装成普遍验证 |
+| N8.4 Ecosystem Boundary | done | 明确与成熟执行层的分工 | 通用 TDD、调试、子代理、worktree、review 优先复用；本项目只保留有可观察增益的治理能力 |
+| N8.5 Cutover Or Converge | done | 根据证据决定正式产品形态 | 已选择治理层切换；状态读取已迁移，legacy 仅作 reference，不扩建第二套通用执行层 |
+
+## N1-N8 给 Owner 的实际结果
+
+| 模块 | 你真正得到的东西 | 它不代表什么 |
+|---|---|---|
+| N1 | 你可以从模糊想法开始；AI 应先给方向、推荐和关键取舍，只让你决定高价值问题 | 不是一份固定问卷，也不保证 AI 每次都有好创意 |
+| N2 | 项目有一个稳定的“为谁、解决什么、不做什么”事实源 | 不是更多产品文档就自动等于好产品 |
+| N3 | 每个功能知道它属于哪个模块，大改动能说明接口、数据、迁移和回滚影响 | 不是提前设计所有实现细节 |
+| N4 | roadmap、spec、tasks 有明确分工和唯一状态来源，不应再各说各话 | 不是用编号和文件数量制造“在管理”的假象 |
+| N5 | AI 开工前要检查上游目标、范围和风险，信息缺失时应停下并告诉你缺什么 | 不是任何小修改都走重流程 |
+| N6 | 你说“这里不好用”时，AI 应定位该改产品、架构、规划还是代码，并检查连带影响 | 不是自动猜对你没有说出的产品意图 |
+| N7 | “做完”不再只是代码能跑，还要有与风险匹配的安全、部署、监控、备份、恢复和回滚证据 | 不是 base 会替每个项目自动配好云服务和运维 |
+| N8 | 不同项目可以形成自己的 preset；完全权限不等于你已同意高影响决策；MY2 正式收敛为治理层而不是第二个 Superpowers | 不代表 preset feedback 已闭环，也不代表三个项目都已生成并激活 preset |
+
+N1-N8 合起来交付的不是“更会写代码的模型”，而是一条让 AI 与 Owner 共同做产品、在长期开发中不容易跑偏的治理主干：它管“写什么、为什么写、什么时候必须停下、改完如何证明没破坏整体”，通用编码执行能力优先交给成熟生态。
 
 ## 风险与未决
 
-| 项 | 当前建议 | 决策时点 |
-|---|---|---|
-| Project Model 形态 | 先设计信息模型，再决定文档或结构化存储 | N2 |
-| 架构表达深度 | 先覆盖能力、模块、接口和关键数据流，不提前设计全部实现 | N3 |
-| spec/tasks 粒度 | 用三个真实功能测试后再固定模板 | N4 |
-| 当前状态读取漂移 | status/Workbench 仍显示旧 M6；N4 定义读取契约，N8 完成迁移 | N4,N8 |
-| 自动影响检查 | 已建立关系契约；N8 的真实项目验证后再判断哪些检查值得工具化 | N8 |
-| 部署适配范围 | 已定义平台无关合同；具体平台部署、监控、备份和恢复由项目 preset/CI/CD 落地 | N8/项目实施 |
-| 安全与上线门禁 | 已按风险分级强制 Threat Model、Owner Decision 和运行准备度证据；真实环境验证由每次 `/ship` 执行 | 项目发布 |
-| 重构方式 | 平行构建 vNext，验证后整体替换旧流程 | N8 |
+| 项 | 状态 | 当前处理 | 处理时点 |
+|---|---|---|---|
+| project-preset feedback 闭环 | 未完成，P0 | 执行 N8.1.5：反馈只能形成有证据的候选修改，Owner 确认并通过 curate/validate 后才能重新加载 | N8 关单前 |
+| Dogfood 样本覆盖 | 已接受限制，P1 | D21 是回放，仅 PetCare 有激活 preset；后续补无 PRD 实时探索和第二个异构项目激活，不阻塞 N8.1.5 | 后续 Dogfood |
+| Claude/Codex 实机一致性 | 环境阻塞，已接受 | 保留静态同步证据；Claude gateway 502 恢复后补跑 A1-A4，不把 Codex 结果伪装成 Claude 实机证据 | 环境恢复后 |
+| 项目具体部署/恢复适配 | 持续责任 | base 只保留平台无关合同；由每个 project-preset 和 `/ship` 落地真实环境证据 | 每个项目发布时 |
+| 公共 preset 孵化 | 暂停 | 至少三个已激活项目出现稳定、重复、可验证的共同模式后再评估 | 达到样本门槛后 |
 
 ## 进度
 
@@ -89,4 +116,4 @@ N1-N4 先建立正确的思考和指挥体系；N5-N6 让开发与修改遵守�
 - [x] N5 受控开发循环 - done - 最近更新：2026-07-11
 - [x] N6 变更影响与完整性 - done - 最近更新：2026-07-11
 - [x] N7 安全、发布与运行保障 - done - 最近更新：2026-07-11
-- [ ] N8 验证、迁移与替换 - planned - 最近更新：2026-07-11
+- [ ] N8 Project Preset、决策门禁与真实验证 - in_progress（仅剩 N8.1.5 feedback 闭环） - 最近更新：2026-07-12

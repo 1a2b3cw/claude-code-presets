@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { parseArtifactMetadata, validatePlanningArtifacts } from './planning-artifacts.js';
+import { parseArtifactMetadata, selectFeatureForModule, validatePlanningArtifacts } from './planning-artifacts.js';
 
 const CHANGE_KINDS = new Set(['experience', 'behavior', 'architecture', 'security', 'operational']);
 const CHANGE_STATUSES = new Set(['draft', 'ready', 'in_progress', 'complete', 'blocked']);
@@ -62,7 +62,7 @@ function findTarget(planning, target) {
   if (module) {
     return {
       module,
-      feature: planning.features.find((item) => normalize(item.spec['Roadmap Module']).match(/^N\d+/)?.[0] === value) ?? null,
+      feature: selectFeatureForModule(planning.features, value),
     };
   }
   const feature = planning.features.find((item) => item.name === value);

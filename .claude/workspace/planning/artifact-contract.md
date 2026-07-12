@@ -71,4 +71,5 @@
 
 - `node create-claude-team/cli.js planning validate` 校验 ID、引用、模块依赖、feature package 与状态所有权。
 - `create-claude-team status` 优先读取根 `roadmap.md` 与对应 feature package；缺少 vNext artifact 时才回退 legacy M6 读取。
+- 同一 roadmap module 存在多个 feature package 时，状态读取优先选择含 `in_progress` 任务的 package，随后依次选择 local/review/release gate、planned/ready、待澄清/blocked；全部完成时才按稳定目录名回退。不得因目录排序选中旧 package。
 - Workbench 使用与 CLI 相同的规划读取结果；它不能直接解析旧 roadmap 来定义当前主线。

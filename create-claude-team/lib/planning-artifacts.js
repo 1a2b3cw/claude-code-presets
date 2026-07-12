@@ -6,6 +6,18 @@ const TASK_STATUSES = new Set([
   'ready', 'needs_clarification', 'planned', 'in_progress', 'local_gate',
   'review_gate', 'release_gate', 'blocked', 'shipped', 'done',
 ]);
+const ACTIVE_TASK_PRIORITY = new Map([
+  ['in_progress', 0],
+  ['local_gate', 1],
+  ['review_gate', 2],
+  ['release_gate', 3],
+  ['planned', 4],
+  ['ready', 4],
+  ['needs_clarification', 5],
+  ['blocked', 6],
+  ['done', 9],
+  ['shipped', 9],
+]);
 
 function normalize(value) {
   return String(value ?? '').trim().replace(/^`|`$/g, '');
@@ -100,7 +112,7 @@ function parseTaskFields(markdown) {
 
 export function parseFeatureTasks(markdown) {
   const tasks = [];
-  const pattern = /^### (N\d+\.\d+) ([^\r\n]+)\r?\n([\s\S]*?)(?=^### N\d+\.\d+ |(?![\s\S]))/gm;
+  const pattern = /^### (N\d+(?:\.\d+){1,2}) ([^\r\n]+)\r?\n([\s\S]*?)(?=^### N\d+(?:\.\d+){1,2} |(?![\s\S]))/gm;
   for (const match of String(markdown ?? '').matchAll(pattern)) {
     const fields = parseTaskFields(match[3]);
     tasks.push({
@@ -111,6 +123,26 @@ export function parseFeatureTasks(markdown) {
     });
   }
   return tasks;
+}
+
+export function selectFeatureForModule(features, moduleId) {
+  const candidates = features.filter((feature) => (
+    normalize(feature.spec['Roadmap Module']).match(/^N\d+/)?.[0] === moduleId
+  ));
+  if (candidates.length < 2) return candidates[0] ?? null;
+
+  return candidates
+    .map((feature) => {
+      const priorities = parseFeatureTasks(feature.tasksText)
+        .map((task) => ACTIVE_TASK_PRIORITY.get(task.status) ?? 8);
+      return {
+        feature,
+        priority: priorities.length > 0 ? Math.min(...priorities) : 8,
+      };
+    })
+    .sort((left, right) => (
+      left.priority - right.priority || left.feature.name.localeCompare(right.feature.name)
+    ))[0].feature;
 }
 
 function featureDirectories(cwd) {
@@ -258,7 +290,7 @@ export function readPlanningStatus({ cwd = process.cwd() } = {}) {
     ?? result.modules.find((module) => module.状态 === 'planned')
     ?? result.modules.at(-1);
   const moduleId = activeModule?.['模块 ID'] ?? null;
-  const feature = result.features.find((item) => normalize(item.spec['Roadmap Module']).match(/^N\d+/)?.[0] === moduleId) ?? null;
+  const feature = selectFeatureForModule(result.features, moduleId);
   const taskText = feature ? readText(feature.tasksPath) : null;
   const tasks = parseFeatureTasks(taskText);
   const nextTask = tasks.find((task) => ['in_progress', 'ready', 'planned', 'local_gate', 'review_gate'].includes(task.status))

@@ -9,6 +9,9 @@ import { formatPlanningValidation, validatePlanningArtifacts } from './lib/plann
 import { formatDeliveryResult, validateDeliveryPreflight, validateDeliveryTransition } from './lib/delivery-control.js';
 import { analyzeChange, formatChangeResult, validateChangeBrief } from './lib/change-impact.js';
 import { formatOperationalReadiness, validateOperationalReadiness } from './lib/operational-readiness.js';
+import { formatOwnerDecision, validateOwnerDecision } from './lib/owner-decision.js';
+import { formatProjectPresetFeedback, validateProjectPresetFeedback } from './lib/project-preset-feedback.js';
+import { formatProjectPresetResult, getProjectPresetContext, validateProjectPreset } from './lib/project-preset.js';
 import {
   getAvailableLanguages,
   getDefaultPreset,
@@ -39,11 +42,15 @@ ${presetUsage}
     npx create-claude-team events validate                校验 events JSONL 和 artifact 引用
     npx create-claude-team metrics update                 从 events 聚合 metrics.md
     npx create-claude-team planning validate               校验 vNext planning artifact 引用链
-    npx create-claude-team delivery preflight <module> [--task <id>]  校验受控开发开工条件
-    npx create-claude-team delivery transition <module> <task> <status>  校验任务状态迁移
+    npx create-claude-team delivery preflight <module> [--task <id>] [--decision <brief>]  校验受控开发开工条件
+    npx create-claude-team delivery transition <module> <task> <status> [--decision <brief>]  校验任务状态迁移
+    npx create-claude-team decision validate <brief>             校验 Owner Decision Brief
     npx create-claude-team change analyze <module> [--kind <kind>]  分析变更归属和影响范围
     npx create-claude-team change validate <brief>           校验 Change Impact Brief
     npx create-claude-team operations validate <brief>       校验运行准备度证据
+    npx create-claude-team project-preset validate           校验项目专属 preset
+    npx create-claude-team project-preset context [--json]   输出项目 preset 加载上下文
+    npx create-claude-team project-preset feedback validate <proposal> [--json]  校验反馈到 preset 的受控更新候选
     npx create-claude-team --help                        显示帮助
 
   选项:
@@ -61,10 +68,14 @@ ${presetExamples}
     npx create-claude-team events validate
     npx create-claude-team metrics update
     npx create-claude-team planning validate
-    npx create-claude-team delivery preflight N5 --task N5.2
-    npx create-claude-team delivery transition N5 N5.2 in_progress
+    npx create-claude-team delivery preflight N5 --task N5.2 --decision .claude/workspace/decisions/2026-07-12-n5-architecture.md
+    npx create-claude-team delivery transition N5 N5.2 in_progress --decision .claude/workspace/decisions/2026-07-12-n5-architecture.md
+    npx create-claude-team decision validate .claude/workspace/decisions/2026-07-12-n5-architecture.md
     npx create-claude-team change analyze N6 --kind experience
     npx create-claude-team operations validate .claude/workspace/operations/n7-readiness.md
+    npx create-claude-team project-preset validate
+    npx create-claude-team project-preset context --json
+    npx create-claude-team project-preset feedback validate project-profile/feedback/2026-07-12-testing-evidence.md
 `;
 
 const { values, positionals } = parseArgs({
@@ -77,6 +88,7 @@ const { values, positionals } = parseArgs({
     json: { type: 'boolean', default: false },
     task: { type: 'string' },
     change: { type: 'string' },
+    decision: { type: 'string' },
     kind: { type: 'string', default: 'experience' },
     help: { type: 'boolean', short: 'h', default: false },
   },
@@ -152,17 +164,27 @@ try {
       const subcommand = positionals[1];
       let result;
       if (subcommand === 'preflight') {
-        result = validateDeliveryPreflight({ target: positionals[2], taskId: values.task ?? null, changePath: values.change ?? null });
+        result = validateDeliveryPreflight({ target: positionals[2], taskId: values.task ?? null, changePath: values.change ?? null, decisionPath: values.decision ?? null });
       } else if (subcommand === 'transition') {
         result = validateDeliveryTransition({
           target: positionals[2],
           taskId: positionals[3],
           toStatus: positionals[4],
+          decisionPath: values.decision ?? null,
         });
       } else {
-        throw new Error('未知 delivery 子命令。可用: delivery preflight <module> [--task <id>] / delivery transition <module> <task> <status>');
+        throw new Error('未知 delivery 子命令。可用: delivery preflight <module> [--task <id>] [--decision <brief>] / delivery transition <module> <task> <status> [--decision <brief>]');
       }
       console.log(formatDeliveryResult(result, { json: values.json }));
+      if (result.status !== 'pass') process.exit(1);
+      break;
+    }
+    case 'decision': {
+      if (positionals[1] !== 'validate') {
+        throw new Error('未知 decision 子命令。可用: decision validate <brief>');
+      }
+      const result = validateOwnerDecision({ path: positionals[2] });
+      console.log(formatOwnerDecision(result, { json: values.json }));
       if (result.status !== 'pass') process.exit(1);
       break;
     }
@@ -187,6 +209,25 @@ try {
       const result = validateOperationalReadiness({ path: positionals[2] });
       console.log(formatOperationalReadiness(result, { json: values.json }));
       if (result.status !== 'pass') process.exit(1);
+      break;
+    }
+    case 'project-preset': {
+      const subcommand = positionals[1];
+      let result;
+      if (subcommand === 'validate') {
+        result = validateProjectPreset();
+      } else if (subcommand === 'context') {
+        result = getProjectPresetContext();
+      } else if (subcommand === 'feedback' && positionals[2] === 'validate') {
+        result = validateProjectPresetFeedback({ path: positionals[3] });
+        console.log(formatProjectPresetFeedback(result, { json: values.json }));
+        if (result.status !== 'pass') process.exit(1);
+        break;
+      } else {
+        throw new Error('未知 project-preset 子命令。可用: project-preset validate / project-preset context / project-preset feedback validate <proposal>');
+      }
+      console.log(formatProjectPresetResult(result, { mode: subcommand, json: values.json }));
+      if (result.status === 'needs_revision') process.exit(1);
       break;
     }
     default:

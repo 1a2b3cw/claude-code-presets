@@ -1,5 +1,6 @@
-import { parseFeatureTasks, validatePlanningArtifacts } from './planning-artifacts.js';
+import { parseFeatureTasks, selectFeatureForModule, validatePlanningArtifacts } from './planning-artifacts.js';
 import { validateChangeBrief } from './change-impact.js';
+import { validateOwnerDecision } from './owner-decision.js';
 
 const STARTABLE_STATUSES = new Set(['ready', 'planned', 'in_progress']);
 const REQUIRED_TASK_FIELDS = ['描述', '验收标准', '验收命令', '阻塞原因', 'Gate 结果', '产物', '最近更新'];
@@ -17,6 +18,7 @@ const HIGH_RISK_TERMS = [
   '认证', '授权', '密码', 'token', '密钥', '加密', '支付', '个人数据', '个人信息', 'pii', '数据迁移',
   'authentication', 'authorization', 'password', 'encryption', 'payment', 'personal data', 'data migration',
 ];
+const OWNER_DECISION_REQUIREMENTS = new Set(['yes', 'no']);
 
 function normalize(value) {
   return String(value ?? '').trim().replace(/^`|`$/g, '');
@@ -56,7 +58,7 @@ function findTarget(result, target) {
   if (module) {
     return {
       module,
-      feature: result.features.find((item) => normalize(item.spec['Roadmap Module']).match(/^N\d+/)?.[0] === value) ?? null,
+      feature: selectFeatureForModule(result.features, value),
     };
   }
   const feature = result.features.find((item) => item.name === value);
@@ -70,6 +72,43 @@ function taskIssues(task, issues) {
     if (!normalize(task.fields?.[field])) {
       addIssue(issues, 'task_field_missing', `${task.id}: 缺少 ${field}`, `补齐 tasks.md 的 ${task.id} ${field} 字段。`);
     }
+  }
+}
+
+function validateOwnerDecisionRequirement(result, decisionPath, cwd) {
+  const required = normalize(result.feature.spec['Owner Decision Required']).toLowerCase();
+  if (!required) return;
+  if (!OWNER_DECISION_REQUIREMENTS.has(required)) {
+    addIssue(result.issues, 'owner_decision_requirement_invalid', `${result.feature.name}/spec.md 的 Owner Decision Required 必须为 yes 或 no`, '使用 yes（需要确认）或 no（普通低风险任务）。');
+    return;
+  }
+  if (required === 'no') return;
+
+  const requiredTypes = normalize(result.feature.spec['Owner Decision Types'])
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+  if (requiredTypes.length === 0) {
+    addIssue(result.issues, 'owner_decision_types_missing', `${result.feature.name}/spec.md 标记为需要 Owner Decision，但缺少 Owner Decision Types`, '声明本任务需要的 product_scope / architecture / security_privacy / irreversible_operation / release_risk 类型。');
+    return;
+  }
+  if (!decisionPath) {
+    addIssue(result.issues, 'owner_decision_missing', `${result.feature.name} 需要已确认的 Owner Decision Brief`, '传入 --decision <brief>，并等待 Owner 明确确认后再开工。');
+    return;
+  }
+
+  const decision = validateOwnerDecision({ cwd, path: decisionPath });
+  result.decision = decision;
+  if (decision.status !== 'pass') {
+    for (const issue of decision.issues) addIssue(result.issues, `decision_${issue.code}`, issue.message, issue.action);
+    return;
+  }
+  if (decision.module?.['模块 ID'] !== result.module?.['模块 ID']) {
+    addIssue(result.issues, 'decision_target_mismatch', `Decision Brief 目标为 ${decision.module?.['模块 ID']}，但 delivery target 为 ${result.module?.['模块 ID']}`, '使用目标模块一致的 Owner Decision Brief。');
+  }
+  const missingTypes = requiredTypes.filter((type) => !decision.decisionTypes.includes(type));
+  if (missingTypes.length > 0) {
+    addIssue(result.issues, 'decision_type_mismatch', `Decision Brief 缺少本任务要求的类型：${missingTypes.join(', ')}`, '创建或确认覆盖所需高影响类型的 Decision Brief。');
   }
 }
 
@@ -133,7 +172,7 @@ function basePreflight({ cwd, target }) {
   return { status, planning, issues, module, feature, task: null };
 }
 
-export function validateDeliveryPreflight({ cwd = process.cwd(), target, taskId = null, changePath = null } = {}) {
+export function validateDeliveryPreflight({ cwd = process.cwd(), target, taskId = null, changePath = null, decisionPath = null } = {}) {
   const result = basePreflight({ cwd, target });
   if (!result.feature || result.status === 'blocked') return result;
 
@@ -162,9 +201,12 @@ export function validateDeliveryPreflight({ cwd = process.cwd(), target, taskId 
       addIssue(result.issues, 'change_target_mismatch', `Change Brief 目标为 ${change.module?.['模块 ID']}，但 delivery target 为 ${result.module?.['模块 ID']}`, '使用与当前 delivery module 相同的 Change Impact Brief。');
     }
   }
+  validateOwnerDecisionRequirement(result, decisionPath, cwd);
   result.task = task;
   if (result.issues.length > 0) {
-    result.status = result.issues.some((issue) => issue.code === 'change_brief_missing' || issue.code === 'change_target_missing') ? 'blocked' : 'needs_revision';
+    result.status = result.issues.some((issue) => (
+      issue.code === 'change_brief_missing' || issue.code === 'change_target_missing' || issue.code.startsWith('owner_decision_') || issue.code.startsWith('decision_')
+    )) ? 'blocked' : 'needs_revision';
   }
   return result;
 }
@@ -173,7 +215,7 @@ function gateIncludes(task, value) {
   return normalize(task.fields?.['Gate 结果']).toLowerCase().includes(value);
 }
 
-export function validateDeliveryTransition({ cwd = process.cwd(), target, taskId, toStatus } = {}) {
+export function validateDeliveryTransition({ cwd = process.cwd(), target, taskId, toStatus, decisionPath = null } = {}) {
   const result = basePreflight({ cwd, target });
   if (!result.feature || result.status !== 'pass') return result;
   const task = parseFeatureTasks(result.feature.tasksText).find((item) => item.id === taskId);
@@ -189,7 +231,7 @@ export function validateDeliveryTransition({ cwd = process.cwd(), target, taskId
     addIssue(result.issues, 'transition_not_allowed', `${task.id} 不能从 ${task.status} 迁移到 ${destination}`, '遵循 Controlled Delivery Contract 的小迭代状态路径。');
   }
   if (destination === 'in_progress') {
-    const preflight = validateDeliveryPreflight({ cwd, target, taskId });
+    const preflight = validateDeliveryPreflight({ cwd, target, taskId, decisionPath });
     if (preflight.status !== 'pass') result.issues.push(...preflight.issues);
   }
   if (task.status === 'local_gate' && destination === 'review_gate' && !gateIncludes(task, 'local pass')) {
@@ -215,6 +257,7 @@ export function formatDeliveryResult(result, { json = false } = {}) {
     module: result.module?.['模块 ID'] ?? null,
     task: result.task?.id ?? null,
     transition: result.transition ?? null,
+    decision: result.decision?.metadata?.['Decision ID'] ?? null,
     issues: result.issues,
   }, null, 2);
 
@@ -223,5 +266,5 @@ export function formatDeliveryResult(result, { json = false } = {}) {
   const issueText = result.issues.length === 0
     ? '  - 无；可以继续当前受控开发步骤。'
     : result.issues.map((issue) => `  - [${issue.code}] ${issue.message}\n    下一步：${issue.action}`).join('\n');
-  return `\n${title}: ${result.status}\n  目标: ${target}\n${result.transition ? `  迁移: ${result.transition.from} -> ${result.transition.to}\n` : ''}  结果:\n${issueText}`;
+  return `\n${title}: ${result.status}\n  目标: ${target}\n${result.decision ? `  Decision: ${result.decision.metadata?.['Decision ID'] ?? 'unknown'}\n` : ''}${result.transition ? `  迁移: ${result.transition.from} -> ${result.transition.to}\n` : ''}  结果:\n${issueText}`;
 }

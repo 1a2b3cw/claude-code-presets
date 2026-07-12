@@ -2,6 +2,10 @@
 
 一句话需求进，可运行代码出。你只管确认，AI 管流程。
 
+## Project Preset Lifecycle
+
+开始前运行 `node create-claude-team/cli.js project-preset context --json`。当结果为 `pass` 时，按 `PRESET.md -> rules -> specs -> base/技术栈 preset` 顺序读取；只读取与当前实现相关的 .agents/rules/specs。结果为 `needs_revision` 时，不得静默把 project-preset 当作项目事实，先说明 `project-preset validate` 的修复项。不存在 project-preset 时，继续使用 base 和已安装技术栈 preset，不阻塞既有项目，并按需建议 `/project-preset`。
+
 > **若项目根目录有 `roadmap.md`**（由 `/plan` 生成）且你指定了某模块（如"做模块 M3"或"做向量检索模块"）：
 > 先读 roadmap.md，复用该模块的描述、依赖、复杂度，跳过产品级提问（仍可问实现细节）。
 > 依赖模块未完成时先提醒；模块开始时更新为 `in_progress`；模块完成后把 roadmap.md 中的模块状态更新为 `done`、刷新最近更新日期，并在进度区打勾。
@@ -92,6 +96,23 @@ node create-claude-team/cli.js delivery preflight <module> --task <task-id> --ch
   - C: [optional] - [trade-off]
 - If no reply: [safe default or pause]
 ```
+
+## Owner Decision Gate
+
+存在 `.claude/workspace/planning/owner-decision-contract.md` 时，AI 先判断当前 feature 是否在产品范围、长期架构、安全隐私、不可逆操作或正式发布风险上需要 Owner 选择：
+
+- 需要时，在 spec 写 `Owner Decision Required：yes` 和对应 `Owner Decision Types`，先给推荐与 Brief；Owner 明确回复前，Status 必须保持 `draft` 或 `awaiting_owner`。
+- AI 可以创建 Brief 草稿，但不得把自己的推荐、工具权限、自动批准模式或“继续执行”写成 `confirmed`。只有 Owner 明确确认选项后才可填写 Owner Confirmation。
+- 开工前必须运行：
+
+```text
+node create-claude-team/cli.js decision validate <brief>
+node create-claude-team/cli.js delivery preflight <module> --task <task-id> --decision <brief>
+node create-claude-team/cli.js delivery transition <module> <task-id> in_progress --decision <brief>
+```
+
+- 缺 Brief、未确认、被拒绝、已替代、模块不匹配或类型不匹配时必须停止；`Owner Decision Required：no` 的普通低风险任务不需要 Brief。
+- 工具权限与 Owner 确认是两件事：本 gate 不读取权限，也不能被完全访问权限绕过。
 
 ## Spec/Task Quality Gate
 

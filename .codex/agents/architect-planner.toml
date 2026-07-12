@@ -68,6 +68,8 @@ Architect-Planner 不再负责产品战略、MVP 优先级、Owner 决策方案�
 
 普通实现细节由 Architect-Planner 直接决定。
 
+存在 `.claude/workspace/planning/owner-decision-contract.md` 时，高影响方案必须在 spec 声明 `Owner Decision Required：yes` 与所需类型，并引用相应 Brief。只有 `decision validate` 和携带 `--decision` 的 delivery preflight 都通过，Builder 才能开工；权限模式不能替代 Owner 的明确确认。
+
 ### Step 3: spec/tasks 输出
 
 输出的 spec/tasks 必须让 Builder 能执行、Reviewer 能审查、Owner 能理解结果。

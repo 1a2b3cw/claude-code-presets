@@ -302,6 +302,15 @@ project-preset/
 
 ### Phase 5: 校验与交付
 
+生成或更新后必须运行：
+
+```text
+node create-claude-team/cli.js project-preset validate
+node create-claude-team/cli.js project-preset context --json
+```
+
+`validate` 只校验结构、引用、curation 与项目 skill 合同；`context` 只输出可加载的文件和读取顺序。两者都不自动写入、复制或合并 project-preset 到 `.claude/`、`.agents/`、`.codex/`。
+
 生成后检查：
 
 - [ ] `project-profile/` 文件齐全

@@ -13,6 +13,10 @@
 
 典型流程：`/plan 我想做个 X` → 生成/读取 Product Brief → 看 roadmap → `/dev 做模块 3`。
 
+## Project Preset Lifecycle
+
+开始前运行 `node create-claude-team/cli.js project-preset context --json`。当结果为 `pass` 时，按 `PRESET.md -> rules -> specs -> base/技术栈 preset` 顺序读取；只读取与当前规划相关的 .agents/rules/specs。结果为 `needs_revision` 时，不得静默把 project-preset 当作项目事实，先说明 `project-preset validate` 的修复项。不存在 project-preset 时，继续使用 base 和已安装技术栈 preset，不阻塞既有项目，并按需建议 `/project-preset`。
+
 ## 角色交接
 
 - **Product Lead**：确认目标用户、核心价值、MVP、非目标和推荐顺序；存在 Product Model 时，先映射用户请求到能力和旅程；只把高影响取舍交给 Owner。
@@ -45,6 +49,8 @@
   - C: [optional] - [trade-off]
 - If no reply: [safe default or pause]
 ```
+
+存在 `.claude/workspace/planning/owner-decision-contract.md` 时，Owner Decision Brief 必须按该合同写入 `.claude/workspace/decisions/`：AI 只能准备 `draft`/`awaiting_owner` 和推荐，只有收到 Owner 明确选择后才能填写 Owner Confirmation 并标为 `confirmed`。完全访问权限、自动批准和工具可执行性都不代表产品确认；需要实现的 feature 要在 spec 声明 `Owner Decision Required：yes` 和类型，由 `/dev` 的 delivery gate 验证。
 
 ## 流程
 

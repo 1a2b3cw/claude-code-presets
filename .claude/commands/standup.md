@@ -2,6 +2,10 @@
 
 生成项目当前状态的简要汇报 + 团队效能分析。
 
+## Project Preset Lifecycle
+
+开始前运行 `node create-claude-team/cli.js project-preset context --json`。当结果为 `pass` 时，按 `PRESET.md -> rules -> specs -> base/技术栈 preset` 顺序读取；只读取与当前状态判断相关的 rules/specs。结果为 `needs_revision` 时，不得静默把 project-preset 当作项目事实，先说明 `project-preset validate` 的修复项。不存在 project-preset 时，继续使用 base 和已安装技术栈 preset，不阻塞既有项目，并按需建议 `/project-preset`。
+
 ## 数据来源
 - `roadmap.md`（产品模块、优先级、依赖、进度；不存在时跳过）
 - `tasks.md`（当前迭代任务状态、阻塞、验收命令；不存在时跳过）
@@ -129,7 +133,7 @@ Artifact Cleanup 报告格式：
 
 重复失败建议规则：
 
-- 同一 `failureType` 在最近 10 条非 `/standup` 事件中出现 `>= 2` 次：建议更新 project-preset 或对应流程规则。
+- 同一 `failureType` 在最近 10 条非 `/standup` 事件中出现 `>= 2` 次：只能建议创建 `project-profile/feedback/` proposal，引用这些事件作为证据；不直接更新 project-preset。
 - 同一 `rootCause` 出现 `>= 2` 次：建议补回归测试、hook 行为测试或 CI 检查。
 - `finalStatus = blocked` 或 `needs_followup`：必须进入“阻塞项”和“下一步建议”。
 - `hook_false_positive` 出现：建议记录误拦输入、调整 hook 规则，并补一个不会误拦的行为测试。
@@ -299,7 +303,7 @@ Today 视图在 `all-done` 状态下：
 | [time] | [taskId] | [failureType] | [stage] | [symptom] | [recoveryAction] | [finalStatus] | [evidence] |
 
 ## 重复失败建议
-- [failureType/rootCause] → [数据来源：failureRecovery 最近 N 条] → [建议更新的测试、hook、CI、release 或 project-preset 规则]
+- [failureType/rootCause] → [数据来源：failureRecovery 最近 N 条] → [建议更新的测试、hook、CI、release，或创建 project-preset feedback proposal]
 - 无重复失败时输出：暂无重复失败。
 
 ---

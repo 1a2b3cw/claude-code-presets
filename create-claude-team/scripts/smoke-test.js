@@ -16,10 +16,13 @@ import { init } from '../lib/init.js';
 import { missingPresetMcpServers, update } from '../lib/update.js';
 import { readPresetCatalog } from '../lib/presets.js';
 import { buildStatus, updateMetrics, validateEvents } from '../lib/state-tools.js';
-import { validatePlanningArtifacts } from '../lib/planning-artifacts.js';
+import { parseFeatureTasks, validatePlanningArtifacts } from '../lib/planning-artifacts.js';
 import { validateDeliveryPreflight, validateDeliveryTransition } from '../lib/delivery-control.js';
+import { validateOwnerDecision } from '../lib/owner-decision.js';
 import { analyzeChange, validateChangeBrief } from '../lib/change-impact.js';
 import { validateOperationalReadiness } from '../lib/operational-readiness.js';
+import { validateProjectPresetFeedback } from '../lib/project-preset-feedback.js';
+import { getProjectPresetContext, validateProjectPreset } from '../lib/project-preset.js';
 import { validateProject } from '../lib/validate.js';
 import { validateSkills } from '../lib/skill-contracts.js';
 import { toCodexText } from '../lib/codex/text.js';
@@ -51,6 +54,8 @@ const PLANNING_ARTIFACT_CONTEXT_TEXT = ['artifact-contract.md', 'planning valida
 const CONTROLLED_DELIVERY_TEXT = ['Controlled Delivery Contract', 'delivery transition'];
 const CHANGE_IMPACT_CONTEXT_TEXT = ['Change Impact Contract', 'change analyze'];
 const OPERATIONAL_READINESS_CONTEXT_TEXT = ['Operational Readiness Contract', 'operations validate'];
+const PROJECT_PRESET_LIFECYCLE_CONTEXT_TEXT = ['Project Preset Lifecycle', 'project-preset validate', 'project-preset context', 'PRESET.md', 'rules', 'specs', '不存在 project-preset'];
+const PROJECT_PRESET_FEEDBACK_TEXT = ['project-preset feedback validate', 'Owner 确认', '不自动写入', 'project-profile/feedback/'];
 const PLANNING_UPGRADE_PLAN_TEXT = ['Product Lead', '用户价值', 'MVP 归属', '推荐顺序', 'Product Brief 来源优先级', 'project-profile/product.md'];
 const EXPLORATION_BRIEF_PLAN_TEXT = ['Exploration Brief', '不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '当前请求其实是局部功能或修复', '不得只用普通“下一步”问题或散文选项代替'];
 const EXPLORATION_BRIEF_PRODUCT_LEAD_TEXT = ['不以固定问卷开场', '已确认信号', 'AI 推断', '需要验证', '每轮默认只问 0-2 个高价值问题', '先给结论和推荐', '不能只用普通“下一步”问题代替'];
@@ -162,6 +167,10 @@ function hasOperationalReadinessContext(text) {
   return OPERATIONAL_READINESS_CONTEXT_TEXT.every((part) => text.includes(part));
 }
 
+function hasProjectPresetLifecycleContext(text) {
+  return PROJECT_PRESET_LIFECYCLE_CONTEXT_TEXT.every((part) => text.includes(part));
+}
+
 function hasPlanningUpgradePlanContract(text) {
   return PLANNING_UPGRADE_PLAN_TEXT.every((part) => text.includes(part));
 }
@@ -205,6 +214,12 @@ function hasNextBestActionContract(text) {
 
 function hasOwnerDecisionBriefContract(text) {
   return OWNER_DECISION_BRIEF_REQUIRED_TEXT.every((part) => text.includes(part));
+}
+
+function hasOwnerDecisionGateContext(text) {
+  return text.includes('owner-decision-contract.md') &&
+    text.includes('decision validate') &&
+    text.includes('工具权限');
 }
 
 function hasSpecTaskGateContract(text) {
@@ -407,7 +422,13 @@ function writePlanningFixture(root, { invalidCapability = false } = {}) {
   ].join('\n'));
 }
 
-function writeDeliveryFixture(root, { taskStatus = 'planned', gateResult = 'local pending / review pending / release not_required' } = {}) {
+function writeDeliveryFixture(root, {
+  taskStatus = 'planned',
+  gateResult = 'local pending / review pending / release not_required',
+  ownerDecisionRequired = 'no',
+  ownerDecisionTypes = 'none',
+  taskId = 'N1.1',
+} = {}) {
   writePlanningFixture(root);
   const featureDir = join(root, '.claude', 'workspace', 'features', 'n1-fixture');
   writeFileSync(join(featureDir, 'spec.md'), [
@@ -425,6 +446,8 @@ function writeDeliveryFixture(root, { taskStatus = 'planned', gateResult = 'loca
     '> Security Risk Level：standard',
     '> Threat Model：not required for standard fixture',
     '> Operational Impact：none',
+    `> Owner Decision Required：${ownerDecisionRequired}`,
+    `> Owner Decision Types：${ownerDecisionTypes}`,
     '> 执行包：`.claude/workspace/features/n1-fixture/`',
     '',
     '## 验收场景',
@@ -445,7 +468,7 @@ function writeDeliveryFixture(root, { taskStatus = 'planned', gateResult = 'loca
     '',
     '- 当前结果: pass',
     '',
-    '### N1.1 fixture task',
+    `### ${taskId} fixture task`,
     `- **状态**：${taskStatus}`,
     '- **描述**：Run delivery fixture.',
     '- **验收标准**：The fixture reports a deterministic result.',
@@ -455,6 +478,45 @@ function writeDeliveryFixture(root, { taskStatus = 'planned', gateResult = 'loca
     '- **产物**：fixture',
     '- **最近更新**：2026-07-11',
   ].join('\n'));
+}
+
+function writeOwnerDecisionBrief(root, {
+  name = 'decision.md',
+  status = 'confirmed',
+  targetModule = 'N1',
+  decisionType = 'architecture',
+  withConfirmation = true,
+} = {}) {
+  const decisionsDir = join(root, '.claude', 'workspace', 'decisions');
+  mkdirSync(decisionsDir, { recursive: true });
+  const path = join(decisionsDir, name);
+  writeFileSync(path, [
+    '> Decision ID：OD-TEST-001',
+    `> Status：${status}`,
+    `> Decision Type：${decisionType}`,
+    `> Target Module：${targetModule}`,
+    '> Requested By：Architect-Planner',
+    '> Related Spec：`.claude/workspace/features/n1-fixture/spec.md`',
+    '',
+    '## Owner Decision Brief',
+    '',
+    '- Decision: Choose the fixture architecture path.',
+    '- Context: This choice changes a long-lived fixture boundary.',
+    '- Recommendation: Choose A because it preserves the documented path.',
+    '- Options:',
+    '  - A: Preserve the documented path.',
+    '  - B: Introduce a separate path.',
+    '- If no reply: Pause implementation.',
+    '',
+    '## Owner Confirmation',
+    '',
+    ...(withConfirmation ? [
+      '- Confirmed option: A',
+      '- Confirmed by: Owner',
+      '- Confirmation date: 2026-07-12',
+    ] : ['- Pending: waiting for Owner reply.']),
+  ].join('\n'));
+  return path;
 }
 
 function writeChangeBrief(root, {
@@ -557,6 +619,86 @@ function writeOperationalReadinessBrief(root, {
     '- [x] No unmitigated fixture risks.',
     extra,
   ].filter(Boolean).join('\n'));
+  return path;
+}
+
+function writeProjectPresetFixture(root, {
+  curationResult = '通过',
+  forbiddenDir = null,
+  specs = ['architecture.md'],
+} = {}) {
+  const profileDir = join(root, 'project-profile');
+  const presetDir = join(root, 'project-preset');
+  const rulesDir = join(presetDir, 'rules');
+  const specsDir = join(presetDir, 'specs');
+  const skillsDir = join(presetDir, 'skills');
+  mkdirSync(profileDir, { recursive: true });
+  mkdirSync(rulesDir, { recursive: true });
+  mkdirSync(specsDir, { recursive: true });
+  mkdirSync(skillsDir, { recursive: true });
+  writeFileSync(join(profileDir, 'product.md'), '# Fixture profile\n');
+  writeFileSync(join(presetDir, 'PRESET.md'), '# Fixture preset\n');
+  writeFileSync(join(presetDir, 'manifest.json'), JSON.stringify({
+    name: 'project-preset',
+    version: '0.1.0',
+    source: 'fixture',
+    generatedAt: '2026-07-12',
+    updatedAt: '2026-07-12',
+    priority: 'project-over-technical-preset',
+    profileDir: 'project-profile',
+    curation: 'curation.md',
+    rules: ['project.md', 'testing.md'],
+    specs,
+  }, null, 2));
+  writeFileSync(join(presetDir, 'curation.md'), `# Curation\n\n- 审查结论：${curationResult}\n`);
+  writeFileSync(join(rulesDir, 'project.md'), '# Project rules\n');
+  writeFileSync(join(rulesDir, 'testing.md'), '# Testing rules\n');
+  if (specs.includes('architecture.md')) writeFileSync(join(specsDir, 'architecture.md'), '# Architecture\n');
+  writeFileSync(join(skillsDir, 'README.md'), '# No project skills\n');
+  if (forbiddenDir) mkdirSync(join(presetDir, forbiddenDir), { recursive: true });
+}
+
+function writeProjectPresetFeedbackProposal(root, {
+  status = 'awaiting_owner',
+  targetFiles = 'project-preset/rules/testing.md',
+  confirmed = false,
+} = {}) {
+  const feedbackDir = join(root, 'project-profile', 'feedback');
+  mkdirSync(feedbackDir, { recursive: true });
+  const path = join(feedbackDir, '2026-07-12-testing-evidence.md');
+  const confirmation = confirmed
+    ? ['- Confirmed option: apply the proposed testing evidence rule', '- Confirmed by: Owner', '- Confirmation date: 2026-07-12']
+    : ['- Confirmed option: pending Owner reply'];
+  writeFileSync(path, [
+    '# Project Preset Feedback Proposal',
+    '',
+    '> Proposal ID：PPFB-TEST-001',
+    `> Status：${status}`,
+    '> Evidence Type：repeated_evidence',
+    `> Target Files：${targetFiles}`,
+    '> Requested By：Builder',
+    '',
+    '## Source Feedback',
+    '',
+    '- Repeated review evidence shows that validation claims need to distinguish automated checks from manual evidence.',
+    '',
+    '## Evidence',
+    '',
+    '- project-profile/quality.md records the current automated check boundary.',
+    '',
+    '## Proposed Change',
+    '',
+    '- Add one short rule that requires validation reports to label automated and manual evidence separately.',
+    '',
+    '## Safety Boundaries',
+    '',
+    '- Do not modify business code, database data, credentials, or files outside Target Files.',
+    '',
+    '## Owner Confirmation',
+    '',
+    ...confirmation,
+    '',
+  ].join('\n'));
   return path;
 }
 
@@ -711,6 +853,10 @@ async function runScenario(manifest, {
         'init: plan/project-preset command 与 skill 包含 M2 规划与边界契约'
       );
       assert(
+        PROJECT_PRESET_FEEDBACK_TEXT.every((text) => projectPresetSkillText.includes(text) && projectPresetCommand.includes(text)),
+        'init: project-preset command 与 skill 包含 feedback 受控更新契约'
+      );
+      assert(
         hasExplorationBriefPlanContract(planSkill) &&
           hasExplorationBriefPlanContract(planCommand) &&
           hasExplorationBriefProductLeadContract(productLead) &&
@@ -770,6 +916,20 @@ async function runScenario(manifest, {
       hasOperationalReadinessContext(codexCommandSkillText(agentsDir, 'ship')) &&
       hasOperationalReadinessContext(codexCommandText(agentsDir, 'ship')),
       'init: ship command 与 skill 包含 N7 Operational Readiness Contract'
+    );
+    assert(
+      hasOwnerDecisionGateContext(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasOwnerDecisionGateContext(codexCommandText(agentsDir, 'dev')) &&
+        hasOwnerDecisionGateContext(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasOwnerDecisionGateContext(codexCommandText(agentsDir, 'ship')),
+      'init: dev/ship command 与 skill 包含 N8.2 Owner Decision Gate'
+    );
+    assert(
+      ['plan', 'dev', 'fix', 'check', 'review-all', 'ship', 'standup'].every((commandName) => (
+        hasProjectPresetLifecycleContext(codexCommandSkillText(agentsDir, commandName)) &&
+        hasProjectPresetLifecycleContext(codexCommandText(agentsDir, commandName))
+      )),
+      'init: 核心命令与 skill 包含 N8.1 Project Preset Lifecycle 契约'
     );
     }
     assert(
@@ -1034,6 +1194,13 @@ async function runScenario(manifest, {
         hasPlanningUpgradePresetContract(codexCommandText(agentsDir, 'project-preset')),
       'update: plan/project-preset command 与 skill 保留 M2 规划与边界契约'
     );
+    assert(
+      PROJECT_PRESET_FEEDBACK_TEXT.every((text) => (
+        codexCommandSkillText(agentsDir, 'project-preset').includes(text) &&
+        codexCommandText(agentsDir, 'project-preset').includes(text)
+      )),
+      'update: project-preset command 与 skill 保留 feedback 受控更新契约'
+    );
     {
       const productLead = readFileSync(join(claudeDir, 'agents', 'product-lead.md'), 'utf8');
       const codexProductLead = readFileSync(join(agentsDir, 'agents', 'product-lead.md'), 'utf8');
@@ -1097,6 +1264,20 @@ async function runScenario(manifest, {
       hasOperationalReadinessContext(codexCommandSkillText(agentsDir, 'ship')) &&
       hasOperationalReadinessContext(codexCommandText(agentsDir, 'ship')),
       'update: ship command 与 skill 保留 N7 Operational Readiness Contract'
+    );
+    assert(
+      hasOwnerDecisionGateContext(codexCommandSkillText(agentsDir, 'dev')) &&
+        hasOwnerDecisionGateContext(codexCommandText(agentsDir, 'dev')) &&
+        hasOwnerDecisionGateContext(codexCommandSkillText(agentsDir, 'ship')) &&
+        hasOwnerDecisionGateContext(codexCommandText(agentsDir, 'ship')),
+      'update: dev/ship command 与 skill 保留 N8.2 Owner Decision Gate'
+    );
+    assert(
+      ['plan', 'dev', 'fix', 'check', 'review-all', 'ship', 'standup'].every((commandName) => (
+        hasProjectPresetLifecycleContext(codexCommandSkillText(agentsDir, commandName)) &&
+        hasProjectPresetLifecycleContext(codexCommandText(agentsDir, commandName))
+      )),
+      'update: 核心命令与 skill 保留 N8.1 Project Preset Lifecycle 契约'
     );
     }
     assert(
@@ -1376,7 +1557,24 @@ console.log('\n[N4 规划产物体系]');
       'planning: status 优先读取 root roadmap 与 feature tasks'
     );
 
+    const archivedFeatureDir = join(tmp, '.claude', 'workspace', 'features', 'n1-archived');
+    const activeFeatureDir = join(tmp, '.claude', 'workspace', 'features', 'n1-z-active');
+    mkdirSync(archivedFeatureDir, { recursive: true });
+    mkdirSync(activeFeatureDir, { recursive: true });
+    writeFileSync(join(archivedFeatureDir, 'spec.md'), readFileSync(join(tmp, '.claude', 'workspace', 'features', 'n1-fixture', 'spec.md'), 'utf8').replace('N1-SPEC-001', 'N1-SPEC-ARCHIVED').replaceAll('n1-fixture', 'n1-archived'));
+    writeFileSync(join(archivedFeatureDir, 'tasks.md'), readFileSync(join(tmp, '.claude', 'workspace', 'features', 'n1-fixture', 'tasks.md'), 'utf8').replace('N1-TASKS-001', 'N1-TASKS-ARCHIVED').replaceAll('n1-fixture', 'n1-archived').replace('in_progress', 'done'));
+    writeFileSync(join(activeFeatureDir, 'spec.md'), readFileSync(join(tmp, '.claude', 'workspace', 'features', 'n1-fixture', 'spec.md'), 'utf8').replace('N1-SPEC-001', 'N1-SPEC-ACTIVE').replaceAll('n1-fixture', 'n1-z-active'));
+    writeFileSync(join(activeFeatureDir, 'tasks.md'), readFileSync(join(tmp, '.claude', 'workspace', 'features', 'n1-fixture', 'tasks.md'), 'utf8').replace('N1-TASKS-001', 'N1-TASKS-ACTIVE').replaceAll('n1-fixture', 'n1-z-active').replace('N1.1', 'N1.2'));
+    writeFileSync(join(tmp, '.claude', 'workspace', 'features', 'n1-fixture', 'tasks.md'), readFileSync(join(tmp, '.claude', 'workspace', 'features', 'n1-fixture', 'tasks.md'), 'utf8').replace('in_progress', 'done'));
+    const multiFeatureStatus = await buildStatus({ cwd: tmp });
+    assert(
+      multiFeatureStatus.planning.feature?.path.endsWith('n1-z-active') && multiFeatureStatus.nextPlannedTask?.id === 'N1.2',
+      'planning: 同模块多 feature 时优先读取有活跃任务的 package'
+    );
+
     rmSync(join(tmp, '.claude', 'workspace', 'features', 'n1-fixture'), { recursive: true, force: true });
+    rmSync(archivedFeatureDir, { recursive: true, force: true });
+    rmSync(activeFeatureDir, { recursive: true, force: true });
     const roadmapOnlyStatus = await buildStatus({ cwd: tmp });
     assert(
       roadmapOnlyStatus.currentMain === 'N1 Fixture planning (in_progress)' &&
@@ -1581,6 +1779,161 @@ console.log('\n[N7 安全、发布与运行保障]');
     rmSync(highRiskTmp, { recursive: true, force: true });
     rmSync(highRiskEvidenceTmp, { recursive: true, force: true });
     rmSync(secretTmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n[N8.2 Owner Decision Gate]');
+{
+  const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
+  const pendingTmp = mkdtempSync(join(tmpdir(), 'cct-decision-pending-'));
+  const confirmedTmp = mkdtempSync(join(tmpdir(), 'cct-decision-confirmed-'));
+  const mismatchTmp = mkdtempSync(join(tmpdir(), 'cct-decision-mismatch-'));
+  const lowRiskTmp = mkdtempSync(join(tmpdir(), 'cct-decision-low-risk-'));
+  try {
+    writeDeliveryFixture(pendingTmp, { ownerDecisionRequired: 'yes', ownerDecisionTypes: 'architecture' });
+    const missing = validateDeliveryPreflight({ cwd: pendingTmp, target: 'N1', taskId: 'N1.1' });
+    assert(missing.status === 'blocked' && missing.issues.some((issue) => issue.code === 'owner_decision_missing'), 'decision gate: 需要确认但未提供 Brief 时阻止开工');
+
+    const pendingBrief = writeOwnerDecisionBrief(pendingTmp, { status: 'awaiting_owner', withConfirmation: false });
+    const pending = validateOwnerDecision({ cwd: pendingTmp, path: pendingBrief });
+    assert(pending.status === 'blocked' && pending.issues.some((issue) => issue.code === 'status_not_confirmed'), 'decision validate: awaiting_owner 不能被视为确认');
+    const misplacedBrief = join(pendingTmp, 'misplaced-decision.md');
+    writeFileSync(misplacedBrief, readFileSync(pendingBrief, 'utf8'));
+    const misplaced = validateOwnerDecision({ cwd: pendingTmp, path: misplacedBrief });
+    assert(misplaced.status === 'blocked' && misplaced.issues.some((issue) => issue.code === 'brief_path_invalid'), 'decision validate: 仓库内但不在 decisions 目录的 Brief 被拒绝');
+    const pendingPreflight = validateDeliveryPreflight({ cwd: pendingTmp, target: 'N1', taskId: 'N1.1', decisionPath: pendingBrief });
+    assert(pendingPreflight.status === 'blocked' && pendingPreflight.issues.some((issue) => issue.code === 'decision_status_not_confirmed'), 'decision gate: pending Brief 仍阻止开工');
+
+    writeDeliveryFixture(confirmedTmp, { ownerDecisionRequired: 'yes', ownerDecisionTypes: 'architecture' });
+    const confirmedBrief = writeOwnerDecisionBrief(confirmedTmp);
+    const confirmed = validateOwnerDecision({ cwd: confirmedTmp, path: confirmedBrief });
+    assert(confirmed.status === 'pass' && confirmed.metadata['Decision ID'] === 'OD-TEST-001', 'decision validate: confirmed Brief 通过');
+    const confirmedPreflight = validateDeliveryPreflight({ cwd: confirmedTmp, target: 'N1', taskId: 'N1.1', decisionPath: confirmedBrief });
+    assert(confirmedPreflight.status === 'pass' && confirmedPreflight.decision?.metadata['Decision ID'] === 'OD-TEST-001', 'decision gate: 匹配的 confirmed Brief 允许开工');
+    const confirmedTransition = validateDeliveryTransition({ cwd: confirmedTmp, target: 'N1', taskId: 'N1.1', toStatus: 'in_progress', decisionPath: confirmedBrief });
+    assert(confirmedTransition.status === 'pass', 'decision gate: 任务迁移复用 confirmed Brief 检查');
+    const confirmedCli = spawnSync(process.execPath, [cli, 'decision', 'validate', confirmedBrief], { cwd: confirmedTmp, encoding: 'utf8' });
+    assert(confirmedCli.status === 0 && confirmedCli.stdout.includes('decision validate: pass'), 'decision cli: 输出确认结论');
+
+    writeDeliveryFixture(mismatchTmp, { ownerDecisionRequired: 'yes', ownerDecisionTypes: 'architecture' });
+    writeFileSync(join(mismatchTmp, 'roadmap.md'), `${readFileSync(join(mismatchTmp, 'roadmap.md'), 'utf8')}\n| N2 | done | Other fixture module | C1 | A4 | 无 |`);
+    const mismatchBrief = writeOwnerDecisionBrief(mismatchTmp, { targetModule: 'N2' });
+    const mismatch = validateDeliveryPreflight({ cwd: mismatchTmp, target: 'N1', taskId: 'N1.1', decisionPath: mismatchBrief });
+    assert(mismatch.status === 'blocked' && mismatch.issues.some((issue) => issue.code === 'decision_target_mismatch'), 'decision gate: 其他模块的确认不能借用');
+
+    writeDeliveryFixture(lowRiskTmp);
+    const lowRisk = validateDeliveryPreflight({ cwd: lowRiskTmp, target: 'N1', taskId: 'N1.1' });
+    assert(lowRisk.status === 'pass', 'decision gate: Owner Decision Required no 的低风险任务不被阻断');
+    const parsed = parseFeatureTasks('### N8.2.1 three-level task\n- **状态**：planned\n');
+    assert(parsed[0]?.id === 'N8.2.1', 'planning: 支持 N8.2.1 三级任务编号');
+  } finally {
+    rmSync(pendingTmp, { recursive: true, force: true });
+    rmSync(confirmedTmp, { recursive: true, force: true });
+    rmSync(mismatchTmp, { recursive: true, force: true });
+    rmSync(lowRiskTmp, { recursive: true, force: true });
+  }
+}
+
+console.log('\n[N8.1 Project Preset Lifecycle]');
+{
+  const cli = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js');
+  const validTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-valid-'));
+  const absentTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-absent-'));
+  const missingRuleTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-missing-rule-'));
+  const emptySpecsTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-empty-specs-'));
+  const forbiddenTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-forbidden-'));
+  const pendingTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-pending-'));
+  const feedbackAwaitingTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-feedback-awaiting-'));
+  const feedbackConfirmedTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-feedback-confirmed-'));
+  const feedbackInvalidTmp = mkdtempSync(join(tmpdir(), 'cct-project-preset-feedback-invalid-'));
+  try {
+    writeProjectPresetFixture(validTmp);
+    const valid = validateProjectPreset({ cwd: validTmp });
+    assert(valid.status === 'pass' && valid.issues.length === 0, 'project-preset validate: 完整 preset 通过');
+    const context = getProjectPresetContext({ cwd: validTmp });
+    assert(
+      context.status === 'pass' && context.loadable && context.files[0] === 'project-preset/PRESET.md' && context.files.includes('project-preset/rules/project.md'),
+      'project-preset context: 返回稳定加载顺序'
+    );
+    const validCli = spawnSync(process.execPath, [cli, 'project-preset', 'context', '--json'], { cwd: validTmp, encoding: 'utf8' });
+    const validCliResult = JSON.parse(validCli.stdout);
+    assert(validCli.status === 0 && validCliResult.loadable === true, 'project-preset cli: context JSON 可被自动化读取');
+
+    const absent = validateProjectPreset({ cwd: absentTmp });
+    assert(absent.status === 'absent' && absent.issues.length === 0, 'project-preset validate: 缺失 preset 明确降级而非阻塞');
+
+    writeProjectPresetFixture(emptySpecsTmp, { specs: [] });
+    const emptySpecs = validateProjectPreset({ cwd: emptySpecsTmp });
+    assert(emptySpecs.status === 'pass' && !emptySpecs.files.some((file) => file.startsWith('project-preset/specs/')), 'project-preset validate: 空 specs 数组仍是有效的最小 preset');
+
+    writeProjectPresetFixture(missingRuleTmp);
+    rmSync(join(missingRuleTmp, 'project-preset', 'rules', 'testing.md'));
+    const missingRule = validateProjectPreset({ cwd: missingRuleTmp });
+    assert(
+      missingRule.status === 'needs_revision' && missingRule.issues.some((issue) => issue.code === 'manifest_reference_missing'),
+      'project-preset validate: 拒绝 manifest 指向不存在的 rule'
+    );
+
+    writeProjectPresetFixture(forbiddenTmp, { forbiddenDir: '.agents' });
+    const forbidden = validateProjectPreset({ cwd: forbiddenTmp });
+    assert(
+      forbidden.status === 'needs_revision' && forbidden.issues.some((issue) => issue.code === 'forbidden_directory'),
+      'project-preset validate: 拒绝覆盖边界内的嵌套配置目录'
+    );
+
+    writeProjectPresetFixture(pendingTmp, { curationResult: '需修订' });
+    const pending = validateProjectPreset({ cwd: pendingTmp });
+    assert(
+      pending.status === 'needs_revision' && pending.issues.some((issue) => issue.code === 'curation_not_approved'),
+      'project-preset validate: 未通过 curator 审查时不可加载'
+    );
+
+    writeProjectPresetFixture(feedbackAwaitingTmp);
+    const awaitingProposal = writeProjectPresetFeedbackProposal(feedbackAwaitingTmp);
+    const beforeAwaiting = readFileSync(join(feedbackAwaitingTmp, 'project-preset', 'rules', 'testing.md'), 'utf8');
+    const awaiting = validateProjectPresetFeedback({ cwd: feedbackAwaitingTmp, path: awaitingProposal });
+    const afterAwaiting = readFileSync(join(feedbackAwaitingTmp, 'project-preset', 'rules', 'testing.md'), 'utf8');
+    assert(
+      awaiting.status === 'needs_confirmation' && awaiting.issues.length === 0 && beforeAwaiting === afterAwaiting,
+      'project-preset feedback: 候选修改结构完整但未确认时零写入'
+    );
+    const awaitingCli = spawnSync(process.execPath, [cli, 'project-preset', 'feedback', 'validate', awaitingProposal], { cwd: feedbackAwaitingTmp, encoding: 'utf8' });
+    assert(
+      awaitingCli.status === 1 && awaitingCli.stdout.includes('project-preset feedback validate: needs_confirmation'),
+      'project-preset feedback cli: 未确认候选不得放行'
+    );
+
+    writeProjectPresetFixture(feedbackConfirmedTmp);
+    const confirmedProposal = writeProjectPresetFeedbackProposal(feedbackConfirmedTmp, { status: 'confirmed', confirmed: true });
+    const confirmedFeedback = validateProjectPresetFeedback({ cwd: feedbackConfirmedTmp, path: confirmedProposal });
+    assert(
+      confirmedFeedback.status === 'pass' && confirmedFeedback.targetFiles.includes('project-preset/rules/testing.md'),
+      'project-preset feedback: Owner 确认后候选修改可作为更新门禁'
+    );
+    const confirmedCli = spawnSync(process.execPath, [cli, 'project-preset', 'feedback', 'validate', confirmedProposal, '--json'], { cwd: feedbackConfirmedTmp, encoding: 'utf8' });
+    const confirmedCliResult = JSON.parse(confirmedCli.stdout);
+    assert(
+      confirmedCli.status === 0 && confirmedCliResult.status === 'pass',
+      'project-preset feedback cli: 确认后返回可机器读取的 pass'
+    );
+
+    writeProjectPresetFixture(feedbackInvalidTmp);
+    const invalidProposal = writeProjectPresetFeedbackProposal(feedbackInvalidTmp, { targetFiles: '.env' });
+    const invalidFeedback = validateProjectPresetFeedback({ cwd: feedbackInvalidTmp, path: invalidProposal });
+    assert(
+      invalidFeedback.status === 'needs_revision' && invalidFeedback.issues.some((issue) => issue.code === 'target_file_invalid'),
+      'project-preset feedback: 拒绝越出 project-profile/project-preset 的写入目标'
+    );
+  } finally {
+    rmSync(validTmp, { recursive: true, force: true });
+    rmSync(absentTmp, { recursive: true, force: true });
+    rmSync(missingRuleTmp, { recursive: true, force: true });
+    rmSync(emptySpecsTmp, { recursive: true, force: true });
+    rmSync(forbiddenTmp, { recursive: true, force: true });
+    rmSync(pendingTmp, { recursive: true, force: true });
+    rmSync(feedbackAwaitingTmp, { recursive: true, force: true });
+    rmSync(feedbackConfirmedTmp, { recursive: true, force: true });
+    rmSync(feedbackInvalidTmp, { recursive: true, force: true });
   }
 }
 

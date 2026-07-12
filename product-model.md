@@ -5,7 +5,7 @@
 > Product Brief ID：PB-VNEXT-001
 > Product Brief：`product-brief.md`
 > Roadmap：`roadmap.md`
-> 更新于：2026-07-11
+> 更新于：2026-07-12
 
 ## 用途与边界
 
@@ -82,6 +82,6 @@ Product Brief 说明产品定位、范围与高层约束；本文件说明产品
 
 ## 未决问题
 
-- N3 已建立 `architecture.md` 的组件、依赖与引用方式；后续架构变化通过 ADR 演进。
-- N4 决定 Product Model、roadmap、spec、tasks 的最终结构化存储、ID 校验和状态读取规则。
-- N8 通过真实项目验证后，决定是否把此 Markdown 视图投影为结构化 Project Model。
+- Markdown 继续作为人类可读事实源；只有当真实项目反复出现机器读取瓶颈时，才评估结构化 Project Model，不为工具便利提前引入第二事实源。
+- N8.1.5 需决定最小 feedback proposal 形式，并验证只有 Owner 确认和 curator 通过后才能更新 project-preset。
+- 公共 preset 只在至少三个已激活项目出现稳定共性后评估。

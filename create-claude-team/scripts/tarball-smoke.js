@@ -105,13 +105,21 @@ try {
   }
 
   const helpOutput = run('node', [cliPath, '--help'], { cwd: projectDir, capture: true });
-  if (!helpOutput.includes('operations validate')) {
-    throw new Error('installed CLI help is missing operations validate');
+  if (!helpOutput.includes('operations validate') || !helpOutput.includes('project-preset context')) {
+    throw new Error('installed CLI help is missing a required validation command');
   }
 
   run('node', [cliPath, 'init', '--preset', 'base', '--dry-run'], { cwd: projectDir, capture: true });
   run('node', [cliPath, 'init', '--preset', 'base'], { cwd: projectDir, capture: true });
   run('node', [cliPath, 'validate'], { cwd: projectDir, capture: true });
+  const projectPresetValidate = run('node', [cliPath, 'project-preset', 'validate'], { cwd: projectDir, capture: true });
+  if (!projectPresetValidate.includes('project-preset validate: absent')) {
+    throw new Error('installed CLI did not report the expected project-preset fallback state');
+  }
+  const projectPresetContext = JSON.parse(run('node', [cliPath, 'project-preset', 'context', '--json'], { cwd: projectDir, capture: true }));
+  if (projectPresetContext.status !== 'absent' || projectPresetContext.loadable !== false) {
+    throw new Error('installed CLI project-preset context did not preserve the fallback contract');
+  }
 
   if (!existsSync(join(projectDir, '.claude', 'CLAUDE.md'))) {
     throw new Error('init did not create .claude/CLAUDE.md');

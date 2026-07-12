@@ -2,6 +2,10 @@
 
 合并前/上线前的全面审查。聚焦**文件之间的关系**，单文件质量由 code-review skill 负责。
 
+## Project Preset Lifecycle
+
+开始前运行 `node create-claude-team/cli.js project-preset context --json`。当结果为 `pass` 时，按 `PRESET.md -> rules -> specs -> base/技术栈 preset` 顺序读取；只读取与当前审查相关的 .agents/rules/specs。结果为 `needs_revision` 时，不得静默把 project-preset 当作项目事实，先说明 `project-preset validate` 的修复项。不存在 project-preset 时，继续使用 base 和已安装技术栈 preset，不阻塞既有项目，并按需建议 `/project-preset`。
+
 ## 和 /check、code-review 的关系
 
 | 组件 | 职责 | 范围 | 耗时 |

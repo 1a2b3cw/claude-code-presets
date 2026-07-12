@@ -109,6 +109,8 @@ Gate 结果只能是 `pass` / `needs_revision` / `blocked`。如果不通过，�
 - If no reply: [安全默认或暂停]
 ```
 
+存在 `.claude/workspace/planning/owner-decision-contract.md` 时，按合同把 Brief 写入 `.claude/workspace/decisions/`，并为高影响 feature 建议 `Owner Decision Required：yes` 与类型。你可以写推荐和 `awaiting_owner` 草稿，但不得代替 Owner 填写 `confirmed` 或 Owner Confirmation；完全访问权限不改变这一点。
+
 ## 输出
 
 常见输出：

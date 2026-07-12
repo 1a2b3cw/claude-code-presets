@@ -291,6 +291,15 @@ project-preset/
 
 ### Phase 5: 校验与交付
 
+生成或更新后必须运行：
+
+```text
+node create-claude-team/cli.js project-preset validate
+node create-claude-team/cli.js project-preset context --json
+```
+
+`validate` 只校验结构、引用、curation 与项目 skill 合同；`context` 只输出可加载的文件和读取顺序。两者都不自动写入、复制或合并 project-preset 到 `.claude/`、`.agents/`、`.codex/`。
+
 生成后检查：
 
 - [ ] `project-profile/` 文件齐全
@@ -326,18 +335,46 @@ project-preset/
 3. 技术细节不够时读 `project-preset/specs/`
 4. 最后才回退到通用技术栈 preset 和公共 rules
 
-## 更新策略
+## Feedback 到 Preset 的受控更新
 
-以下情况应更新 project preset：
+以下信号可以触发候选修改：技术栈/架构/测试/UI 方向的已确认变化，review 或 `/standup` 中可复核的重复问题，以及 Owner 明确提出的长期工作方式。它们都不是“直接写入规则”的授权。单次 bug、临时需求或没有证据的猜测，应走变更分析/开发流程，不进 preset。
 
-- 技术栈改变
-- 架构边界改变
-- 测试策略改变
-- UI 方向改变
-- review 多次发现同类问题
-- `/standup` 发现质量瓶颈
+必须依次完成：
 
-更新时只改相关文件，并在 `manifest.json.updatedAt` 更新日期。
+1. 在 `project-profile/feedback/YYYY-MM-DD-<topic>.md` 建立 feedback proposal，写明反馈来源、可复核证据、拟修改的文件、规则文本、不改的范围和风险。
+2. 运行 `node create-claude-team/cli.js project-preset feedback validate <proposal>`。`draft` 或 `awaiting_owner` 只能得到 `needs_confirmation`，不得修改 Target Files。
+3. 把候选修改和取舍展示给 Owner。只有 Owner 明确同意这条具体规则后，才可将 proposal 改为 `confirmed` 并填写确认信息。工具完全权限不代表确认。
+4. 再运行同一校验命令，只有 `pass` 才能按最小 diff 更新现有 `project-profile/` 或 `project-preset/` 文件；不新建无关 skill、不写入密钥、不改业务代码。
+5. 用 `skill-curator` 审查结果是否应该成为规则，更新 `project-preset/curation.md`，并修改 `manifest.json.updatedAt`。最后运行 `project-preset validate` 和 `project-preset context --json`。
+
+Proposal 最小模板：
+
+```markdown
+# Project Preset Feedback Proposal
+
+> Proposal ID：PPFB-YYYYMMDD-001
+> Status：awaiting_owner
+> Evidence Type：owner_feedback / repeated_evidence
+> Target Files：project-preset/rules/testing.md
+> Requested By：Builder
+
+## Source Feedback
+- [Owner 反馈或重复问题]
+
+## Evidence
+- [可复核的项目路径、review 结论或去敏事件标识]
+
+## Proposed Change
+- [要写入的短、可执行规则]
+
+## Safety Boundaries
+- [不修改的目录、不执行的高风险操作]
+
+## Owner Confirmation
+- Confirmed option: [等待 Owner 回复]
+```
+
+此 CLI 只校验 proposal 和放行条件，**不自动写入**任何 preset。这是故意的：事实和规则只能在你看到具体修改后才由人确认。
 
 ## 边界
 

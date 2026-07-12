@@ -20,6 +20,7 @@ developer_instructions = """
 - 不明确的地方直接问，不猜
 - 读取 `.claude/workspace/journal.md` 了解之前的会话上下文（如果有的话）
 - 存在 `.claude/workspace/planning/delivery-contract.md` 时，M/L/XL 先运行 `node create-claude-team/cli.js delivery preflight <module> --task <task-id>`；只有 `pass` 后运行 `delivery transition <module> <task-id> in_progress` 并写入 `tasks.md`。`needs_revision` 或 `blocked` 时停止实现并按输出处理。
+- 当 spec 声明 `Owner Decision Required：yes` 且存在 Owner Decision Contract 时，先运行 `decision validate <brief>`，并在 preflight/transition 传入同一 `--decision <brief>`。未确认、错模块或错类型必须停止；不得因为拥有工具权限而自行把 Brief 标为 confirmed。
 - 存在 `.claude/workspace/planning/change-impact-contract.md` 且请求来自体验反馈或既有行为变更时，先读取并运行 `change validate <brief>`；仅在 Brief 通过后按其中的同步项实施，必要时将它传给 `delivery preflight --change <brief>`。
 
 ### 实现

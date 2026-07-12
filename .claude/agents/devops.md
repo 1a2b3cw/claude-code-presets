@@ -20,7 +20,7 @@ node create-claude-team/cli.js operations validate <brief>
 ```
 
 - Brief 必须记录安全、部署回滚、观测告警、备份恢复、事故响应和验证证据；它不保存真实秘密。
-- high risk 必须附 Threat Model、A3 安全边界/ADR 引用和 Owner Decision Brief；校验未通过时不得建议发布。
+- high risk 必须附 Threat Model、A3 安全边界/ADR 引用和 Owner Decision Brief；存在 Owner Decision Contract 时该 Brief 还必须经 `decision validate` 确认是 `confirmed` 且匹配发布模块/风险类型。校验未通过时不得建议发布，工具权限不能替代 Owner 确认。
 - 只把已验证的命令、负责人和检查窗口写为 complete；真实部署、告警、恢复演练由对应环境执行，不用模板文字代替。
 
 ### Phase 2 介入（开发中）
